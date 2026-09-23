@@ -12,6 +12,7 @@ A redesign concept for https://klandermuelen.nl/: one static page with no build 
 - It respects `prefers-reduced-motion` and is responsive down to 320px.
 
 ## To finish before going live
+- Remove the concept banner (`.concept-banner` in `index.html`). This also re-enables the e-mail reservation form, and you can restore the original `<title>`.
 - Replace the gradient placeholders in the gallery (`.g1`–`.g3` in `styles.css`) with real photos.
 - Check the menu items and add prices. The dishes shown come from public listings.
 - If you want bookings to land in a reservation system instead of e-mail, connect the form to it.

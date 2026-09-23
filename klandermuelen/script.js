@@ -288,6 +288,12 @@
       form.note.value ? `Opmerking: ${form.note.value}` : '',
     ].filter(Boolean).join('\n');
     const subject = `Reservering ${dateLabel} ${state.time} · ${state.guests} pers.`;
+    // Concept preview: don't send real booking requests to the restaurant.
+    if (document.querySelector('.concept-banner')) {
+      $('#formMsg').textContent = `Demo: aanvraag voor ${state.guests} pers. op ${dateLabel} om ${state.time}. In de live-versie gaat dit naar het restaurant.`;
+      toast('Demo: er is niets verstuurd.');
+      return;
+    }
     location.href = `mailto:info@klandermuelen.nl?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     $('#formMsg').textContent = `Je mailprogramma opent met je aanvraag voor ${state.guests} pers. op ${dateLabel} om ${state.time}.`;
     toast('Bijna klaar, verstuur de e-mail om te bevestigen.');
