@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Klander Muelen Concept</title>
   <meta name="description" content="Bar & restaurant De Klander Muelen — sinds 1976 in een 17e-eeuws monument aan het Statenplein in Dordrecht. Lunch, diner, borrel en een zonnig terras.">
-  <meta name="theme-color" content="#1f2a24">
+  <meta name="theme-color" content="#111111">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -45,16 +45,21 @@
     <!-- HERO -->
     <section class="hero">
       <div class="hero-bg" aria-hidden="true">
-        <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
-        <svg class="hero-mill" viewBox="0 0 200 200">
-          <g class="sails-big">
-            <path d="M100 100 L100 8 L118 14 L108 100Z"/><path d="M100 100 L192 100 L186 118 L100 108Z"/>
-            <path d="M100 100 L100 192 L82 186 L92 100Z"/><path d="M100 100 L8 100 L14 82 L100 92Z"/>
-          </g>
-          <circle cx="100" cy="100" r="9"/>
-        </svg>
+        <!-- Hero photo: place the storefront photo at img/hero.jpg -->
+        <div class="hero-photo"></div>
+        <div class="hero-shade"></div>
+        <div class="balloons">
+          <span class="bl gold" style="--x:6%;--s:64px;--d:0s;--t:14s"></span>
+          <span class="bl black" style="--x:14%;--s:44px;--d:-4s;--t:17s"></span>
+          <span class="bl gold" style="--x:78%;--s:52px;--d:-2s;--t:15s"></span>
+          <span class="bl black" style="--x:86%;--s:70px;--d:-7s;--t:19s"></span>
+          <span class="bl gold" style="--x:92%;--s:36px;--d:-10s;--t:13s"></span>
+          <span class="bl black" style="--x:70%;--s:30px;--d:-12s;--t:16s"></span>
+          <span class="bl gold" style="--x:24%;--s:28px;--d:-9s;--t:18s"></span>
+        </div>
       </div>
       <div class="hero-inner">
+        <p class="hero-sign" aria-hidden="true">De Klander Muelen</p>
         <p class="status-pill" id="statusPill"><span class="dot"></span><span id="statusText" data-en="Loading opening hours…">Openingstijden laden…</span></p>
         <h1 class="hero-title">
           <span class="line"><span data-en="Good food, warm company,">Gezellig tafelen</span></span>
@@ -62,8 +67,8 @@
         </h1>
         <p class="hero-sub" data-en="Since 1976 we’ve been pouring, cooking and laughing in a 17th-century monument on the Statenplein. Drop in for a quick lunch, a long dinner or just a good drink on the terrace.">Sinds 1976 schenken, koken en lachen we in een 17e-eeuws monument aan het Statenplein. Voor een snelle lunch, een uitgebreid diner of gewoon een goede borrel op het terras.</p>
         <div class="hero-cta">
-          <a href="#reserveren" class="btn magnetic" data-en="Book a table">Reserveer een tafel</a>
-          <a href="#menu" class="btn btn-ghost" data-en="See the menu">Bekijk het menu</a>
+          <a href="#reserveren" class="btn btn-gold magnetic" data-en="Book a table">Reserveer een tafel</a>
+          <a href="#menu" class="btn btn-ghost-light" data-en="See the menu">Bekijk het menu</a>
         </div>
       </div>
       <a href="#verhaal" class="scroll-hint" aria-label="Scroll naar beneden" data-en-aria-label="Scroll down"><span></span></a>
@@ -125,55 +130,55 @@
         </div>
 
         <div class="menu-grid" id="menuGrid">
-          <article class="dish" data-cat="diner borrel" data-tags="vis fish seafood">
+          <article class="dish" data-photo="img/calamares.jpg" data-cat="diner borrel" data-tags="vis fish seafood">
             <div class="dish-emoji" aria-hidden="true">🦑</div>
             <h3 data-en="Crispy calamari">Knapperige calamares</h3>
             <p data-en="Golden fried squid rings with lemon and aioli.">Goudbruin gebakken inktvisringen met citroen en aioli.</p>
             <div class="chips"><span data-en="Fish">Vis</span><span data-en="To share">Om te delen</span></div>
           </article>
-          <article class="dish" data-cat="diner" data-tags="vlees meat">
+          <article class="dish" data-photo="img/spareribs.jpg" data-cat="diner" data-tags="vlees meat">
             <div class="dish-emoji" aria-hidden="true">🍖</div>
             <h3 data-en="Hearty spare ribs">Stevige spareribs</h3>
             <p data-en="Tender, marinated and generous, with fries and sauce.">Mals, gemarineerd en royaal, met frites en saus.</p>
             <div class="chips"><span data-en="Meat">Vlees</span><span data-en="Favourite">Favoriet</span></div>
           </article>
-          <article class="dish" data-cat="diner" data-tags="vlees meat">
+          <article class="dish" data-photo="img/varkenshaas.jpg" data-cat="diner" data-tags="vlees meat">
             <div class="dish-emoji" aria-hidden="true">🥩</div>
             <h3 data-en="Pork tenderloin in mushroom cream sauce">Varkenshaas in champignonroomsaus</h3>
             <p data-en="With peppers, onion, bacon and mushrooms.">Met paprika, ui, spek en champignons.</p>
             <div class="chips"><span data-en="Meat">Vlees</span></div>
           </article>
-          <article class="dish" data-cat="lunch diner" data-tags="vis fish seafood">
+          <article class="dish" data-photo="img/vis-van-de-dag.jpg" data-cat="lunch diner" data-tags="vis fish seafood">
             <div class="dish-emoji" aria-hidden="true">🐟</div>
             <h3 data-en="Catch of the day">Vis van de dag</h3>
             <p data-en="Ask your server about today’s catch.">Vraag de bediening naar de vangst van vandaag.</p>
             <div class="chips"><span data-en="Fish">Vis</span></div>
           </article>
-          <article class="dish" data-cat="lunch zoet" data-tags="vega veggie vegetarian">
+          <article class="dish" data-photo="img/pannenkoeken.jpg" data-cat="lunch zoet" data-tags="vega veggie vegetarian">
             <div class="dish-emoji" aria-hidden="true">🥞</div>
             <h3 data-en="Dutch pancakes">Pannenkoeken</h3>
             <p data-en="Proper Dutch and generously topped, from plain to bacon and cheese.">Hollands en goed gevuld, van naturel tot spek en kaas.</p>
             <div class="chips"><span>Kids</span><span data-en="Veggie options">Vega-opties</span></div>
           </article>
-          <article class="dish" data-cat="lunch" data-tags="vega veggie vegetarian">
+          <article class="dish" data-photo="img/broodjes.jpg" data-cat="lunch" data-tags="vega veggie vegetarian">
             <div class="dish-emoji" aria-hidden="true">🥪</div>
             <h3 data-en="Tasty sandwiches">Smakelijke broodjes</h3>
             <p data-en="Filled rolls, toasties and uitsmijters (fried eggs on bread) for lunch.">Belegde broodjes, tosti's en uitsmijters voor de lunch.</p>
             <div class="chips"><span>Lunch</span><span data-en="Veggie options">Vega-opties</span></div>
           </article>
-          <article class="dish" data-cat="borrel diner" data-tags="vega veggie vegetarian">
+          <article class="dish" data-photo="img/frites.jpg" data-cat="borrel diner" data-tags="vega veggie vegetarian">
             <div class="dish-emoji" aria-hidden="true">🍟</div>
             <h3 data-en="Generous fries">Royale frites</h3>
             <p data-en="Thick-cut and crispy, with mayo or truffle mayo.">Dik gesneden, knapperig, met mayonaise of truffelmayo.</p>
             <div class="chips"><span data-en="Side">Bijgerecht</span><span data-en="Veggie">Vega</span></div>
           </article>
-          <article class="dish" data-cat="borrel" data-tags="vlees meat">
+          <article class="dish" data-photo="img/bitterballen.jpg" data-cat="borrel" data-tags="vlees meat">
             <div class="dish-emoji" aria-hidden="true">🧆</div>
             <h3 data-en="Bitterballen &amp;amp; sharing board">Bitterballen &amp; borrelplank</h3>
             <p data-en="The perfect partner for a cold beer on the terrace.">De perfecte begeleider van een koud biertje op het terras.</p>
             <div class="chips"><span data-en="To share">Om te delen</span></div>
           </article>
-          <article class="dish" data-cat="zoet" data-tags="vega veggie vegetarian">
+          <article class="dish" data-photo="img/dame-blanche.jpg" data-cat="zoet" data-tags="vega veggie vegetarian">
             <div class="dish-emoji" aria-hidden="true">🍨</div>
             <h3>Dame blanche</h3>
             <p data-en="Vanilla ice cream with warm chocolate sauce and whipped cream.">Vanille-ijs met warme chocoladesaus en slagroom.</p>

@@ -180,16 +180,23 @@
     requestAnimationFrame(step);
   }
 
-  // ---- Hero parallax ----
+  // ---- Hero parallax: photo drifts on scroll, balloons follow the pointer ----
   if (!reduceMotion) {
-    const blobs = $$('.blob'), mill = $('.hero-mill');
+    const photo = $('.hero-photo'), balloons = $('.balloons');
+    addEventListener('scroll', () => {
+      if (scrollY < innerHeight) photo.style.translate = `0 ${scrollY * 0.25}px`;
+    }, { passive: true });
     addEventListener('pointermove', e => {
       if (scrollY > innerHeight) return;
       const x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5;
-      blobs.forEach((b, i) => { b.style.translate = `${x * (i + 1) * 30}px ${y * (i + 1) * 30}px`; });
-      mill.style.transform = `translate(${x * -20}px, ${y * -20}px)`;
+      balloons.style.transform = `translate(${x * -30}px, ${y * -20}px)`;
     });
   }
+
+  // Use the storefront photo in the gallery tile too, once it exists.
+  const heroImg = new Image();
+  heroImg.onload = () => $('.g1')?.classList.add('has-photo');
+  heroImg.src = 'img/hero.jpg';
 
   // ---- Magnetic buttons ----
   if (!reduceMotion && matchMedia('(hover: hover)').matches) {
@@ -237,6 +244,17 @@
   addEventListener('resize', moveIndicator);
   document.fonts?.ready.then(moveIndicator);
   moveIndicator();
+
+  // Dish photos: drop a file at the card's data-photo path (e.g. img/calamares.jpg) and it
+  // replaces the emoji automatically. Cards without a photo keep their emoji.
+  dishes.forEach(d => {
+    if (!d.dataset.photo) return;
+    const img = new Image();
+    img.className = 'dish-photo';
+    img.alt = '';
+    img.onload = () => { d.querySelector('.dish-emoji')?.remove(); d.prepend(img); };
+    img.src = d.dataset.photo;
+  });
 
   if (matchMedia('(hover: hover)').matches) {
     dishes.forEach(d => {

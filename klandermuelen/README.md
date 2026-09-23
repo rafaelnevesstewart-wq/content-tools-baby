@@ -3,6 +3,7 @@
 A redesign concept for https://klandermuelen.nl/: one static page with no build step. Open `index.html` in a browser.
 
 ## What's interactive
+- **NL/EN switch.** It follows the browser language on first visit and remembers the choice.
 - **Live open/closed badge.** It uses Dordrecht time (Europe/Amsterdam), and the hours table highlights today.
 - **Menu filter.** Category tabs have a sliding indicator, there's instant search, and the cards have a cursor spotlight and 3D tilt.
 - **Reservation widget.** Pick the number of guests, a day and a time slot (slots follow the opening hours, and times that have passed today are disabled). A note appears for groups of 10 or more. Submitting opens a pre-filled e-mail to info@klandermuelen.nl.
@@ -13,6 +14,8 @@ A redesign concept for https://klandermuelen.nl/: one static page with no build 
 
 ## To finish before going live
 - Remove the concept banner (`.concept-banner` in `index.html`). This also re-enables the e-mail reservation form, and you can restore the original `<title>`.
-- Replace the gradient placeholders in the gallery (`.g1`–`.g3` in `styles.css`) with real photos.
+- Add the storefront photo as `img/hero.jpg`. It fills the hero and the "historic building" gallery tile.
+- Add dish photos as `img/<dish>.jpg` (names are in each card's `data-photo` in `index.html`). They replace the emoji automatically.
+- Replace the two remaining gradient tiles (`.g2`, `.g3` in `styles.css`) with real photos.
 - Check the menu items and add prices. The dishes shown come from public listings.
 - If you want bookings to land in a reservation system instead of e-mail, connect the form to it.
