@@ -193,10 +193,12 @@
     });
   }
 
-  // Use the storefront photo in the gallery tile too, once it exists.
-  const heroImg = new Image();
-  heroImg.onload = () => $('.g1')?.classList.add('has-photo');
-  heroImg.src = 'img/hero.jpg';
+  // Gallery tiles show their photo once the file exists; until then the emoji placeholder stays.
+  [['.g1', 'img/hero.jpg'], ['.g2', 'img/interieur.jpg'], ['.g3', 'img/terras.jpg']].forEach(([sel, src]) => {
+    const img = new Image();
+    img.onload = () => $(sel)?.classList.add('has-photo');
+    img.src = src;
+  });
 
   // ---- Magnetic buttons ----
   if (!reduceMotion && matchMedia('(hover: hover)').matches) {

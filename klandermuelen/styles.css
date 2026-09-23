@@ -221,12 +221,12 @@ body:has(.concept-banner) .footer { padding-bottom: 130px; }
 .g figcaption { position: relative; z-index: 1; }
 .g:hover { transform: scale(1.03); }
 /* Swap these gradients for real photos: background-image: url(img/pand.jpg) */
-.g1 { grid-row: span 2; background: url(img/hero.jpg) 62% 30% / 260% auto no-repeat, linear-gradient(160deg, #3a3a3a, #111); filter: grayscale(1); }
-.g2 { background-image: linear-gradient(135deg, #3b3b3b, #121212); }
-.g3 { background-image: linear-gradient(135deg, #f1dca6, #c49a4f 50%, #3a2c14); }
+.g1 { grid-row: span 2; background: url(img/hero.jpg) 50% 40% / auto 100% no-repeat, linear-gradient(160deg, #3a3a3a, #111); }
+.g2 { background: url(img/interieur.jpg) center / cover no-repeat, linear-gradient(135deg, #3b3b3b, #121212); }
+.g3 { background: url(img/terras.jpg) center / cover no-repeat, linear-gradient(135deg, #f1dca6, #c49a4f 50%, #3a2c14); }
 .g1:not(.has-photo)::before { content: "🏛"; position: absolute; font-size: 5rem; top: 40%; left: 50%; translate: -50% -50%; opacity: .5; }
-.g2::before { content: "🍺"; position: absolute; font-size: 3.5rem; top: 45%; left: 50%; translate: -50% -50%; opacity: .6; }
-.g3::before { content: "☀"; position: absolute; font-size: 3.5rem; top: 45%; left: 50%; translate: -50% -50%; opacity: .7; }
+.g2:not(.has-photo)::before { content: "🍺"; position: absolute; font-size: 3.5rem; top: 45%; left: 50%; translate: -50% -50%; opacity: .6; }
+.g3:not(.has-photo)::before { content: "☀"; position: absolute; font-size: 3.5rem; top: 45%; left: 50%; translate: -50% -50%; opacity: .7; }
 
 /* Visit */
 .visit { background: var(--surface); border-block: 1px solid var(--line); }
