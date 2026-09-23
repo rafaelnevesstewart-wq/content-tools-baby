@@ -12,26 +12,27 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="concept-banner" role="note">Ontwerpconcept: dit is niet de officiële website van De Klander Muelen. Reserveren kan via <a href="https://klandermuelen.nl/reserveren/">klandermuelen.nl</a>.</div>
+  <div class="concept-banner" role="note" data-en="Design concept: this is not the official De Klander Muelen website. To book, visit &lt;a href=&quot;https://klandermuelen.nl/reserveren/&quot;&gt;klandermuelen.nl&lt;/a&gt;.">Ontwerpconcept: dit is niet de officiële website van De Klander Muelen. Reserveren kan via <a href="https://klandermuelen.nl/reserveren/">klandermuelen.nl</a>.</div>
   <div class="progress" aria-hidden="true"></div>
 
   <header class="nav" id="top">
-    <a href="#top" class="brand" aria-label="De Klander Muelen, naar boven">
+    <a href="#top" class="brand" aria-label="De Klander Muelen, naar boven" data-en-aria-label="De Klander Muelen, back to top">
       <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
         <g class="sails"><path d="M20 20 L20 3 L25 5 L22 20Z"/><path d="M20 20 L37 20 L35 25 L20 22Z"/><path d="M20 20 L20 37 L15 35 L18 20Z"/><path d="M20 20 L3 20 L5 15 L20 18Z"/></g>
         <circle cx="20" cy="20" r="2.6"/>
       </svg>
       <span>De Klander Muelen</span>
     </a>
-    <nav class="nav-links" id="navLinks" aria-label="Hoofdmenu">
-      <a href="#verhaal">Ons verhaal</a>
+    <nav class="nav-links" id="navLinks" aria-label="Hoofdmenu" data-en-aria-label="Main menu">
+      <a href="#verhaal" data-en="Our story">Ons verhaal</a>
       <a href="#menu">Menu</a>
-      <a href="#terras">Terras</a>
-      <a href="#bezoek">Bezoek</a>
-      <a href="#reserveren" class="btn btn-small">Reserveren</a>
+      <a href="#terras" data-en="Terrace">Terras</a>
+      <a href="#bezoek" data-en="Visit">Bezoek</a>
+      <a href="#reserveren" class="btn btn-small" data-en="Book a table">Reserveren</a>
     </nav>
     <div class="nav-tools">
-      <button class="icon-btn" id="themeToggle" aria-label="Wissel licht/donker thema">
+      <button class="icon-btn lang-btn" id="langToggle" aria-label="Switch to English" lang="en">EN</button>
+      <button class="icon-btn" id="themeToggle" aria-label="Wissel licht/donker thema" data-en-aria-label="Toggle light/dark theme">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
       </button>
       <button class="icon-btn burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
@@ -54,25 +55,25 @@
         </svg>
       </div>
       <div class="hero-inner">
-        <p class="status-pill" id="statusPill"><span class="dot"></span><span id="statusText">Openingstijden laden…</span></p>
+        <p class="status-pill" id="statusPill"><span class="dot"></span><span id="statusText" data-en="Loading opening hours…">Openingstijden laden…</span></p>
         <h1 class="hero-title">
-          <span class="line"><span>Gezellig tafelen</span></span>
-          <span class="line"><span>in het hart van <em>Dordt</em>.</span></span>
+          <span class="line"><span data-en="Good food, warm company,">Gezellig tafelen</span></span>
+          <span class="line"><span data-en="in the heart of &lt;em&gt;Dordt&lt;/em&gt;.">in het hart van <em>Dordt</em>.</span></span>
         </h1>
-        <p class="hero-sub">Sinds 1976 schenken, koken en lachen we in een 17e-eeuws monument aan het Statenplein. Voor een snelle lunch, een uitgebreid diner of gewoon een goede borrel op het terras.</p>
+        <p class="hero-sub" data-en="Since 1976 we’ve been pouring, cooking and laughing in a 17th-century monument on the Statenplein. Drop in for a quick lunch, a long dinner or just a good drink on the terrace.">Sinds 1976 schenken, koken en lachen we in een 17e-eeuws monument aan het Statenplein. Voor een snelle lunch, een uitgebreid diner of gewoon een goede borrel op het terras.</p>
         <div class="hero-cta">
-          <a href="#reserveren" class="btn magnetic">Reserveer een tafel</a>
-          <a href="#menu" class="btn btn-ghost">Bekijk het menu</a>
+          <a href="#reserveren" class="btn magnetic" data-en="Book a table">Reserveer een tafel</a>
+          <a href="#menu" class="btn btn-ghost" data-en="See the menu">Bekijk het menu</a>
         </div>
       </div>
-      <a href="#verhaal" class="scroll-hint" aria-label="Scroll naar beneden"><span></span></a>
+      <a href="#verhaal" class="scroll-hint" aria-label="Scroll naar beneden" data-en-aria-label="Scroll down"><span></span></a>
     </section>
 
     <!-- MARQUEE -->
     <div class="marquee" aria-hidden="true">
       <div class="marquee-track">
-        <span>Lunch</span><i>✦</i><span>Diner</span><i>✦</i><span>Borrel</span><i>✦</i><span>Terras aan het Statenplein</span><i>✦</i><span>Sinds 1976</span><i>✦</i><span>Groepen welkom</span><i>✦</i>
-        <span>Lunch</span><i>✦</i><span>Diner</span><i>✦</i><span>Borrel</span><i>✦</i><span>Terras aan het Statenplein</span><i>✦</i><span>Sinds 1976</span><i>✦</i><span>Groepen welkom</span><i>✦</i>
+        <span>Lunch</span><i>✦</i><span data-en="Dinner">Diner</span><i>✦</i><span data-en="Drinks">Borrel</span><i>✦</i><span data-en="Terrace on the Statenplein">Terras aan het Statenplein</span><i>✦</i><span data-en="Since 1976">Sinds 1976</span><i>✦</i><span data-en="Groups welcome">Groepen welkom</span><i>✦</i>
+        <span>Lunch</span><i>✦</i><span data-en="Dinner">Diner</span><i>✦</i><span data-en="Drinks">Borrel</span><i>✦</i><span data-en="Terrace on the Statenplein">Terras aan het Statenplein</span><i>✦</i><span data-en="Since 1976">Sinds 1976</span><i>✦</i><span data-en="Groups welcome">Groepen welkom</span><i>✦</i>
       </div>
     </div>
 
@@ -80,22 +81,22 @@
     <section class="section story" id="verhaal">
       <div class="container story-grid">
         <div class="story-text reveal">
-          <p class="eyebrow">Ons verhaal</p>
-          <h2>Een monument vol verhalen, en ruimte voor dat van jou.</h2>
-          <p>De Klander Muelen dankt zijn naam aan de oude kalandermolen van Dordrecht, waar vroeger stoffen werden gladgeperst. Tegenwoordig draait alles hier om goed eten, royale porties en een warm welkom.</p>
-          <p>Achter de historische gevel vind je de sfeer van een echt bruin café, gecombineerd met een keuken die net een stapje verder gaat.</p>
+          <p class="eyebrow" data-en="Our story">Ons verhaal</p>
+          <h2 data-en="A monument full of stories, with room for yours.">Een monument vol verhalen, en ruimte voor dat van jou.</h2>
+          <p data-en="De Klander Muelen is named after Dordrecht’s old calender mill, where cloth was once pressed smooth. These days it’s all about good food, generous portions and a warm welcome.">De Klander Muelen dankt zijn naam aan de oude kalandermolen van Dordrecht, waar vroeger stoffen werden gladgeperst. Tegenwoordig draait alles hier om goed eten, royale porties en een warm welkom.</p>
+          <p data-en="Behind the historic façade you’ll find the feel of a proper Dutch brown café, with a kitchen that goes a step further.">Achter de historische gevel vind je de sfeer van een echt bruin café, gecombineerd met een keuken die net een stapje verder gaat.</p>
         </div>
         <div class="stats reveal">
-          <div class="stat"><strong data-count="1976" data-plain>0</strong><span>open sinds</span></div>
-          <div class="stat"><strong data-count="17" data-suffix="e">0</strong><span>eeuws monument</span></div>
-          <div class="stat"><strong data-count="7">0</strong><span>dagen per week open</span></div>
-          <div class="stat"><strong data-count="1">0</strong><span>zonnig terras op het plein</span></div>
+          <div class="stat"><strong data-count="1976" data-plain>0</strong><span data-en="open since">open sinds</span></div>
+          <div class="stat"><strong data-count="17" data-suffix="e">0</strong><span data-en="century monument">eeuws monument</span></div>
+          <div class="stat"><strong data-count="7">0</strong><span data-en="days a week">dagen per week open</span></div>
+          <div class="stat"><strong data-count="1">0</strong><span data-en="sunny terrace on the square">zonnig terras op het plein</span></div>
         </div>
       </div>
-      <div class="container timeline reveal" aria-label="Tijdlijn">
-        <div class="tl-item"><span class="tl-year">1600s</span><p>Het pand verrijst aan wat nu het Statenplein is.</p></div>
-        <div class="tl-item"><span class="tl-year">1976</span><p>De Klander Muelen opent de deuren.</p></div>
-        <div class="tl-item"><span class="tl-year">Nu</span><p>Lunch, diner en borrel, met hetzelfde warme welkom.</p></div>
+      <div class="container timeline reveal" aria-label="Tijdlijn" data-en-aria-label="Timeline">
+        <div class="tl-item"><span class="tl-year">1600s</span><p data-en="The building rises on what is now the Statenplein.">Het pand verrijst aan wat nu het Statenplein is.</p></div>
+        <div class="tl-item"><span class="tl-year">1976</span><p data-en="De Klander Muelen opens its doors.">De Klander Muelen opent de deuren.</p></div>
+        <div class="tl-item"><span class="tl-year" data-en="Now">Nu</span><p data-en="Lunch, dinner and drinks, with the same warm welcome.">Lunch, diner en borrel, met hetzelfde warme welkom.</p></div>
       </div>
     </section>
 
@@ -104,83 +105,83 @@
       <div class="container">
         <div class="section-head reveal">
           <p class="eyebrow">Menu</p>
-          <h2>Klassiekers, royaal geserveerd.</h2>
-          <p class="muted">Een greep uit de kaart. Tik op een categorie of zoek op wat je trek hebt.</p>
+          <h2 data-en="Classics, served generously.">Klassiekers, royaal geserveerd.</h2>
+          <p class="muted" data-en="A taste of the menu. Tap a category or search for what you fancy.">Een greep uit de kaart. Tik op een categorie of zoek op wat je trek hebt.</p>
         </div>
 
         <div class="menu-controls reveal">
-          <div class="tabs" role="tablist" aria-label="Menucategorieën">
-            <button role="tab" class="tab active" aria-selected="true" data-filter="all">Alles</button>
+          <div class="tabs" role="tablist" aria-label="Menucategorieën" data-en-aria-label="Menu categories">
+            <button role="tab" class="tab active" aria-selected="true" data-filter="all" data-en="All">Alles</button>
             <button role="tab" class="tab" aria-selected="false" data-filter="lunch">Lunch</button>
-            <button role="tab" class="tab" aria-selected="false" data-filter="diner">Diner</button>
-            <button role="tab" class="tab" aria-selected="false" data-filter="borrel">Borrel</button>
-            <button role="tab" class="tab" aria-selected="false" data-filter="zoet">Zoet</button>
+            <button role="tab" class="tab" aria-selected="false" data-filter="diner" data-en="Dinner">Diner</button>
+            <button role="tab" class="tab" aria-selected="false" data-filter="borrel" data-en="Drinks">Borrel</button>
+            <button role="tab" class="tab" aria-selected="false" data-filter="zoet" data-en="Sweet">Zoet</button>
             <span class="tab-indicator" aria-hidden="true"></span>
           </div>
           <label class="search">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-            <input type="search" id="menuSearch" placeholder="Zoek een gerecht…" aria-label="Zoek in het menu">
+            <input type="search" id="menuSearch" placeholder="Zoek een gerecht…" data-en-placeholder="Search a dish…" aria-label="Zoek in het menu" data-en-aria-label="Search the menu">
           </label>
         </div>
 
         <div class="menu-grid" id="menuGrid">
-          <article class="dish" data-cat="diner borrel" data-tags="vis">
+          <article class="dish" data-cat="diner borrel" data-tags="vis fish seafood">
             <div class="dish-emoji" aria-hidden="true">🦑</div>
-            <h3>Knapperige calamares</h3>
-            <p>Goudbruin gebakken inktvisringen met citroen en aioli.</p>
-            <div class="chips"><span>Vis</span><span>Om te delen</span></div>
+            <h3 data-en="Crispy calamari">Knapperige calamares</h3>
+            <p data-en="Golden fried squid rings with lemon and aioli.">Goudbruin gebakken inktvisringen met citroen en aioli.</p>
+            <div class="chips"><span data-en="Fish">Vis</span><span data-en="To share">Om te delen</span></div>
           </article>
-          <article class="dish" data-cat="diner" data-tags="vlees">
+          <article class="dish" data-cat="diner" data-tags="vlees meat">
             <div class="dish-emoji" aria-hidden="true">🍖</div>
-            <h3>Stevige spareribs</h3>
-            <p>Mals, gemarineerd en royaal, met frites en saus.</p>
-            <div class="chips"><span>Vlees</span><span>Favoriet</span></div>
+            <h3 data-en="Hearty spare ribs">Stevige spareribs</h3>
+            <p data-en="Tender, marinated and generous, with fries and sauce.">Mals, gemarineerd en royaal, met frites en saus.</p>
+            <div class="chips"><span data-en="Meat">Vlees</span><span data-en="Favourite">Favoriet</span></div>
           </article>
-          <article class="dish" data-cat="diner" data-tags="vlees">
+          <article class="dish" data-cat="diner" data-tags="vlees meat">
             <div class="dish-emoji" aria-hidden="true">🥩</div>
-            <h3>Varkenshaas in champignonroomsaus</h3>
-            <p>Met paprika, ui, spek en champignons.</p>
-            <div class="chips"><span>Vlees</span></div>
+            <h3 data-en="Pork tenderloin in mushroom cream sauce">Varkenshaas in champignonroomsaus</h3>
+            <p data-en="With peppers, onion, bacon and mushrooms.">Met paprika, ui, spek en champignons.</p>
+            <div class="chips"><span data-en="Meat">Vlees</span></div>
           </article>
-          <article class="dish" data-cat="lunch diner" data-tags="vis">
+          <article class="dish" data-cat="lunch diner" data-tags="vis fish seafood">
             <div class="dish-emoji" aria-hidden="true">🐟</div>
-            <h3>Vis van de dag</h3>
-            <p>Vraag de bediening naar de vangst van vandaag.</p>
-            <div class="chips"><span>Vis</span></div>
+            <h3 data-en="Catch of the day">Vis van de dag</h3>
+            <p data-en="Ask your server about today’s catch.">Vraag de bediening naar de vangst van vandaag.</p>
+            <div class="chips"><span data-en="Fish">Vis</span></div>
           </article>
-          <article class="dish" data-cat="lunch zoet" data-tags="vega">
+          <article class="dish" data-cat="lunch zoet" data-tags="vega veggie vegetarian">
             <div class="dish-emoji" aria-hidden="true">🥞</div>
-            <h3>Pannenkoeken</h3>
-            <p>Hollands en goed gevuld, van naturel tot spek en kaas.</p>
-            <div class="chips"><span>Kids</span><span>Vega-opties</span></div>
+            <h3 data-en="Dutch pancakes">Pannenkoeken</h3>
+            <p data-en="Proper Dutch and generously topped, from plain to bacon and cheese.">Hollands en goed gevuld, van naturel tot spek en kaas.</p>
+            <div class="chips"><span>Kids</span><span data-en="Veggie options">Vega-opties</span></div>
           </article>
-          <article class="dish" data-cat="lunch" data-tags="vega">
+          <article class="dish" data-cat="lunch" data-tags="vega veggie vegetarian">
             <div class="dish-emoji" aria-hidden="true">🥪</div>
-            <h3>Smakelijke broodjes</h3>
-            <p>Belegde broodjes, tosti's en uitsmijters voor de lunch.</p>
-            <div class="chips"><span>Lunch</span><span>Vega-opties</span></div>
+            <h3 data-en="Tasty sandwiches">Smakelijke broodjes</h3>
+            <p data-en="Filled rolls, toasties and uitsmijters (fried eggs on bread) for lunch.">Belegde broodjes, tosti's en uitsmijters voor de lunch.</p>
+            <div class="chips"><span>Lunch</span><span data-en="Veggie options">Vega-opties</span></div>
           </article>
-          <article class="dish" data-cat="borrel diner" data-tags="vega">
+          <article class="dish" data-cat="borrel diner" data-tags="vega veggie vegetarian">
             <div class="dish-emoji" aria-hidden="true">🍟</div>
-            <h3>Royale frites</h3>
-            <p>Dik gesneden, knapperig, met mayonaise of truffelmayo.</p>
-            <div class="chips"><span>Bijgerecht</span><span>Vega</span></div>
+            <h3 data-en="Generous fries">Royale frites</h3>
+            <p data-en="Thick-cut and crispy, with mayo or truffle mayo.">Dik gesneden, knapperig, met mayonaise of truffelmayo.</p>
+            <div class="chips"><span data-en="Side">Bijgerecht</span><span data-en="Veggie">Vega</span></div>
           </article>
-          <article class="dish" data-cat="borrel" data-tags="vlees">
+          <article class="dish" data-cat="borrel" data-tags="vlees meat">
             <div class="dish-emoji" aria-hidden="true">🧆</div>
-            <h3>Bitterballen &amp; borrelplank</h3>
-            <p>De perfecte begeleider van een koud biertje op het terras.</p>
-            <div class="chips"><span>Om te delen</span></div>
+            <h3 data-en="Bitterballen &amp;amp; sharing board">Bitterballen &amp; borrelplank</h3>
+            <p data-en="The perfect partner for a cold beer on the terrace.">De perfecte begeleider van een koud biertje op het terras.</p>
+            <div class="chips"><span data-en="To share">Om te delen</span></div>
           </article>
-          <article class="dish" data-cat="zoet" data-tags="vega">
+          <article class="dish" data-cat="zoet" data-tags="vega veggie vegetarian">
             <div class="dish-emoji" aria-hidden="true">🍨</div>
             <h3>Dame blanche</h3>
-            <p>Vanille-ijs met warme chocoladesaus en slagroom.</p>
+            <p data-en="Vanilla ice cream with warm chocolate sauce and whipped cream.">Vanille-ijs met warme chocoladesaus en slagroom.</p>
             <div class="chips"><span>Dessert</span></div>
           </article>
         </div>
-        <p class="empty" id="menuEmpty" hidden>Niets gevonden. Probeer een ander woord, of vraag het de bediening.</p>
-        <p class="menu-note reveal">Prijzen en de volledige, actuele kaart vind je op <a href="https://klandermuelen.nl/menu/">klandermuelen.nl/menu</a>. Allergieën? Laat het ons weten.</p>
+        <p class="empty" id="menuEmpty" hidden data-en="Nothing found. Try another word, or ask your server.">Niets gevonden. Probeer een ander woord, of vraag het de bediening.</p>
+        <p class="menu-note reveal" data-en="Prices and the full, current menu are at &lt;a href=&quot;https://klandermuelen.nl/menu/&quot;&gt;klandermuelen.nl/menu&lt;/a&gt;. Allergies? Just let us know.">Prijzen en de volledige, actuele kaart vind je op <a href="https://klandermuelen.nl/menu/">klandermuelen.nl/menu</a>. Allergieën? Laat het ons weten.</p>
       </div>
     </section>
 
@@ -189,19 +190,19 @@
       <div class="container terras-grid">
         <div class="terras-card reveal tilt">
           <div class="sun" aria-hidden="true"></div>
-          <p class="eyebrow">Terras</p>
-          <h2>Het mooiste plekje aan het Statenplein.</h2>
-          <p>Zon op je gezicht, het plein in beweging en iets lekkers op tafel. Ons ruime terras is dé plek om Dordrecht aan je voorbij te zien trekken.</p>
+          <p class="eyebrow" data-en="Terrace">Terras</p>
+          <h2 data-en="The best seat on the Statenplein.">Het mooiste plekje aan het Statenplein.</h2>
+          <p data-en="Sun on your face, the square buzzing and something tasty on the table. Our big terrace is the place to watch Dordrecht go by.">Zon op je gezicht, het plein in beweging en iets lekkers op tafel. Ons ruime terras is dé plek om Dordrecht aan je voorbij te zien trekken.</p>
           <ul class="checks">
-            <li>Uitzicht op het levendige Statenplein</li>
-            <li>Van koffie in de ochtend tot een late borrel</li>
-            <li>Groepen van 10+? We denken graag mee</li>
+            <li data-en="Views over the lively Statenplein">Uitzicht op het levendige Statenplein</li>
+            <li data-en="From morning coffee to late drinks">Van koffie in de ochtend tot een late borrel</li>
+            <li data-en="Groups of 10+? We’re happy to help plan">Groepen van 10+? We denken graag mee</li>
           </ul>
         </div>
         <div class="gallery reveal">
-          <figure class="g g1"><figcaption>Het historische pand</figcaption></figure>
-          <figure class="g g2"><figcaption>Bruin-café sfeer</figcaption></figure>
-          <figure class="g g3"><figcaption>Terras op het plein</figcaption></figure>
+          <figure class="g g1"><figcaption data-en="The historic building">Het historische pand</figcaption></figure>
+          <figure class="g g2"><figcaption data-en="Brown-café atmosphere">Bruin-café sfeer</figcaption></figure>
+          <figure class="g g3"><figcaption data-en="Terrace on the square">Terras op het plein</figcaption></figure>
         </div>
       </div>
     </section>
@@ -210,8 +211,8 @@
     <section class="section visit" id="bezoek">
       <div class="container visit-grid">
         <div class="reveal">
-          <p class="eyebrow">Bezoek</p>
-          <h2>Kom langs.</h2>
+          <p class="eyebrow" data-en="Visit">Bezoek</p>
+          <h2 data-en="Come and visit.">Kom langs.</h2>
           <address>
             <strong>De Klander Muelen</strong><br>
             Statenplein 149-150<br>
@@ -221,15 +222,15 @@
             <a href="tel:+31786356338">078 635 6338</a>
             <a href="mailto:info@klandermuelen.nl">info@klandermuelen.nl</a>
           </p>
-          <table class="hours" aria-label="Openingstijden">
+          <table class="hours" aria-label="Openingstijden" data-en-aria-label="Opening hours">
             <tbody id="hoursBody"></tbody>
           </table>
         </div>
         <div class="map reveal">
           <div class="map-art" aria-hidden="true"><span class="pin">📍</span></div>
-          <div class="map-label"><strong>Statenplein 149-150</strong><span>Midden in het centrum van Dordrecht</span></div>
+          <div class="map-label"><strong>Statenplein 149-150</strong><span data-en="Right in the centre of Dordrecht">Midden in het centrum van Dordrecht</span></div>
           <a class="btn btn-small map-btn" target="_blank" rel="noopener"
-            href="https://www.google.com/maps/search/?api=1&amp;query=Statenplein+149+Dordrecht">Route plannen ↗</a>
+            href="https://www.google.com/maps/search/?api=1&amp;query=Statenplein+149+Dordrecht" data-en="Get directions ↗">Route plannen ↗</a>
         </div>
       </div>
     </section>
@@ -238,34 +239,34 @@
     <section class="section reserve" id="reserveren">
       <div class="container reserve-grid">
         <div class="reveal">
-          <p class="eyebrow">Reserveren</p>
-          <h2>Schuif aan.</h2>
-          <p>Kies een dag, tijd en het aantal gasten. We sturen je aanvraag direct door. Voor groepen van 10 of meer nemen we even persoonlijk contact op.</p>
+          <p class="eyebrow" data-en="Book a table">Reserveren</p>
+          <h2 data-en="Pull up a chair.">Schuif aan.</h2>
+          <p data-en="Choose a day, a time and how many guests. We pass your request straight on. For groups of 10 or more, we’ll get in touch personally.">Kies een dag, tijd en het aantal gasten. We sturen je aanvraag direct door. Voor groepen van 10 of meer nemen we even persoonlijk contact op.</p>
         </div>
         <form class="reserve-form reveal" id="reserveForm" novalidate>
           <div class="field">
-            <span class="label">Aantal gasten</span>
+            <span class="label" data-en="Guests">Aantal gasten</span>
             <div class="stepper">
-              <button type="button" data-step="-1" aria-label="Minder gasten">−</button>
+              <button type="button" data-step="-1" aria-label="Minder gasten" data-en-aria-label="Fewer guests">−</button>
               <output id="guests" aria-live="polite">2</output>
-              <button type="button" data-step="1" aria-label="Meer gasten">+</button>
+              <button type="button" data-step="1" aria-label="Meer gasten" data-en-aria-label="More guests">+</button>
             </div>
           </div>
           <div class="field">
-            <span class="label">Dag</span>
-            <div class="days" id="days" role="radiogroup" aria-label="Kies een dag"></div>
+            <span class="label" data-en="Day">Dag</span>
+            <div class="days" id="days" role="radiogroup" aria-label="Kies een dag" data-en-aria-label="Choose a day"></div>
           </div>
           <div class="field">
-            <span class="label">Tijd</span>
-            <div class="times" id="times" role="radiogroup" aria-label="Kies een tijd"></div>
+            <span class="label" data-en="Time">Tijd</span>
+            <div class="times" id="times" role="radiogroup" aria-label="Kies een tijd" data-en-aria-label="Choose a time"></div>
           </div>
           <div class="row">
-            <label class="field"><span class="label">Naam</span><input name="name" required autocomplete="name"></label>
-            <label class="field"><span class="label">Telefoon</span><input name="phone" type="tel" required autocomplete="tel"></label>
+            <label class="field"><span class="label" data-en="Name">Naam</span><input name="name" required autocomplete="name"></label>
+            <label class="field"><span class="label" data-en="Phone">Telefoon</span><input name="phone" type="tel" required autocomplete="tel"></label>
           </div>
-          <label class="field"><span class="label">Opmerking <small>(optioneel)</small></span><textarea name="note" rows="2" placeholder="Verjaardag, allergie, terras graag…"></textarea></label>
-          <p class="group-note" id="groupNote" hidden>Met 10 of meer personen stemmen we het graag persoonlijk af. Je aanvraag gaat per e-mail naar ons team.</p>
-          <button class="btn btn-block" type="submit">Verstuur aanvraag</button>
+          <label class="field"><span class="label" data-en="Note &lt;small&gt;(optional)&lt;/small&gt;">Opmerking <small>(optioneel)</small></span><textarea name="note" rows="2" placeholder="Verjaardag, allergie, terras graag…" data-en-placeholder="Birthday, allergy, terrace please…"></textarea></label>
+          <p class="group-note" id="groupNote" hidden data-en="For 10 or more people we like to arrange things personally. Your request goes to our team by e-mail.">Met 10 of meer personen stemmen we het graag persoonlijk af. Je aanvraag gaat per e-mail naar ons team.</p>
+          <button class="btn btn-block" type="submit" data-en="Send request">Verstuur aanvraag</button>
           <p class="form-msg" id="formMsg" role="status"></p>
         </form>
       </div>
@@ -282,7 +283,7 @@
     </div>
   </footer>
 
-  <a href="#reserveren" class="fab" aria-label="Reserveren">Reserveer</a>
+  <a href="#reserveren" class="fab" aria-label="Reserveren" data-en-aria-label="Book a table" data-en="Book">Reserveer</a>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="script.js"></script>

@@ -91,6 +91,7 @@ body:has(.concept-banner) .footer { padding-bottom: 130px; }
 .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: grid; place-items: center; transition: transform .3s var(--ease); }
 .icon-btn:hover { transform: rotate(-20deg); }
 .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.lang-btn { font: 700 .8rem Inter, sans-serif; letter-spacing: .04em; }
 .burger { display: none; }
 .burger span { display: block; width: 18px; height: 2px; background: currentColor; transition: transform .3s var(--ease); }
 .burger span + span { margin-top: -14px; }
@@ -212,7 +213,7 @@ address { font-style: normal; font-size: 1.15rem; margin-bottom: 1rem; }
 .hours td { padding: .7rem .2rem; border-bottom: 1px solid var(--line); }
 .hours td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .hours tr.today { font-weight: 700; color: var(--brand); }
-.hours tr.today td:first-child::after { content: " · vandaag"; font-weight: 500; color: var(--accent); font-size: .85rem; }
+.hours tr.today td:first-child::after { content: " · " attr(data-today); font-weight: 500; color: var(--accent); font-size: .85rem; }
 .map { position: relative; border-radius: 28px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); aspect-ratio: 4 / 3.4; }
 .map-art { position: absolute; inset: 0; background:
   linear-gradient(90deg, transparent 48%, var(--line) 48% 52%, transparent 52%) 0 0 / 120px 120px,
