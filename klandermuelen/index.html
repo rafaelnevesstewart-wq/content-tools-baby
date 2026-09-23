@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>De Klander Muelen · Dordrecht</title>
+  <meta name="description" content="Bar & restaurant De Klander Muelen — sinds 1976 in een 17e-eeuws monument aan het Statenplein in Dordrecht. Lunch, diner, borrel en een zonnig terras.">
+  <meta name="theme-color" content="#1f2a24">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="progress" aria-hidden="true"></div>
+
+  <header class="nav" id="top">
+    <a href="#top" class="brand" aria-label="De Klander Muelen, naar boven">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <g class="sails"><path d="M20 20 L20 3 L25 5 L22 20Z"/><path d="M20 20 L37 20 L35 25 L20 22Z"/><path d="M20 20 L20 37 L15 35 L18 20Z"/><path d="M20 20 L3 20 L5 15 L20 18Z"/></g>
+        <circle cx="20" cy="20" r="2.6"/>
+      </svg>
+      <span>De Klander Muelen</span>
+    </a>
+    <nav class="nav-links" id="navLinks" aria-label="Hoofdmenu">
+      <a href="#verhaal">Ons verhaal</a>
+      <a href="#menu">Menu</a>
+      <a href="#terras">Terras</a>
+      <a href="#bezoek">Bezoek</a>
+      <a href="#reserveren" class="btn btn-small">Reserveren</a>
+    </nav>
+    <div class="nav-tools">
+      <button class="icon-btn" id="themeToggle" aria-label="Wissel licht/donker thema">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
+      </button>
+      <button class="icon-btn burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+        <span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true">
+        <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+        <svg class="hero-mill" viewBox="0 0 200 200">
+          <g class="sails-big">
+            <path d="M100 100 L100 8 L118 14 L108 100Z"/><path d="M100 100 L192 100 L186 118 L100 108Z"/>
+            <path d="M100 100 L100 192 L82 186 L92 100Z"/><path d="M100 100 L8 100 L14 82 L100 92Z"/>
+          </g>
+          <circle cx="100" cy="100" r="9"/>
+        </svg>
+      </div>
+      <div class="hero-inner">
+        <p class="status-pill" id="statusPill"><span class="dot"></span><span id="statusText">Openingstijden laden…</span></p>
+        <h1 class="hero-title">
+          <span class="line"><span>Gezellig tafelen</span></span>
+          <span class="line"><span>in het hart van <em>Dordt</em>.</span></span>
+        </h1>
+        <p class="hero-sub">Sinds 1976 schenken, koken en lachen we in een 17e-eeuws monument aan het Statenplein. Voor een snelle lunch, een uitgebreid diner of gewoon een goede borrel op het terras.</p>
+        <div class="hero-cta">
+          <a href="#reserveren" class="btn magnetic">Reserveer een tafel</a>
+          <a href="#menu" class="btn btn-ghost">Bekijk het menu</a>
+        </div>
+      </div>
+      <a href="#verhaal" class="scroll-hint" aria-label="Scroll naar beneden"><span></span></a>
+    </section>
+
+    <!-- MARQUEE -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>Lunch</span><i>✦</i><span>Diner</span><i>✦</i><span>Borrel</span><i>✦</i><span>Terras aan het Statenplein</span><i>✦</i><span>Sinds 1976</span><i>✦</i><span>Groepen welkom</span><i>✦</i>
+        <span>Lunch</span><i>✦</i><span>Diner</span><i>✦</i><span>Borrel</span><i>✦</i><span>Terras aan het Statenplein</span><i>✦</i><span>Sinds 1976</span><i>✦</i><span>Groepen welkom</span><i>✦</i>
+      </div>
+    </div>
+
+    <!-- STORY -->
+    <section class="section story" id="verhaal">
+      <div class="container story-grid">
+        <div class="story-text reveal">
+          <p class="eyebrow">Ons verhaal</p>
+          <h2>Een monument vol verhalen, en ruimte voor dat van jou.</h2>
+          <p>De Klander Muelen dankt zijn naam aan de oude kalandermolen van Dordrecht, waar vroeger stoffen werden gladgeperst. Tegenwoordig draait alles hier om goed eten, royale porties en een warm welkom.</p>
+          <p>Achter de historische gevel vind je de sfeer van een echt bruin café, gecombineerd met een keuken die net een stapje verder gaat.</p>
+        </div>
+        <div class="stats reveal">
+          <div class="stat"><strong data-count="1976" data-plain>0</strong><span>open sinds</span></div>
+          <div class="stat"><strong data-count="17" data-suffix="e">0</strong><span>eeuws monument</span></div>
+          <div class="stat"><strong data-count="7">0</strong><span>dagen per week open</span></div>
+          <div class="stat"><strong data-count="1">0</strong><span>zonnig terras op het plein</span></div>
+        </div>
+      </div>
+      <div class="container timeline reveal" aria-label="Tijdlijn">
+        <div class="tl-item"><span class="tl-year">1600s</span><p>Het pand verrijst aan wat nu het Statenplein is.</p></div>
+        <div class="tl-item"><span class="tl-year">1976</span><p>De Klander Muelen opent de deuren.</p></div>
+        <div class="tl-item"><span class="tl-year">Nu</span><p>Lunch, diner en borrel, met hetzelfde warme welkom.</p></div>
+      </div>
+    </section>
+
+    <!-- MENU -->
+    <section class="section menu" id="menu">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">Menu</p>
+          <h2>Klassiekers, royaal geserveerd.</h2>
+          <p class="muted">Een greep uit de kaart. Tik op een categorie of zoek op wat je trek hebt.</p>
+        </div>
+
+        <div class="menu-controls reveal">
+          <div class="tabs" role="tablist" aria-label="Menucategorieën">
+            <button role="tab" class="tab active" aria-selected="true" data-filter="all">Alles</button>
+            <button role="tab" class="tab" aria-selected="false" data-filter="lunch">Lunch</button>
+            <button role="tab" class="tab" aria-selected="false" data-filter="diner">Diner</button>
+            <button role="tab" class="tab" aria-selected="false" data-filter="borrel">Borrel</button>
+            <button role="tab" class="tab" aria-selected="false" data-filter="zoet">Zoet</button>
+            <span class="tab-indicator" aria-hidden="true"></span>
+          </div>
+          <label class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="menuSearch" placeholder="Zoek een gerecht…" aria-label="Zoek in het menu">
+          </label>
+        </div>
+
+        <div class="menu-grid" id="menuGrid">
+          <article class="dish" data-cat="diner borrel" data-tags="vis">
+            <div class="dish-emoji" aria-hidden="true">🦑</div>
+            <h3>Knapperige calamares</h3>
+            <p>Goudbruin gebakken inktvisringen met citroen en aioli.</p>
+            <div class="chips"><span>Vis</span><span>Om te delen</span></div>
+          </article>
+          <article class="dish" data-cat="diner" data-tags="vlees">
+            <div class="dish-emoji" aria-hidden="true">🍖</div>
+            <h3>Stevige spareribs</h3>
+            <p>Mals, gemarineerd en royaal, met frites en saus.</p>
+            <div class="chips"><span>Vlees</span><span>Favoriet</span></div>
+          </article>
+          <article class="dish" data-cat="diner" data-tags="vlees">
+            <div class="dish-emoji" aria-hidden="true">🥩</div>
+            <h3>Varkenshaas in champignonroomsaus</h3>
+            <p>Met paprika, ui, spek en champignons.</p>
+            <div class="chips"><span>Vlees</span></div>
+          </article>
+          <article class="dish" data-cat="lunch diner" data-tags="vis">
+            <div class="dish-emoji" aria-hidden="true">🐟</div>
+            <h3>Vis van de dag</h3>
+            <p>Vraag de bediening naar de vangst van vandaag.</p>
+            <div class="chips"><span>Vis</span></div>
+          </article>
+          <article class="dish" data-cat="lunch zoet" data-tags="vega">
+            <div class="dish-emoji" aria-hidden="true">🥞</div>
+            <h3>Pannenkoeken</h3>
+            <p>Hollands en goed gevuld, van naturel tot spek en kaas.</p>
+            <div class="chips"><span>Kids</span><span>Vega-opties</span></div>
+          </article>
+          <article class="dish" data-cat="lunch" data-tags="vega">
+            <div class="dish-emoji" aria-hidden="true">🥪</div>
+            <h3>Smakelijke broodjes</h3>
+            <p>Belegde broodjes, tosti's en uitsmijters voor de lunch.</p>
+            <div class="chips"><span>Lunch</span><span>Vega-opties</span></div>
+          </article>
+          <article class="dish" data-cat="borrel diner" data-tags="vega">
+            <div class="dish-emoji" aria-hidden="true">🍟</div>
+            <h3>Royale frites</h3>
+            <p>Dik gesneden, knapperig, met mayonaise of truffelmayo.</p>
+            <div class="chips"><span>Bijgerecht</span><span>Vega</span></div>
+          </article>
+          <article class="dish" data-cat="borrel" data-tags="vlees">
+            <div class="dish-emoji" aria-hidden="true">🧆</div>
+            <h3>Bitterballen &amp; borrelplank</h3>
+            <p>De perfecte begeleider van een koud biertje op het terras.</p>
+            <div class="chips"><span>Om te delen</span></div>
+          </article>
+          <article class="dish" data-cat="zoet" data-tags="vega">
+            <div class="dish-emoji" aria-hidden="true">🍨</div>
+            <h3>Dame blanche</h3>
+            <p>Vanille-ijs met warme chocoladesaus en slagroom.</p>
+            <div class="chips"><span>Dessert</span></div>
+          </article>
+        </div>
+        <p class="empty" id="menuEmpty" hidden>Niets gevonden. Probeer een ander woord, of vraag het de bediening.</p>
+        <p class="menu-note reveal">Prijzen en de volledige, actuele kaart vind je op <a href="https://klandermuelen.nl/menu/">klandermuelen.nl/menu</a>. Allergieën? Laat het ons weten.</p>
+      </div>
+    </section>
+
+    <!-- TERRACE -->
+    <section class="section terras" id="terras">
+      <div class="container terras-grid">
+        <div class="terras-card reveal tilt">
+          <div class="sun" aria-hidden="true"></div>
+          <p class="eyebrow">Terras</p>
+          <h2>Het mooiste plekje aan het Statenplein.</h2>
+          <p>Zon op je gezicht, het plein in beweging en iets lekkers op tafel. Ons ruime terras is dé plek om Dordrecht aan je voorbij te zien trekken.</p>
+          <ul class="checks">
+            <li>Uitzicht op het levendige Statenplein</li>
+            <li>Van koffie in de ochtend tot een late borrel</li>
+            <li>Groepen van 10+? We denken graag mee</li>
+          </ul>
+        </div>
+        <div class="gallery reveal">
+          <figure class="g g1"><figcaption>Het historische pand</figcaption></figure>
+          <figure class="g g2"><figcaption>Bruin-café sfeer</figcaption></figure>
+          <figure class="g g3"><figcaption>Terras op het plein</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISIT -->
+    <section class="section visit" id="bezoek">
+      <div class="container visit-grid">
+        <div class="reveal">
+          <p class="eyebrow">Bezoek</p>
+          <h2>Kom langs.</h2>
+          <address>
+            <strong>De Klander Muelen</strong><br>
+            Statenplein 149-150<br>
+            3311 NH Dordrecht
+          </address>
+          <p class="contact-links">
+            <a href="tel:+31786356338">078 635 6338</a>
+            <a href="mailto:info@klandermuelen.nl">info@klandermuelen.nl</a>
+          </p>
+          <table class="hours" aria-label="Openingstijden">
+            <tbody id="hoursBody"></tbody>
+          </table>
+        </div>
+        <div class="map reveal">
+          <iframe title="Kaart: Statenplein, Dordrecht" loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=4.6680%2C51.8110%2C4.6780%2C51.8160&amp;layer=mapnik&amp;marker=51.8135%2C4.6730"></iframe>
+          <a class="btn btn-small map-btn" target="_blank" rel="noopener"
+            href="https://www.google.com/maps/search/?api=1&amp;query=Statenplein+149+Dordrecht">Route plannen ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESERVE -->
+    <section class="section reserve" id="reserveren">
+      <div class="container reserve-grid">
+        <div class="reveal">
+          <p class="eyebrow">Reserveren</p>
+          <h2>Schuif aan.</h2>
+          <p>Kies een dag, tijd en het aantal gasten. We sturen je aanvraag direct door. Voor groepen van 10 of meer nemen we even persoonlijk contact op.</p>
+        </div>
+        <form class="reserve-form reveal" id="reserveForm" novalidate>
+          <div class="field">
+            <span class="label">Aantal gasten</span>
+            <div class="stepper">
+              <button type="button" data-step="-1" aria-label="Minder gasten">−</button>
+              <output id="guests" aria-live="polite">2</output>
+              <button type="button" data-step="1" aria-label="Meer gasten">+</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">Dag</span>
+            <div class="days" id="days" role="radiogroup" aria-label="Kies een dag"></div>
+          </div>
+          <div class="field">
+            <span class="label">Tijd</span>
+            <div class="times" id="times" role="radiogroup" aria-label="Kies een tijd"></div>
+          </div>
+          <div class="row">
+            <label class="field"><span class="label">Naam</span><input name="name" required autocomplete="name"></label>
+            <label class="field"><span class="label">Telefoon</span><input name="phone" type="tel" required autocomplete="tel"></label>
+          </div>
+          <label class="field"><span class="label">Opmerking <small>(optioneel)</small></span><textarea name="note" rows="2" placeholder="Verjaardag, allergie, terras graag…"></textarea></label>
+          <p class="group-note" id="groupNote" hidden>Met 10 of meer personen stemmen we het graag persoonlijk af. Je aanvraag gaat per e-mail naar ons team.</p>
+          <button class="btn btn-block" type="submit">Verstuur aanvraag</button>
+          <p class="form-msg" id="formMsg" role="status"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p>© <span id="year"></span> De Klander Muelen · Statenplein 149-150, Dordrecht</p>
+      <p class="socials">
+        <a href="https://www.instagram.com/klandermuelen/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.facebook.com/p/De-Klander-Muelen-100063667713684/" target="_blank" rel="noopener">Facebook</a>
+      </p>
+    </div>
+  </footer>
+
+  <a href="#reserveren" class="fab" aria-label="Reserveren">Reserveer</a>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
