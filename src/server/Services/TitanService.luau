@@ -4,8 +4,13 @@
 -- A titan is one unanchored physics assembly held by rigid AlignPosition and
 -- AlignOrientation constraints. Because it really moves (instead of being
 -- teleported), players standing on the deck are carried along with it.
+--
+-- Titan parts sit in the "Titans" collision group, which only collides with
+-- players. The rigid constraints would otherwise fight the terrain, buildings
+-- and other titans, and fling everyone on the deck into the sky.
 
 local CollectionService = game:GetService("CollectionService")
+local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -821,6 +826,15 @@ local function build(record, player: Player)
 	record.Model = model
 	record.Root = root
 	record.Head = head
+	local function setGroup(descendant: Instance)
+		if descendant:IsA("BasePart") then
+			descendant.CollisionGroup = "Titans"
+		end
+	end
+	for _, descendant in model:GetDescendants() do
+		setGroup(descendant)
+	end
+	model.DescendantAdded:Connect(setGroup)
 	model.Parent = herdFolder
 	pcall(function()
 		root:SetNetworkOwner(nil)
@@ -1044,6 +1058,13 @@ function TitanService:PlaceOnDeck(player: Player, record)
 	end
 	local offset = CFrame.new(math.random(-2, 2), 4, record.DeckSize.Z * 0.1)
 	character:PivotTo(record.Deck.CFrame * offset)
+	-- Carry the deck's motion, not the speed of whatever fall came before.
+	for _, descendant in character:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			descendant.AssemblyLinearVelocity = record.Deck.AssemblyLinearVelocity
+			descendant.AssemblyAngularVelocity = Vector3.zero
+		end
+	end
 end
 
 function TitanService:IsOnDeck(record, position: Vector3): boolean
@@ -1125,6 +1146,13 @@ end
 
 function TitanService:Init(services)
 	S = services
+	PhysicsService:RegisterCollisionGroup("Titans")
+	PhysicsService:RegisterCollisionGroup("Players")
+	for _, group in PhysicsService:GetRegisteredCollisionGroups() do
+		if group.name ~= "Players" then
+			PhysicsService:CollisionGroupSetCollidable("Titans", group.name, false)
+		end
+	end
 	herdFolder = Instance.new("Folder")
 	herdFolder.Name = "Herd"
 	herdFolder.Parent = workspace

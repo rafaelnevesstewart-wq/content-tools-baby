@@ -54,6 +54,7 @@ function PlayerService:Start()
 		for player, session in sessions do
 			self:_tick(player, session, dt)
 		end
+		self:_rescueFallen()
 		if saveClock >= Config.AutosaveInterval then
 			saveClock = 0
 			for player, session in sessions do
@@ -123,10 +124,37 @@ function PlayerService:_onAdded(player: Player)
 end
 
 function PlayerService:_onCharacter(player: Player, character: Model)
+	-- Players are the only thing titans collide with (see TitanService).
+	local function setGroup(descendant: Instance)
+		if descendant:IsA("BasePart") then
+			descendant.CollisionGroup = "Players"
+		end
+	end
+	for _, descendant in character:GetDescendants() do
+		setGroup(descendant)
+	end
+	character.DescendantAdded:Connect(setGroup)
 	character:WaitForChild("HumanoidRootPart", 10)
 	task.wait(0.1)
 	S.TitanService:PlaceOnDeck(player)
 	S.CombatService:OnCharacter(player, character)
+end
+
+-- Safety net: anyone who ends up under the ground goes back to their titan's
+-- deck (or the town if they have no titan yet) instead of falling forever.
+function PlayerService:_rescueFallen()
+	for player in sessions do
+		local character = player.Character
+		local hrp = character and character:FindFirstChild("HumanoidRootPart")
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if hrp and humanoid and humanoid.Health > 0 and hrp.Position.Y < -25 then
+			if S.TitanService:GetTitan(player) then
+				S.TitanService:PlaceOnDeck(player)
+			else
+				character:PivotTo(CFrame.new(S.WorldService:TravelPoint("Base") + Vector3.new(0, 4, 0)))
+			end
+		end
+	end
 end
 
 function PlayerService:_onRemoving(player: Player)
