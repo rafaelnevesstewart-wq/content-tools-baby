@@ -1,2 +1,46 @@
-# content-tools-baby
-dsadsadsadsa
+# Grow a Titan
+
+A Roblox game. You hatch a titan, a giant gentle creature, and its back is your base. Feed it to make it grow. The whole server's titans walk together as one herd across four biomes. During the day you can board other titans to steal eggs and Riders. At night the herd has to team up and survive against beasts.
+
+This repo holds the first playable build: one full day and night loop with every core system working, built from simple parts so it runs without any imported art.
+
+## What's in this build
+
+| System | Where |
+|---|---|
+| Titans that grow in 6 stages (Hatchling to Ancient) and physically carry players on their backs | `src/server/Services/TitanService.luau` |
+| The herd walks a loop through Fern Valley, Salt Flats, Aurora Tundra and Ember Wastes | `TitanService`, `WorldService` |
+| Foraging food, digging up eggs, taming wild Riders | `WorldService` |
+| Coins per second from Riders, mutations (Golden to Void), rarities, hatching | `PlayerService` |
+| Molt (rebirth): permanent +15% coins, +1 Rider slot and a new mutation roll | `PlayerService` |
+| Nightfall: beasts attack every titan, Pebble Sling, Titan Roar, a Storm King boss every 5th night, shared dawn loot | `CycleService` |
+| Stealing: Shell Lock, egg-only protection for small titans, Snatch Back, Leap between titans, Call Home for homesick Riders | `StealService` |
+| Perks: Herd Bond, Mutation Resonance, Weathered, Homecoming, Guardian crown | spread across the services above |
+| Shop: 7 game passes and 5 developer products with receipt handling | `ShopService`, `src/client/Hud.client.luau` |
+| Saving with DataStores (a failed load never overwrites saved progress) | `DataService` |
+| HUD: stats, day/night timer, buttons, toasts, shop screen | `src/client/Hud.client.luau` |
+
+All numbers (prices, growth, timers, odds) are in `src/shared/Config.luau`.
+
+## How to open it in Roblox Studio
+
+1. Install [Rojo](https://rojo.space/docs/v7/getting-started/installation/), both the command-line tool and the Studio plugin.
+2. In this folder, run `rojo serve`.
+3. Open a new Baseplate place in Studio, delete the default `Baseplate` part, and click **Connect** in the Rojo plugin.
+4. Press **Play**. The map, your titan and the HUD are all built when the game starts.
+
+When you test in Studio:
+- The day/night cycle is shortened (75s day, 60s night) so you reach Nightfall quickly.
+- Shop items whose `Id` is still `0` are granted for free, so you can try every pass and product.
+- To test saving, turn on **Game Settings → Security → Enable Studio Access to API Services**.
+- To test stealing, start a local server with 2+ players from **Test → Clients and Servers**.
+
+## Before publishing
+
+1. Create each game pass and developer product on the Creator Hub, then paste its id into `Id` in `Config.luau`.
+2. Put the real day and night lengths back if you changed them. The live values are `DayLength` and `NightLength` in `Config.luau`.
+3. Paid eggs and serums count as paid random items under Roblox policy, so their odds must be shown before purchase. None are sold in this build.
+
+## Design doc
+
+The full concept pitch, with research sources and the reasoning behind prices, lives in the project files at `concepts/grow-a-titan-concept.md`.
