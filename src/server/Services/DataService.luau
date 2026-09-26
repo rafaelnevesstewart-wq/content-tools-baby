@@ -32,6 +32,8 @@ local function defaultProfile()
 		GrowthSnackUntil = 0,
 		NextId = 1,
 		PurchaseIds = {},
+		OwnedSkins = { "Classic" },
+		EquippedSkin = "Classic",
 	}
 end
 

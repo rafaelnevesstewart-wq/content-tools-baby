@@ -4,6 +4,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local MapBuilder = require(script.Parent.MapBuilder)
 local Util = require(ReplicatedStorage.Shared.Util)
 
 local WorldService = {}
@@ -13,22 +14,9 @@ local rng = Random.new()
 local pickups = {} -- list of { Part, Kind }
 local pickupFolder
 
-local BIOMES = {
-	-- Quadrants in loop order, starting at angle 0.
-	{ Name = "Fern Valley", Ground = Color3.fromRGB(96, 160, 70), Material = Enum.Material.Grass, Decor = Color3.fromRGB(50, 120, 50) },
-	{ Name = "Salt Flats", Ground = Color3.fromRGB(230, 225, 210), Material = Enum.Material.Sand, Decor = Color3.fromRGB(250, 250, 250) },
-	{ Name = "Aurora Tundra", Ground = Color3.fromRGB(220, 235, 245), Material = Enum.Material.Snow, Decor = Color3.fromRGB(60, 110, 90) },
-	{ Name = "Ember Wastes", Ground = Color3.fromRGB(80, 50, 45), Material = Enum.Material.Basalt, Decor = Color3.fromRGB(255, 90, 30) },
-}
-
 local function wrapPi(a: number): number
 	a = (a + math.pi) % (math.pi * 2)
 	return a - math.pi
-end
-
-local function biomeAt(angle: number)
-	local quadrant = math.floor((angle % (math.pi * 2)) / (math.pi / 2)) + 1
-	return BIOMES[math.clamp(quadrant, 1, 4)]
 end
 
 local function anchoredPart(props)
@@ -40,83 +28,6 @@ local function anchoredPart(props)
 		part[key] = value
 	end
 	return part
-end
-
-local function buildMap()
-	local map = Instance.new("Folder")
-	map.Name = "Map"
-
-	-- One ground tile per biome quadrant. Quadrant k covers angles [(k-1)*90°, k*90°).
-	for index, biome in BIOMES do
-		local mid = (index - 0.5) * math.pi / 2
-		local sx = math.cos(mid) >= 0 and 1 or -1
-		local sz = math.sin(mid) >= 0 and 1 or -1
-		anchoredPart({
-			Name = biome.Name,
-			Size = Vector3.new(1600, 2, 1600),
-			Position = Vector3.new(sx * 800, -1, sz * 800),
-			Color = biome.Ground,
-			Material = biome.Material,
-		}).Parent =
-			map
-	end
-
-	-- Dirt trail that the herd follows.
-	local segments = 72
-	local r = Config.Herd.PathRadius
-	for i = 1, segments do
-		local a = (i - 0.5) / segments * math.pi * 2
-		local position = Vector3.new(math.cos(a) * r, 0.05, math.sin(a) * r)
-		local tangent = Vector3.new(-math.sin(a), 0, math.cos(a))
-		local length = 2 * math.pi * r / segments + 2
-		local trail = anchoredPart({
-			Name = "Trail",
-			Size = Vector3.new(90, 0.2, length),
-			Color = Color3.fromRGB(150, 115, 80),
-			Material = Enum.Material.Ground,
-			CanCollide = false,
-		})
-		trail.CFrame = CFrame.lookAt(position, position + tangent)
-		trail.Parent = map
-	end
-
-	-- Scenery away from the herd's lanes.
-	for _ = 1, 160 do
-		local a = rng:NextNumber(0, math.pi * 2)
-		local radius = rng:NextNumber() < 0.5 and rng:NextNumber(150, r - 260) or rng:NextNumber(r + 260, 1500)
-		local biome = biomeAt(a)
-		local base = Vector3.new(math.cos(a) * radius, 0, math.sin(a) * radius)
-		local height = rng:NextNumber(12, 40)
-		anchoredPart({
-			Name = "Trunk",
-			Size = Vector3.new(3, height, 3),
-			Position = base + Vector3.new(0, height / 2, 0),
-			Color = Color3.fromRGB(100, 70, 45),
-			Material = Enum.Material.Wood,
-		}).Parent =
-			map
-		local crown = anchoredPart({
-			Name = "Crown",
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.one * rng:NextNumber(10, 22),
-			Position = base + Vector3.new(0, height, 0),
-			Color = biome.Decor,
-			Material = biome.Name == "Ember Wastes" and Enum.Material.Neon or Enum.Material.Grass,
-		})
-		crown.Parent = map
-	end
-
-	local spawn = Instance.new("SpawnLocation")
-	spawn.Anchored = true
-	spawn.Neutral = true
-	spawn.Size = Vector3.new(12, 1, 12)
-	spawn.Position = Vector3.new(r, 0.5, 0)
-	spawn.Transparency = 1
-	spawn.CanCollide = false
-	spawn.Duration = 0
-	spawn.Parent = map
-
-	map.Parent = workspace
 end
 
 -- Pickups ---------------------------------------------------------------------
@@ -228,7 +139,7 @@ local function spawnWildRider()
 end
 
 function WorldService:BiomeName(): string
-	return biomeAt(S.TitanService:GetAngle()).Name
+	return MapBuilder.Biomes[MapBuilder.biomeIndexAt(S.TitanService:GetAngle())].Name
 end
 
 function WorldService:Init(services)
@@ -236,7 +147,7 @@ function WorldService:Init(services)
 end
 
 function WorldService:Start()
-	buildMap()
+	MapBuilder.build()
 	pickupFolder = Instance.new("Folder")
 	pickupFolder.Name = "Pickups"
 	pickupFolder.Parent = workspace

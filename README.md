@@ -8,7 +8,10 @@ This repo holds the first playable build: one full day and night loop with every
 
 | System | Where |
 |---|---|
-| Titans that grow in 6 stages (Hatchling to Ancient) and physically carry players on their backs | `src/server/Services/TitanService.luau` |
+| Titans that grow in 6 stages (Hatchling to Ancient) and physically carry players on their backs. Each species has its own look (spikes, moss, tusks and trunk, fins), plus big eyes, feet, a tail, deck lanterns and a flag | `src/server/Services/TitanService.luau` |
+| Ladders on both sides of every titan, with a plank to the deck and a **Climb** button at the bottom | `TitanService` |
+| 9 titan skins: 2 bought with coins, 6 with Robux (Candy Pop to Golden King) | `Config.Skins`, `PlayerService`, shop screen |
+| Terrain map: mountains, foothills, lakes, lava pools, the town of Titan's Rest in the middle and an outpost in each biome | `src/server/Services/MapBuilder.luau` |
 | The herd walks a loop through Fern Valley, Salt Flats, Aurora Tundra and Ember Wastes | `TitanService`, `WorldService` |
 | Foraging food, digging up eggs, taming wild Riders | `WorldService` |
 | Coins per second from Riders, mutations (Golden to Void), rarities, hatching | `PlayerService` |
@@ -37,9 +40,10 @@ When you test in Studio:
 
 ## Before publishing
 
-1. Create each game pass and developer product on the Creator Hub, then paste its id into `Id` in `Config.luau`.
-2. Put the real day and night lengths back if you changed them. The live values are `DayLength` and `NightLength` in `Config.luau`.
-3. Paid eggs and serums count as paid random items under Roblox policy, so their odds must be shown before purchase. None are sold in this build.
+1. Create each game pass and developer product on the Creator Hub, then paste its id into `Id` in `Config.luau`. Robux skins are developer products too.
+2. Set the server size to 12 players or fewer (Game Settings), or raise `Herd.MaxLanes` in `Config.luau`. The map keeps its buildings clear of that many titan lanes.
+3. Put the real day and night lengths back if you changed them. The live values are `DayLength` and `NightLength` in `Config.luau`.
+4. Paid eggs and serums count as paid random items under Roblox policy, so their odds must be shown before purchase. None are sold in this build.
 
 ## Design doc
 

@@ -1,5 +1,5 @@
 -- Client-side world touches: hides prompts that aren't meant for this player,
--- counts down egg timers, and animates Rainbow mutations.
+-- counts down egg timers, and animates Rainbow mutations and the Galaxy skin.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -55,6 +55,12 @@ RunService.RenderStepped:Connect(function(dt)
 	for _, part in CollectionService:GetTagged("RainbowPart") do
 		if part:IsA("BasePart") then
 			part.Color = color
+		end
+	end
+	local galaxy = Color3.fromHSV(0.62 + math.sin(hue * math.pi * 2) * 0.12, 0.8, 0.55)
+	for _, part in CollectionService:GetTagged("GalaxyPart") do
+		if part:IsA("BasePart") then
+			part.Color = galaxy
 		end
 	end
 

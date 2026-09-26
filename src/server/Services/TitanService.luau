@@ -125,15 +125,117 @@ end
 
 -- Building -------------------------------------------------------------------
 
-local function mutationStyle(profile)
-	return Util.mutation(profile.TitanMutation)
+-- Works out the colours and materials for a titan from its species, equipped
+-- skin and mutation. On the Classic skin the mutation paints the shell; on any
+-- other skin the skin wins and the mutation shows as a glowing aura instead.
+local function resolveLook(profile, species, mutation)
+	local skin = Util.find(Config.Skins, "Key", profile.EquippedSkin) or Config.Skins[1]
+	local look = {
+		Skin = skin,
+		Body = skin.BodyColor or species.BodyColor,
+		BodyMat = skin.BodyMaterial or Enum.Material.SmoothPlastic,
+		Belly = skin.BellyColor or species.BellyColor,
+		Shell = skin.ShellColor or species.ShellColor,
+		ShellMat = skin.ShellMaterial or Enum.Material.SmoothPlastic,
+		Accent = skin.AccentColor or species.AccentColor,
+		AccentMat = skin.AccentMaterial or Enum.Material.SmoothPlastic,
+		Galaxy = skin.Galaxy == true,
+		Rainbow = false,
+	}
+	if skin.Key == "Classic" then
+		if mutation.Color then
+			look.Shell = mutation.Color
+			look.ShellMat = mutation.Material or look.ShellMat
+			look.Body = look.Body:Lerp(mutation.Color, 0.3)
+		end
+		look.Rainbow = mutation.Rainbow == true
+	end
+	return look
+end
+
+local function particles(parent: BasePart, props)
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.LightEmission = 1
+	emitter.SpreadAngle = Vector2.new(180, 180)
+	for key, value in props do
+		emitter[key] = value
+	end
+	emitter.Parent = parent
+	return emitter
+end
+
+local function light(parent: BasePart, color: Color3, range: number, brightness: number)
+	local pointLight = Instance.new("PointLight")
+	pointLight.Color = color
+	pointLight.Range = range
+	pointLight.Brightness = brightness
+	pointLight.Parent = parent
+	return pointLight
+end
+
+local function addEffects(shell: BasePart, look, mutation, s: number)
+	local effect = look.Skin.Effect
+	if effect == "Sparkles" then
+		particles(shell, {
+			Rate = 8,
+			Lifetime = NumberRange.new(1, 2),
+			Speed = NumberRange.new(1, 3),
+			Size = NumberSequence.new(0.6 * s),
+			Color = ColorSequence.new(look.Accent),
+		})
+	elseif effect == "Embers" then
+		particles(shell, {
+			Rate = 18,
+			Lifetime = NumberRange.new(1.5, 3),
+			Speed = NumberRange.new(2, 5),
+			SpreadAngle = Vector2.new(30, 30),
+			Acceleration = Vector3.new(0, 4, 0),
+			Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5 * s), NumberSequenceKeypoint.new(1, 0) }),
+			Color = ColorSequence.new(Color3.fromRGB(255, 180, 60), Color3.fromRGB(255, 60, 0)),
+		})
+		light(shell, Color3.fromRGB(255, 120, 40), 20 * s, 2)
+	elseif effect == "Lights" then
+		light(shell, look.Accent, 22 * s, 2)
+	elseif effect == "Stars" then
+		particles(shell, {
+			Rate = 14,
+			Lifetime = NumberRange.new(2, 4),
+			Speed = NumberRange.new(0.5, 1.5),
+			Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 0.7 * s), NumberSequenceKeypoint.new(1, 0) }),
+			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(180, 160, 255)),
+		})
+		light(shell, Color3.fromRGB(150, 110, 255), 18 * s, 1.5)
+	end
+
+	-- Mutation aura.
+	if mutation.Name ~= "Normal" then
+		local color = mutation.Rainbow
+				and ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)),
+					ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 240, 80)),
+					ColorSequenceKeypoint.new(0.66, Color3.fromRGB(80, 220, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 90, 255)),
+				})
+			or ColorSequence.new(mutation.Color)
+		particles(shell, {
+			Rate = 10,
+			Lifetime = NumberRange.new(1.5, 2.5),
+			Speed = NumberRange.new(3, 6),
+			SpreadAngle = Vector2.new(40, 40),
+			Acceleration = Vector3.new(0, 3, 0),
+			Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.8 * s), NumberSequenceKeypoint.new(1, 0) }),
+			Transparency = NumberSequence.new(0.2, 1),
+			Color = color,
+		})
+		light(shell, mutation.Color or Color3.fromRGB(255, 255, 255), 16 * s, 1)
+	end
 end
 
 local function build(record, player: Player)
 	local profile = S.PlayerService:GetProfile(player)
 	local stage = Config.Stages[profile.Stage]
 	local species = Config.Species[profile.Species] or Config.Species.Shellback
-	local mutation = mutationStyle(profile)
+	local mutation = Util.mutation(profile.TitanMutation)
 	local s = stage.Scale
 	record.Scale = s
 
@@ -152,54 +254,184 @@ local function build(record, player: Player)
 	model.PrimaryPart = root
 
 	local body = Vector3.new(16, 10, 22) * s
-	local shellColor = mutation.Color or species.ShellColor
-	local shellMaterial = mutation.Material or Enum.Material.SmoothPlastic
-	local bodyColor = mutation.Color and species.BodyColor:Lerp(mutation.Color, 0.5) or species.BodyColor
+	local look = resolveLook(profile, species, mutation)
 
-	local bodyPart = attach(root, newPart({ Name = "Body", Size = body, Color = bodyColor }), CFrame.new(), model)
-	sphereMesh(bodyPart)
+	local function blob(name: string, size: Vector3, color: Color3, material: Enum.Material?, offset: CFrame)
+		local part = attach(root, newPart({ Name = name, Size = size, Color = color, Material = material or Enum.Material.SmoothPlastic }), offset, model)
+		sphereMesh(part)
+		return part
+	end
+	local function tagShell(part: BasePart)
+		if look.Rainbow then
+			CollectionService:AddTag(part, "RainbowPart")
+		elseif look.Galaxy then
+			CollectionService:AddTag(part, "GalaxyPart")
+		end
+	end
+	-- Height of the shell's surface above the root at a given (x, z).
+	local shellCenterY, shellA, shellB, shellC = body.Y * 0.3, body.X * 0.525, body.Y * 0.45, body.Z * 0.475
+	local function shellSurfaceY(x: number, z: number): number
+		local k = 1 - (x / shellA) ^ 2 - (z / shellC) ^ 2
+		return shellCenterY + shellB * math.sqrt(math.max(0, k))
+	end
+
+	-- Body, belly and shell.
+	blob("Body", body, look.Body, look.BodyMat, CFrame.new())
+	blob("Belly", Vector3.new(body.X * 0.86, body.Y * 0.55, body.Z * 0.88), look.Belly, look.BodyMat, CFrame.new(0, -body.Y * 0.22, 0))
 	attach(root, newPart({ Name = "Hull", Size = body * 0.85, Transparency = 1, CanCollide = true }), CFrame.new(), model)
-
-	local shell = attach(
-		root,
-		newPart({ Name = "Shell", Size = Vector3.new(body.X * 1.05, body.Y * 0.9, body.Z * 0.95), Color = shellColor, Material = shellMaterial }),
-		CFrame.new(0, body.Y * 0.3, 0),
-		model
-	)
-	sphereMesh(shell)
-	if mutation.Rainbow then
-		CollectionService:AddTag(shell, "RainbowPart")
-		CollectionService:AddTag(bodyPart, "RainbowPart")
-	end
-
-	local head = attach(
-		root,
-		newPart({ Name = "Head", Size = Vector3.new(7, 6, 7) * s, Color = bodyColor }),
-		CFrame.new(0, body.Y * 0.1, -(body.Z / 2 + 2.2 * s)),
-		model
-	)
-	sphereMesh(head)
-	for _, side in { -1, 1 } do
-		local eye = attach(
-			root,
-			newPart({ Name = "Eye", Size = Vector3.one * 1.2 * s, Color = Color3.new(0.05, 0.05, 0.05) }),
-			CFrame.new(side * 2 * s, body.Y * 0.1 + 1.2 * s, -(body.Z / 2 + 5.2 * s)),
-			model
+	local shell = blob("Shell", Vector3.new(shellA * 2, shellB * 2, shellC * 2), look.Shell, look.ShellMat, CFrame.new(0, shellCenterY, 0))
+	tagShell(shell)
+	blob("ShellRim", Vector3.new(body.X * 1.14, 1.8 * s, body.Z * 1.04), look.Accent, look.AccentMat, CFrame.new(0, body.Y * 0.08, 0))
+	for i = 0, 9 do
+		local a = i / 10 * math.pi * 2
+		local px, pz = math.cos(a) * shellA * 0.84, math.sin(a) * shellC * 0.84
+		local plate = blob(
+			"ShellPlate",
+			Vector3.new(4, 1.2, 4) * s,
+			look.Shell:Lerp(Color3.new(1, 1, 1), 0.18),
+			look.ShellMat,
+			CFrame.new(px, shellSurfaceY(px, pz) - 0.2 * s, pz) * CFrame.Angles(math.sin(a) * 0.6, 0, -math.cos(a) * 0.6)
 		)
-		sphereMesh(eye)
+		tagShell(plate)
 	end
 
+	-- Head with big friendly eyes.
+	local headOffset = CFrame.new(0, body.Y * 0.15, -(body.Z / 2 + 2.6 * s))
+	local head = blob("Head", Vector3.new(7.5, 6.5, 7.5) * s, look.Body, look.BodyMat, headOffset)
+	for _, side in { -1, 1 } do
+		local eyeOffset = headOffset * CFrame.new(side * 2.1 * s, 1.1 * s, -3 * s)
+		blob("Eye", Vector3.new(2.2, 2.5, 1.4) * s, Color3.new(1, 1, 1), nil, eyeOffset)
+		blob("Pupil", Vector3.new(1.2, 1.5, 0.8) * s, Color3.fromRGB(20, 20, 30), nil, eyeOffset * CFrame.new(0, -0.1 * s, -0.55 * s))
+		blob("Shine", Vector3.one * 0.45 * s, Color3.new(1, 1, 1), Enum.Material.Neon, eyeOffset * CFrame.new(0.3 * s, 0.35 * s, -0.95 * s))
+		blob("Cheek", Vector3.new(1.6, 0.9, 0.5) * s, Color3.fromRGB(255, 150, 160), nil, headOffset * CFrame.new(side * 2.7 * s, -0.7 * s, -2.8 * s))
+	end
+	if profile.Species ~= "Tuskhorn" then
+		blob("Snout", Vector3.new(5, 3.4, 3) * s, look.Body:Lerp(look.Belly, 0.4), look.BodyMat, headOffset * CFrame.new(0, -1.3 * s, -3 * s))
+		for _, side in { -1, 1 } do
+			blob("Nostril", Vector3.one * 0.5 * s, Color3.fromRGB(30, 30, 30), nil, headOffset * CFrame.new(side * 0.8 * s, -0.8 * s, -4.4 * s))
+		end
+	end
+
+	-- Species features.
+	if profile.Species == "Shellback" then
+		for _, side in { -1, 1 } do
+			for i = -2, 2 do
+				local pz = i * shellC * 0.3
+				local px = side * shellA * 0.92
+				blob(
+					"Spike",
+					Vector3.new(1.4, 3.4, 1.4) * s,
+					look.Accent,
+					look.AccentMat,
+					CFrame.new(px, shellSurfaceY(px * 0.95, pz) + 0.6 * s, pz) * CFrame.Angles(0, 0, -side * 0.7)
+				)
+			end
+		end
+		blob("Beak", Vector3.new(2.4, 1.2, 2) * s, look.Accent, look.AccentMat, headOffset * CFrame.new(0, -2.3 * s, -4 * s))
+	elseif profile.Species == "Mossback" then
+		for i = 0, 13 do
+			local a = i / 14 * math.pi * 2
+			local px, pz = math.cos(a) * shellA * 0.95, math.sin(a) * shellC * 0.95
+			blob("Moss", Vector3.new(3, 2, 3) * s, Color3.fromRGB(70, 140, 55), Enum.Material.Grass, CFrame.new(px, shellSurfaceY(px * 0.9, pz * 0.9), pz))
+			if i % 2 == 0 then
+				blob("Flower", Vector3.one * 1.1 * s, look.Accent, Enum.Material.Neon, CFrame.new(px, shellSurfaceY(px * 0.9, pz * 0.9) + 1.1 * s, pz))
+			end
+		end
+		blob("Beard", Vector3.new(4, 3, 2) * s, Color3.fromRGB(70, 140, 55), Enum.Material.Grass, headOffset * CFrame.new(0, -3 * s, -2 * s))
+	elseif profile.Species == "Tuskhorn" then
+		for _, side in { -1, 1 } do
+			blob(
+				"Tusk",
+				Vector3.new(1.1, 1.1, 6) * s,
+				look.Accent,
+				look.AccentMat,
+				headOffset * CFrame.new(side * 1.8 * s, -2.2 * s, -4.5 * s) * CFrame.Angles(0.5, side * 0.2, 0)
+			)
+			blob(
+				"Ear",
+				Vector3.new(0.7, 6, 5.5) * s,
+				look.Body:Lerp(Color3.fromRGB(255, 170, 170), 0.25),
+				look.BodyMat,
+				headOffset * CFrame.new(side * 4 * s, 0.5 * s, 0.5 * s) * CFrame.Angles(0, side * 0.35, side * 0.15)
+			)
+		end
+		for i = 1, 4 do
+			local size = (3.2 - i * 0.45) * s
+			blob(
+				"Trunk",
+				Vector3.new(size, size, size * 1.3),
+				look.Body,
+				look.BodyMat,
+				headOffset * CFrame.new(0, -0.8 * s - i * 1.4 * s, -3.6 * s - i * 0.5 * s)
+			)
+		end
+	elseif profile.Species == "Driftfin" then
+		for _, side in { -1, 1 } do
+			local fin = Instance.new("WedgePart")
+			fin.Size = Vector3.new(0.6, 5, 8) * s
+			fin.Color = look.Accent
+			fin.Material = look.AccentMat
+			fin.Anchored = false
+			fin.CanCollide = false
+			fin.Massless = true
+			attach(root, fin, CFrame.new(side * body.X * 0.52, -body.Y * 0.05, 0) * CFrame.Angles(0, 0, side * 1.2), model)
+			for i = -2, 2 do
+				blob("GlowSpot", Vector3.one * 0.9 * s, look.Accent, Enum.Material.Neon, CFrame.new(side * body.X * 0.49, body.Y * 0.1, i * body.Z * 0.14))
+			end
+		end
+	end
+
+	-- Crown for the Golden King skin.
+	if look.Skin.Crown then
+		local crownBase = headOffset * CFrame.new(0, 3.4 * s, 0)
+		blob("Crown", Vector3.new(3.8, 1, 3.8) * s, look.Shell, look.ShellMat, crownBase)
+		for i = 0, 4 do
+			local a = i / 5 * math.pi * 2
+			blob(
+				"CrownPoint",
+				Vector3.new(0.8, 2, 0.8) * s,
+				look.Shell,
+				look.ShellMat,
+				crownBase * CFrame.new(math.cos(a) * 1.5 * s, 1 * s, math.sin(a) * 1.5 * s)
+			)
+		end
+		blob("CrownGem", Vector3.one * 0.9 * s, look.Accent, Enum.Material.Neon, crownBase * CFrame.new(0, 0.3 * s, -1.9 * s))
+	end
+
+	-- Chunky legs with feet and toes.
 	local legHeight = 10 * s
 	for _, x in { -1, 1 } do
 		for _, z in { -1, 1 } do
+			local legOffset = CFrame.new(x * body.X * 0.32, -12 * s + legHeight / 2, z * body.Z * 0.3)
 			attach(
 				root,
-				newPart({ Name = "Leg", Size = Vector3.new(3.5 * s, legHeight, 3.5 * s), Color = bodyColor:Lerp(Color3.new(0, 0, 0), 0.2) }),
-				CFrame.new(x * body.X * 0.32, -12 * s + legHeight / 2, z * body.Z * 0.3),
+				newPart({
+					Name = "Leg",
+					Shape = Enum.PartType.Cylinder,
+					Size = Vector3.new(legHeight, 4.2 * s, 4.2 * s),
+					Color = look.Body,
+					Material = look.BodyMat,
+				}),
+				legOffset * CFrame.Angles(0, 0, math.pi / 2),
 				model
 			)
+			local footOffset = CFrame.new(x * body.X * 0.32, -12 * s + 0.9 * s, z * body.Z * 0.3 - 0.4 * s)
+			blob("Foot", Vector3.new(5.4, 1.8, 6) * s, look.Body:Lerp(Color3.new(0, 0, 0), 0.12), look.BodyMat, footOffset)
+			for toe = -1, 1 do
+				blob("Toe", Vector3.new(1.1, 0.9, 1.1) * s, Color3.fromRGB(245, 240, 225), nil, footOffset * CFrame.new(toe * 1.5 * s, 0, -2.8 * s))
+			end
 		end
 	end
+
+	-- Tail.
+	local tailSizes = { Vector3.new(3.6, 3, 4.5), Vector3.new(2.6, 2.2, 3.6), Vector3.new(1.6, 1.4, 2.6) }
+	local tailZ = body.Z / 2
+	for i, size in tailSizes do
+		tailZ += size.Z * s * 0.6
+		blob("Tail", size * s, look.Body, look.BodyMat, CFrame.new(0, -body.Y * 0.1 - i * 0.6 * s, tailZ))
+	end
+
+	addEffects(shell, look, mutation, s)
 
 	-- Deck: the part players stand and build on.
 	local deckSize = Vector3.new(body.X * 0.78, 1, body.Z * 0.72)
@@ -237,20 +469,79 @@ local function build(record, player: Player)
 		)
 	end
 
-	-- Ladders so anyone on the ground can climb aboard (thieves included).
+	-- Ladders on both sides so anyone on the ground can climb aboard (thieves
+	-- included). An invisible truss does the climbing; the rails and rungs are
+	-- what players see. A plank bridges the ladder top to the deck, and a
+	-- "Climb" prompt at the bottom lifts you straight up (handy on mobile).
 	local rootY = 12 * s
 	local deckTop = rootY + deckY + 0.5
-	local ladderHeight = math.max(2, math.floor((deckTop - 1) / 2) * 2)
-	for _, x in { -1, 1 } do
+	local ladderX = body.X * 0.58 + 1.5
+	local ladderHeight = math.max(4, math.floor((deckTop - 0.5) / 2) * 2)
+	local ground = -rootY
+	local wood = Color3.fromRGB(160, 112, 64)
+	for _, side in { -1, 1 } do
+		local x = side * ladderX
 		local truss = Instance.new("TrussPart")
-		truss.Name = "Ladder"
+		truss.Name = "LadderClimb"
 		truss.Size = Vector3.new(2, ladderHeight, 2)
+		truss.Transparency = 1
 		truss.Anchored = false
 		truss.Massless = true
 		truss.CanCollide = true
-		truss.Color = Color3.fromRGB(120, 90, 60)
-		attach(root, truss, CFrame.new(x * (deckSize.X / 2 + 1.4), (1 + ladderHeight / 2) - rootY, 0), model)
+		attach(root, truss, CFrame.new(x, ground + 0.5 + ladderHeight / 2, 0), model)
+		for _, z in { -1.3, 1.3 } do
+			attach(
+				root,
+				newPart({ Name = "LadderRail", Size = Vector3.new(0.5, ladderHeight, 0.5), Color = wood, Material = Enum.Material.Wood }),
+				CFrame.new(x + side * 0.4, ground + 0.5 + ladderHeight / 2, z),
+				model
+			)
+		end
+		for y = 1.5, ladderHeight, 2 do
+			attach(
+				root,
+				newPart({ Name = "LadderRung", Size = Vector3.new(0.4, 0.4, 2.6), Color = wood:Lerp(Color3.new(1, 1, 1), 0.15), Material = Enum.Material.Wood }),
+				CFrame.new(x + side * 0.4, ground + y, 0),
+				model
+			)
+		end
+		local inner = deckSize.X / 2 - 0.5
+		local plankLength = ladderX - inner + 1
+		attach(
+			root,
+			newPart({ Name = "LadderPlank", Size = Vector3.new(plankLength, 0.6, 4), CanCollide = true, Color = wood, Material = Enum.Material.WoodPlanks }),
+			CFrame.new(side * (inner + plankLength / 2), deckY + 0.2, 0),
+			model
+		)
+		local base = attach(root, newPart({ Name = "LadderBase", Size = Vector3.new(3, 3, 3), Transparency = 1 }), CFrame.new(x, ground + 1.5, 0), model)
+		local climb = addPrompt(base, { ActionText = "Climb", ObjectText = "Titan ladder", HoldDuration = 0, MaxActivationDistance = 10 })
+		climb.Triggered:Connect(function(who)
+			TitanService:PlaceOnDeck(who, record)
+		end)
 	end
+
+	-- Lanterns on the deck corners and a flag at the front.
+	for _, cx in { -1, 1 } do
+		for _, cz in { -1, 1 } do
+			local offset = CFrame.new(cx * (deckSize.X / 2 - 1), deckY + 2.5, cz * (deckSize.Z / 2 - 1))
+			attach(root, newPart({ Name = "LanternPost", Size = Vector3.new(0.5, 4, 0.5), Color = wood, Material = Enum.Material.Wood }), offset, model)
+			local lamp = attach(
+				root,
+				newPart({ Name = "Lantern", Size = Vector3.one * 1.3, Color = Color3.fromRGB(255, 210, 120), Material = Enum.Material.Neon }),
+				offset * CFrame.new(0, 2.4, 0),
+				model
+			)
+			light(lamp, Color3.fromRGB(255, 200, 120), 16, 1.2)
+		end
+	end
+	local mastOffset = CFrame.new(0, deckY + 4.5, -deckSize.Z / 2 - 1)
+	attach(root, newPart({ Name = "Mast", Size = Vector3.new(0.4, 8, 0.4), Color = wood, Material = Enum.Material.Wood }), mastOffset, model)
+	attach(
+		root,
+		newPart({ Name = "Banner", Size = Vector3.new(0.2, 2.2, 3.6), Color = look.Accent, Material = Enum.Material.Fabric }),
+		mastOffset * CFrame.new(0, 2.6, 1.9),
+		model
+	)
 
 	-- Leap post at the back of the deck: jump across to a neighbouring titan.
 	local post = attach(

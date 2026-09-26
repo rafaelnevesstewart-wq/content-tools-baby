@@ -17,28 +17,39 @@ Config.Herd = {
 	PathRadius = 700, -- radius of the migration loop
 	LaneSpacing = 70, -- distance between neighbouring titans
 	DaySpeed = 6, -- studs per second along the loop
+	-- Scenery is kept clear of the lanes up to this many titans. Match it to the
+	-- place's max server size (Game Settings) so titans never walk into buildings.
+	MaxLanes = 12,
 }
 
 Config.Species = {
 	Shellback = {
 		DisplayName = "Shellback",
-		BodyColor = Color3.fromRGB(104, 150, 86),
-		ShellColor = Color3.fromRGB(128, 94, 62),
+		BodyColor = Color3.fromRGB(104, 170, 96),
+		BellyColor = Color3.fromRGB(230, 220, 160),
+		ShellColor = Color3.fromRGB(150, 104, 62),
+		AccentColor = Color3.fromRGB(240, 200, 110),
 	},
 	Mossback = {
 		DisplayName = "Mossback",
-		BodyColor = Color3.fromRGB(140, 120, 96),
-		ShellColor = Color3.fromRGB(76, 128, 60),
+		BodyColor = Color3.fromRGB(150, 126, 100),
+		BellyColor = Color3.fromRGB(225, 205, 175),
+		ShellColor = Color3.fromRGB(86, 150, 66),
+		AccentColor = Color3.fromRGB(255, 140, 190),
 	},
 	Tuskhorn = {
 		DisplayName = "Tuskhorn",
-		BodyColor = Color3.fromRGB(150, 110, 90),
-		ShellColor = Color3.fromRGB(96, 70, 56),
+		BodyColor = Color3.fromRGB(160, 116, 92),
+		BellyColor = Color3.fromRGB(215, 180, 150),
+		ShellColor = Color3.fromRGB(110, 78, 60),
+		AccentColor = Color3.fromRGB(250, 245, 230),
 	},
 	Driftfin = {
 		DisplayName = "Driftfin",
-		BodyColor = Color3.fromRGB(80, 120, 170),
-		ShellColor = Color3.fromRGB(200, 214, 230),
+		BodyColor = Color3.fromRGB(84, 132, 196),
+		BellyColor = Color3.fromRGB(215, 235, 250),
+		ShellColor = Color3.fromRGB(46, 84, 150),
+		AccentColor = Color3.fromRGB(120, 240, 255),
 	},
 }
 Config.SpeciesOrder = { "Shellback", "Mossback", "Tuskhorn", "Driftfin" }
@@ -167,6 +178,119 @@ Config.DevProducts = {
 	{ Key = "CoinPouch", Name = "Coin Pouch", Price = 49, Id = 0, Description = "A pouch of coins (scales with your income)." },
 	{ Key = "CoinChest", Name = "Coin Chest", Price = 299, Id = 0, Description = "A chest of coins (scales with your income)." },
 	{ Key = "StormTotem", Name = "Storm Totem", Price = 199, Id = 0, Description = "Starts a storm for the whole server: rare mutations for everyone." },
+}
+
+-- Titan skins. Coin skins are bought in game; Robux skins are developer
+-- products (set Id after creating them on the Creator Hub, 0 = Studio test only).
+-- Colours left out fall back to the species colours.
+Config.Skins = {
+	{ Key = "Classic", Name = "Classic", Currency = "Free", Price = 0, Description = "Your titan's natural colours. Mutations tint the shell." },
+	{
+		Key = "Mossy",
+		Name = "Mossy Grove",
+		Currency = "Coins",
+		Price = 5000,
+		Description = "A shell overgrown with moss and flowers.",
+		ShellColor = Color3.fromRGB(70, 140, 60),
+		ShellMaterial = Enum.Material.Grass,
+		AccentColor = Color3.fromRGB(255, 150, 200),
+	},
+	{
+		Key = "Sandstone",
+		Name = "Desert Stone",
+		Currency = "Coins",
+		Price = 20000,
+		Description = "Carved sandstone plates, weathered by the Salt Flats.",
+		ShellColor = Color3.fromRGB(215, 180, 120),
+		ShellMaterial = Enum.Material.Sandstone,
+		BodyColor = Color3.fromRGB(190, 150, 100),
+		AccentColor = Color3.fromRGB(150, 90, 50),
+	},
+	{
+		Key = "Candy",
+		Name = "Candy Pop",
+		Currency = "Robux",
+		Price = 99,
+		Id = 0,
+		Description = "Pastel sweets from head to tail.",
+		ShellColor = Color3.fromRGB(255, 150, 200),
+		BodyColor = Color3.fromRGB(190, 170, 255),
+		BellyColor = Color3.fromRGB(255, 250, 220),
+		AccentColor = Color3.fromRGB(140, 240, 200),
+		Effect = "Sparkles",
+	},
+	{
+		Key = "Crystal",
+		Name = "Crystal Shell",
+		Currency = "Robux",
+		Price = 149,
+		Id = 0,
+		Description = "A see-through shell that glitters in the sun.",
+		ShellColor = Color3.fromRGB(150, 230, 255),
+		ShellMaterial = Enum.Material.Glass,
+		AccentColor = Color3.fromRGB(230, 250, 255),
+		AccentMaterial = Enum.Material.Neon,
+		Effect = "Sparkles",
+	},
+	{
+		Key = "Lava",
+		Name = "Lava Forge",
+		Currency = "Robux",
+		Price = 199,
+		Id = 0,
+		Description = "Cooling rock with glowing lava cracks and embers.",
+		ShellColor = Color3.fromRGB(45, 40, 40),
+		ShellMaterial = Enum.Material.Basalt,
+		BodyColor = Color3.fromRGB(70, 55, 50),
+		AccentColor = Color3.fromRGB(255, 110, 20),
+		AccentMaterial = Enum.Material.Neon,
+		Effect = "Embers",
+	},
+	{
+		Key = "Mech",
+		Name = "Mech Armor",
+		Currency = "Robux",
+		Price = 299,
+		Id = 0,
+		Description = "Armor plating with glowing power lines.",
+		ShellColor = Color3.fromRGB(150, 155, 165),
+		ShellMaterial = Enum.Material.DiamondPlate,
+		BodyColor = Color3.fromRGB(90, 95, 105),
+		BodyMaterial = Enum.Material.Metal,
+		BellyColor = Color3.fromRGB(60, 65, 75),
+		AccentColor = Color3.fromRGB(60, 230, 255),
+		AccentMaterial = Enum.Material.Neon,
+		Effect = "Lights",
+	},
+	{
+		Key = "Galaxy",
+		Name = "Galaxy",
+		Currency = "Robux",
+		Price = 399,
+		Id = 0,
+		Description = "A shell full of drifting stars that shifts colour.",
+		ShellColor = Color3.fromRGB(60, 30, 120),
+		ShellMaterial = Enum.Material.Neon,
+		BodyColor = Color3.fromRGB(35, 25, 70),
+		AccentColor = Color3.fromRGB(255, 255, 255),
+		AccentMaterial = Enum.Material.Neon,
+		Effect = "Stars",
+		Galaxy = true,
+	},
+	{
+		Key = "GoldenKing",
+		Name = "Golden King",
+		Currency = "Robux",
+		Price = 499,
+		Id = 0,
+		Description = "Solid gold shell and a royal crown. Pure flex.",
+		ShellColor = Color3.fromRGB(255, 200, 50),
+		ShellMaterial = Enum.Material.Foil,
+		BodyColor = Color3.fromRGB(250, 235, 200),
+		AccentColor = Color3.fromRGB(200, 40, 60),
+		Effect = "Sparkles",
+		Crown = true,
+	},
 }
 
 Config.Products = {

@@ -496,6 +496,54 @@ function PlayerService:OnPassesChanged(player: Player)
 	self:Notify(player, "Pass unlocked. Thank you!")
 end
 
+-- Skins ---------------------------------------------------------------------
+
+function PlayerService:OwnsSkin(player: Player, key: string): boolean
+	local profile = self:GetProfile(player)
+	return profile ~= nil and (key == "Classic" or table.find(profile.OwnedSkins, key) ~= nil)
+end
+
+-- Unlocks a skin and puts it on straight away. Safe to call twice.
+function PlayerService:GrantSkin(player: Player, key: string): boolean
+	local profile = self:GetProfile(player)
+	local skin = Util.find(Config.Skins, "Key", key)
+	if not profile or not skin then
+		return false
+	end
+	if not table.find(profile.OwnedSkins, key) then
+		table.insert(profile.OwnedSkins, key)
+		self:Notify(player, string.format("Unlocked the %s skin!", skin.Name))
+	end
+	self:EquipSkin(player, key)
+	return true
+end
+
+function PlayerService:EquipSkin(player: Player, key: string)
+	local profile = self:GetProfile(player)
+	if not profile or not self:OwnsSkin(player, key) or profile.EquippedSkin == key then
+		return
+	end
+	profile.EquippedSkin = key
+	S.TitanService:Rebuild(player)
+	self:MarkDirty(player)
+end
+
+function PlayerService:_buySkinWithCoins(player: Player, key: string)
+	local profile = self:GetProfile(player)
+	local skin = Util.find(Config.Skins, "Key", key)
+	if not skin or skin.Currency ~= "Coins" then
+		return
+	end
+	if self:OwnsSkin(player, key) then
+		self:EquipSkin(player, key)
+	elseif profile.Coins < skin.Price then
+		self:Notify(player, string.format("You need %s coins for %s.", Util.formatNumber(skin.Price), skin.Name))
+	else
+		self:AddCoins(player, -skin.Price)
+		self:GrantSkin(player, key)
+	end
+end
+
 function PlayerService:GrantProduct(player: Player, key: string): boolean
 	local profile = self:GetProfile(player)
 	if not profile then
@@ -564,6 +612,12 @@ function PlayerService:_onAction(player: Player, action, arg)
 			S.TitanService:PlaceOnDeck(player)
 		else
 			self:Notify(player, "Titan Whistle is a game pass.")
+		end
+	elseif action == "BuySkin" and type(arg) == "string" then
+		self:_buySkinWithCoins(player, arg)
+	elseif action == "EquipSkin" and type(arg) == "string" then
+		if self:OwnsSkin(player, arg) then
+			self:EquipSkin(player, arg)
 		end
 	elseif action == "Roar" then
 		S.CycleService:Roar(player)
@@ -693,6 +747,8 @@ function PlayerService:_flush(player: Player, session)
 		GrowthSnackLeft = math.max(0, profile.GrowthSnackUntil - os.time()),
 		Weathered = profile.NightsSurvivedStreak >= Config.Nightfall.WeatheredStreak,
 		NightsStreak = profile.NightsSurvivedStreak,
+		OwnedSkins = profile.OwnedSkins,
+		EquippedSkin = profile.EquippedSkin,
 	})
 end
 

@@ -78,6 +78,11 @@ function ShopService:StudioGrant(player: Player, kind: string, key: string)
 		if Util.find(Config.DevProducts, "Key", key) then
 			return S.PlayerService:GrantProduct(player, key)
 		end
+	elseif kind == "Skin" then
+		local skin = Util.find(Config.Skins, "Key", key)
+		if skin and skin.Currency == "Robux" then
+			return S.PlayerService:GrantSkin(player, key)
+		end
 	end
 	return false
 end
@@ -85,7 +90,8 @@ end
 function ShopService:_processReceipt(receipt)
 	local player = Players:GetPlayerByUserId(receipt.PlayerId)
 	local product = Util.find(Config.DevProducts, "Id", receipt.ProductId)
-	if not player or not product then
+	local skin = Util.find(Config.Skins, "Id", receipt.ProductId)
+	if not player or not (product or skin) then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	local profile = S.PlayerService:GetProfile(player)
@@ -95,11 +101,15 @@ function ShopService:_processReceipt(receipt)
 	if table.find(profile.PurchaseIds, receipt.PurchaseId) then
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
+	local key = product and product.Key or skin.Key
 	local ok, granted = pcall(function()
-		return S.PlayerService:GrantProduct(player, product.Key)
+		if skin then
+			return S.PlayerService:GrantSkin(player, skin.Key)
+		end
+		return S.PlayerService:GrantProduct(player, key)
 	end)
 	if not ok or not granted then
-		warn("[ShopService] Failed to grant", product.Key, ok and "" or granted)
+		warn("[ShopService] Failed to grant", key, ok and "" or granted)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	table.insert(profile.PurchaseIds, receipt.PurchaseId)

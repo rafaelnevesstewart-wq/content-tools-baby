@@ -296,6 +296,70 @@ local function shopRow(kind: string, item)
 	end
 end
 
+local skinButtons = {}
+
+local function skinOwned(key: string): boolean
+	return key == "Classic" or (state ~= nil and table.find(state.OwnedSkins or {}, key) ~= nil)
+end
+
+local function skinRow(skin)
+	order += 1
+	local row = make("Frame", { Size = UDim2.new(1, -8, 0, 64), BackgroundColor3 = Color3.fromRGB(44, 50, 66), LayoutOrder = order }, { corner(10) })
+	local swatch = make("Frame", {
+		Size = UDim2.fromOffset(44, 44),
+		Position = UDim2.fromOffset(10, 10),
+		BackgroundColor3 = skin.ShellColor or Color3.fromRGB(150, 104, 62),
+	}, {
+		make("UICorner", { CornerRadius = UDim.new(0.5, 0) }),
+		make("UIStroke", { Thickness = 3, Color = skin.AccentColor or Color3.fromRGB(240, 200, 110) }),
+	})
+	swatch.Parent = row
+	text({ Size = UDim2.new(1, -190, 0, 26), Position = UDim2.fromOffset(64, 6), Text = skin.Name, Parent = row })
+	local description = text({
+		Size = UDim2.new(1, -190, 0, 24),
+		Position = UDim2.fromOffset(64, 34),
+		Text = skin.Description,
+		TextColor3 = Color3.fromRGB(190, 200, 215),
+		Parent = row,
+	})
+	description:FindFirstChildOfClass("UITextSizeConstraint").MaxTextSize = 16
+	local skinButton = make("TextButton", {
+		Size = UDim2.fromOffset(110, 44),
+		Position = UDim2.new(1, -120, 0.5, -22),
+		BackgroundColor3 = Color3.fromRGB(80, 190, 90),
+		Font = FONT,
+		TextScaled = true,
+		TextColor3 = Color3.new(1, 1, 1),
+		Text = "",
+	}, { corner(10), make("UITextSizeConstraint", { MaxTextSize = 20 }) })
+	skinButton.Activated:Connect(function()
+		if not state then
+			return
+		end
+		if skinOwned(skin.Key) then
+			Remotes.Action:FireServer("EquipSkin", skin.Key)
+		elseif skin.Currency == "Coins" then
+			Remotes.Action:FireServer("BuySkin", skin.Key)
+		elseif skin.Currency == "Robux" then
+			if skin.Id ~= 0 then
+				MarketplaceService:PromptProductPurchase(player, skin.Id)
+			elseif RunService:IsStudio() then
+				toast("Studio test: unlocking " .. skin.Name .. " for free")
+				Remotes.Action:FireServer("StudioGrant", { Kind = "Skin", Key = skin.Key })
+			else
+				toast(skin.Name .. " is coming soon!")
+			end
+		end
+	end)
+	skinButton.Parent = row
+	row.Parent = list
+	skinButtons[skin.Key] = { Button = skinButton, Skin = skin }
+end
+
+header("Titan Skins")
+for _, skin in Config.Skins do
+	skinRow(skin)
+end
 header("Game Passes (forever)")
 for _, pass in Config.GamePasses do
 	shopRow("Pass", pass)
@@ -354,6 +418,22 @@ local function refresh()
 	roarButton.Visible = state.CanRoar and ReplicatedStorage:GetAttribute("Phase") == "Night"
 	whistleButton.Visible = table.find(state.Passes, "TitanWhistle") ~= nil
 
+	for key, entry in skinButtons do
+		local skinButton, skin = entry.Button, entry.Skin
+		if state.EquippedSkin == key then
+			skinButton.Text = "Equipped"
+			skinButton.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
+		elseif skinOwned(key) then
+			skinButton.Text = "Equip"
+			skinButton.BackgroundColor3 = Color3.fromRGB(70, 140, 220)
+		elseif skin.Currency == "Coins" then
+			skinButton.Text = "🪙 " .. Util.formatNumber(skin.Price)
+			skinButton.BackgroundColor3 = Color3.fromRGB(210, 160, 50)
+		else
+			skinButton.Text = "R$ " .. skin.Price
+			skinButton.BackgroundColor3 = Color3.fromRGB(80, 190, 90)
+		end
+	end
 	for key, entry in passButtons do
 		local owned = table.find(state.Passes, key) ~= nil
 		entry.Button.Text = owned and "Owned" or ("R$ " .. entry.Item.Price)
