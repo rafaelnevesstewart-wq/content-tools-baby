@@ -58,12 +58,12 @@ local function setupSky()
 	colorCorrection = Instance.new("ColorCorrectionEffect")
 	colorCorrection.Parent = Lighting
 	bloom = Instance.new("BloomEffect")
-	bloom.Intensity = 0.6
-	bloom.Size = 30
-	bloom.Threshold = 1.4
+	bloom.Intensity = 0.25
+	bloom.Size = 24
+	bloom.Threshold = 2
 	bloom.Parent = Lighting
 	sunRays = Instance.new("SunRaysEffect")
-	sunRays.Intensity = 0.08
+	sunRays.Intensity = 0.04
 	sunRays.Spread = 0.6
 	sunRays.Parent = Lighting
 
@@ -79,39 +79,44 @@ local function tween(object: Instance, props)
 end
 
 local function applyLighting()
+	-- Tuned for Future lighting (set in default.project.json): low ambient light
+	-- so shadows stay deep, natural haze, and a gentle film-like colour grade.
 	if phase == "Night" then
 		tween(Lighting, {
-			ClockTime = 0.5,
-			Brightness = 0.6,
-			Ambient = Color3.fromRGB(15, 15, 25),
-			OutdoorAmbient = Color3.fromRGB(40, 40, 60),
-			ExposureCompensation = -0.2,
-		})
-		tween(atmosphere, { Density = 0.5, Offset = 0.1, Color = Color3.fromRGB(40, 45, 70), Decay = Color3.fromRGB(20, 15, 35), Glare = 0, Haze = 2.5 })
-		tween(colorCorrection, { Saturation = -0.35, Contrast = 0.2, Brightness = -0.03, TintColor = Color3.fromRGB(190, 200, 255) })
-		tween(clouds, { Cover = 0.85, Density = 0.8, Color = Color3.fromRGB(40, 40, 50) })
-	elseif CycleService:IsStorm() then
-		tween(Lighting, {
-			ClockTime = 16,
-			Brightness = 1.2,
-			Ambient = Color3.fromRGB(40, 40, 50),
-			OutdoorAmbient = Color3.fromRGB(90, 85, 110),
+			ClockTime = 0.2,
+			Brightness = 0.5,
+			Ambient = Color3.fromRGB(8, 10, 16),
+			OutdoorAmbient = Color3.fromRGB(34, 38, 52),
 			ExposureCompensation = -0.1,
 		})
-		tween(atmosphere, { Density = 0.45, Offset = 0.2, Color = Color3.fromRGB(110, 105, 130), Decay = Color3.fromRGB(60, 50, 80), Glare = 0, Haze = 3 })
-		tween(colorCorrection, { Saturation = -0.3, Contrast = 0.2, Brightness = -0.02, TintColor = Color3.fromRGB(215, 205, 240) })
-		tween(clouds, { Cover = 0.95, Density = 0.9, Color = Color3.fromRGB(70, 65, 85) })
+		tween(atmosphere, { Density = 0.45, Offset = 0.1, Color = Color3.fromRGB(58, 66, 84), Decay = Color3.fromRGB(22, 26, 38), Glare = 0, Haze = 1.6 })
+		tween(colorCorrection, { Saturation = -0.35, Contrast = 0.12, Brightness = -0.02, TintColor = Color3.fromRGB(205, 215, 255) })
+		tween(clouds, { Cover = 0.8, Density = 0.7, Color = Color3.fromRGB(45, 48, 56) })
+	elseif CycleService:IsStorm() then
+		tween(Lighting, {
+			ClockTime = 15.5,
+			Brightness = 1.4,
+			Ambient = Color3.fromRGB(20, 22, 26),
+			OutdoorAmbient = Color3.fromRGB(80, 82, 88),
+			ExposureCompensation = -0.15,
+		})
+		tween(atmosphere, { Density = 0.5, Offset = 0.15, Color = Color3.fromRGB(120, 124, 130), Decay = Color3.fromRGB(70, 72, 78), Glare = 0, Haze = 2.2 })
+		tween(colorCorrection, { Saturation = -0.3, Contrast = 0.1, Brightness = -0.02, TintColor = Color3.fromRGB(225, 230, 240) })
+		tween(clouds, { Cover = 0.95, Density = 0.9, Color = Color3.fromRGB(80, 82, 88) })
 	else
-		tween(
-			Lighting,
-			{ ClockTime = 16.5, Brightness = 2, Ambient = Color3.fromRGB(50, 50, 55), OutdoorAmbient = Color3.fromRGB(120, 115, 110), ExposureCompensation = 0 }
-		)
+		tween(Lighting, {
+			ClockTime = 15,
+			Brightness = 2.6,
+			Ambient = Color3.fromRGB(25, 25, 28),
+			OutdoorAmbient = Color3.fromRGB(95, 92, 88),
+			ExposureCompensation = 0,
+		})
 		tween(
 			atmosphere,
-			{ Density = 0.33, Offset = 0.25, Color = Color3.fromRGB(190, 185, 170), Decay = Color3.fromRGB(110, 95, 85), Glare = 0.4, Haze = 1.6 }
+			{ Density = 0.32, Offset = 0.25, Color = Color3.fromRGB(199, 185, 160), Decay = Color3.fromRGB(106, 90, 70), Glare = 0.25, Haze = 1.2 }
 		)
-		tween(colorCorrection, { Saturation = -0.15, Contrast = 0.12, Brightness = 0, TintColor = Color3.fromRGB(255, 245, 230) })
-		tween(clouds, { Cover = 0.7, Density = 0.6, Color = Color3.fromRGB(190, 190, 195) })
+		tween(colorCorrection, { Saturation = -0.12, Contrast = 0.08, Brightness = 0, TintColor = Color3.fromRGB(255, 247, 238) })
+		tween(clouds, { Cover = 0.62, Density = 0.55, Color = Color3.fromRGB(215, 212, 208) })
 	end
 end
 
@@ -136,9 +141,9 @@ function CycleService:StartStorm(seconds: number, byPlayer: Player?)
 	stormUntil = math.max(stormUntil, now()) + seconds
 	ReplicatedStorage:SetAttribute("StormUntil", stormUntil)
 	if byPlayer then
-		S.PlayerService:NotifyAll(string.format("⚡ %s started a Storm! Rare mutations are more likely for everyone.", byPlayer.DisplayName))
+		S.PlayerService:NotifyAll(string.format("%s started a Storm! Rare mutations are more likely for everyone.", byPlayer.DisplayName))
 	else
-		S.PlayerService:NotifyAll("⚡ A storm rolls in! Rare mutations are more likely.")
+		S.PlayerService:NotifyAll("A storm rolls in! Rare mutations are more likely.")
 	end
 	applyLighting()
 	task.delay(seconds + 0.5, function()
@@ -197,9 +202,7 @@ function CycleService:_runNight()
 		S.TitanService:RefreshDeck(player) -- homesick Riders expire now
 	end
 	local boss = self:IsBossNight()
-	S.PlayerService:NotifyAll(
-		boss and "🌩 NIGHTFALL: The Storm King approaches! Protect the herd!" or "🌙 Nightfall! Monsters are hunting. Protect the herd!"
-	)
+	S.PlayerService:NotifyAll(boss and "NIGHTFALL: The Storm King approaches! Protect the herd!" or "Nightfall! Monsters are hunting. Protect the herd!")
 	if boss then
 		S.MonsterService:SpawnBoss()
 	end
@@ -243,7 +246,7 @@ function CycleService:_dawn(wasBoss: boolean)
 		if share > 0 then
 			S.PlayerService:AddCoins(player, share)
 		end
-		S.PlayerService:Notify(player, string.format("☀ Dawn! %d/%d titans survived. Herd loot: +%s coins each.", survivors, total, Util.formatNumber(share)))
+		S.PlayerService:Notify(player, string.format("Dawn! %d/%d titans survived. Herd loot: +%s coins each.", survivors, total, Util.formatNumber(share)))
 	end
 
 	if wasBoss then
@@ -256,7 +259,7 @@ function CycleService:_dawn(wasBoss: boolean)
 		end
 		if top then
 			top:SetAttribute("Guardian", true)
-			S.PlayerService:NotifyAll(string.format("👑 %s is the Herd Guardian until the next Storm King!", top.DisplayName))
+			S.PlayerService:NotifyAll(string.format("%s is the Herd Guardian until the next Storm King!", top.DisplayName))
 		end
 		-- Survivors of a boss night get a bonus egg.
 		for player, record in S.TitanService:AllTitans() do

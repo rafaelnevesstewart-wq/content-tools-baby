@@ -29,7 +29,8 @@ Config.Species = {
 		BellyColor = Color3.fromRGB(120, 112, 88),
 		ShellColor = Color3.fromRGB(72, 58, 44),
 		AccentColor = Color3.fromRGB(190, 180, 160),
-		SkinMaterial = Enum.Material.Slate,
+		SkinMaterial = Enum.Material.Leather,
+		ShellMaterial = Enum.Material.Slate,
 	},
 	Mossback = {
 		DisplayName = "Mossback",
@@ -37,7 +38,8 @@ Config.Species = {
 		BellyColor = Color3.fromRGB(110, 100, 82),
 		ShellColor = Color3.fromRGB(52, 78, 40),
 		AccentColor = Color3.fromRGB(160, 60, 70),
-		SkinMaterial = Enum.Material.Rock,
+		SkinMaterial = Enum.Material.Leather,
+		ShellMaterial = Enum.Material.Rock,
 	},
 	Tuskhorn = {
 		DisplayName = "Tuskhorn",
@@ -45,15 +47,17 @@ Config.Species = {
 		BellyColor = Color3.fromRGB(120, 100, 88),
 		ShellColor = Color3.fromRGB(60, 46, 40),
 		AccentColor = Color3.fromRGB(225, 215, 190),
-		SkinMaterial = Enum.Material.Slate,
+		SkinMaterial = Enum.Material.Leather,
+		ShellMaterial = Enum.Material.Slate,
 	},
 	Driftfin = {
 		DisplayName = "Driftfin",
 		BodyColor = Color3.fromRGB(44, 62, 84),
 		BellyColor = Color3.fromRGB(96, 112, 124),
 		ShellColor = Color3.fromRGB(26, 38, 60),
-		AccentColor = Color3.fromRGB(80, 220, 255),
-		SkinMaterial = Enum.Material.Slate,
+		AccentColor = Color3.fromRGB(90, 140, 150),
+		SkinMaterial = Enum.Material.Leather,
+		ShellMaterial = Enum.Material.Slate,
 	},
 }
 Config.SpeciesOrder = { "Shellback", "Mossback", "Tuskhorn", "Driftfin" }

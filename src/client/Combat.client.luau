@@ -15,7 +15,7 @@ local mouse = player:GetMouse()
 local camera = workspace.CurrentCamera
 local state = nil
 
-local FONT = Enum.Font.FredokaOne
+local FONT = Enum.Font.GothamMedium
 local PANEL = Color3.fromRGB(28, 32, 44)
 
 local gui = Instance.new("ScreenGui")
@@ -136,7 +136,7 @@ for _, spell in Config.Spells do
 	level.Font = FONT
 	level.TextScaled = true
 	level.TextColor3 = Color3.fromRGB(200, 200, 200)
-	level.Text = "🔒"
+	level.Text = "Locked"
 	level.Parent = slot
 	local cooldown = Instance.new("Frame")
 	cooldown.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -168,12 +168,12 @@ end)
 -- Travel menu ---------------------------------------------------------------------
 
 local PLACES = {
-	{ Key = "Base", Name = "🏰 Base (Titan's Rest)" },
-	{ Key = "Titan", Name = "🦖 My Titan" },
-	{ Key = "Fern Valley", Name = "🌲 Fern Valley Outpost" },
-	{ Key = "Salt Flats", Name = "🏜 Salt Flats Outpost" },
-	{ Key = "Aurora Tundra", Name = "❄ Aurora Tundra Outpost" },
-	{ Key = "Ember Wastes", Name = "🌋 Ember Wastes Outpost" },
+	{ Key = "Base", Name = "Base (Titan's Rest)" },
+	{ Key = "Titan", Name = "My Titan" },
+	{ Key = "Fern Valley", Name = "Fern Valley Outpost" },
+	{ Key = "Salt Flats", Name = "Salt Flats Outpost" },
+	{ Key = "Aurora Tundra", Name = "Aurora Tundra Outpost" },
+	{ Key = "Ember Wastes", Name = "Ember Wastes Outpost" },
 }
 
 local travelFrame = Instance.new("Frame")
@@ -188,7 +188,7 @@ travelTitle.BackgroundTransparency = 1
 travelTitle.Size = UDim2.new(1, 0, 0, 40)
 travelTitle.Font = FONT
 travelTitle.TextScaled = true
-travelTitle.TextColor3 = Color3.fromRGB(255, 196, 70)
+travelTitle.TextColor3 = Color3.fromRGB(214, 180, 116)
 travelTitle.Text = "Travel"
 travelTitle.Parent = travelFrame
 for i, place in PLACES do
@@ -214,11 +214,11 @@ end
 local travelButton = Instance.new("TextButton")
 travelButton.Size = UDim2.fromOffset(120, 40)
 travelButton.Position = UDim2.new(0, 12, 0, 236)
-travelButton.BackgroundColor3 = Color3.fromRGB(70, 110, 170)
+travelButton.BackgroundColor3 = Color3.fromRGB(58, 78, 104)
 travelButton.Font = FONT
 travelButton.TextScaled = true
 travelButton.TextColor3 = Color3.new(1, 1, 1)
-travelButton.Text = "🗺 Travel"
+travelButton.Text = "Travel"
 corner(travelButton, 12)
 travelButton.Activated:Connect(function()
 	travelFrame.Visible = not travelFrame.Visible
@@ -275,7 +275,7 @@ Remotes.State.OnClientEvent:Connect(function(newState)
 	state = newState
 	for key, slot in spellSlots do
 		local level = state.Spells[key] or 0
-		slot.Level.Text = level > 0 and ("Lv " .. level) or "🔒"
+		slot.Level.Text = level > 0 and ("Lv " .. level) or "Locked"
 		slot.Slot.BackgroundTransparency = level > 0 and 0 or 0.4
 	end
 end)

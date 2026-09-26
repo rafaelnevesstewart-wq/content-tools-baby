@@ -46,7 +46,7 @@ local function ensureQuests(player: Player)
 	end
 	if type(profile.Quests) ~= "table" or type(profile.Quests.List) ~= "table" or os.time() >= (profile.Quests.RefreshAt or 0) then
 		newQuests(profile)
-		S.PlayerService:Notify(player, "📜 New quests are up! Check the quest list on the right.")
+		S.PlayerService:Notify(player, "New quests are up! Check the quest list on the left.")
 		S.PlayerService:MarkDirty(player)
 	end
 	return profile.Quests
@@ -62,7 +62,7 @@ function QuestService:Progress(player: Player, stat: string, amount: number)
 		if quest.Stat == stat and not quest.Claimed and quest.Progress < quest.Goal then
 			quest.Progress = math.min(quest.Goal, quest.Progress + amount)
 			if quest.Progress >= quest.Goal then
-				S.PlayerService:Notify(player, "✅ Quest complete: " .. quest.Text .. ". Claim your reward!")
+				S.PlayerService:Notify(player, "Quest complete: " .. quest.Text .. ". Claim your reward!")
 			end
 			S.PlayerService:MarkDirty(player)
 		end
@@ -77,7 +77,7 @@ function QuestService:Claim(player: Player, index)
 	end
 	quest.Claimed = true
 	S.PlayerService:AddCoins(player, quest.Coins)
-	S.PlayerService:Notify(player, string.format("📜 Quest reward: +%d coins, +%d XP", quest.Coins, quest.XP))
+	S.PlayerService:Notify(player, string.format("Quest reward: +%d coins, +%d XP", quest.Coins, quest.XP))
 	S.PlayerService:AddXP(player, quest.XP)
 end
 
@@ -175,7 +175,7 @@ local function openChest(model: Model, player: Player)
 	coins = math.floor(coins * rng:NextNumber(0.85, 1.25))
 	S.PlayerService:AddCoins(player, coins)
 	local food = S.PlayerService:AddFood(player, rng:NextInteger(2, 5))
-	S.PlayerService:Notify(player, string.format("💰 Treasure! +%d coins, +%d XP%s", coins, Config.Chests.XP, food > 0 and (", +" .. food .. " food") or ""))
+	S.PlayerService:Notify(player, string.format("Treasure! +%d coins, +%d XP%s", coins, Config.Chests.XP, food > 0 and (", +" .. food .. " food") or ""))
 	S.PlayerService:AddXP(player, Config.Chests.XP)
 	QuestService:Progress(player, "Chest", 1)
 

@@ -106,7 +106,7 @@ function StealService:TrySteal(thief: Player, owner: Player, kind: string, id: n
 	S.TitanService:RefreshDeck(owner)
 	PS:MarkDirty(owner)
 	PS:Notify(thief, string.format("You grabbed %s! Get back to your own titan (or Leap) within %ds.", itemLabel(kind, item), Config.Steal.CarryTimeout))
-	PS:Notify(owner, string.format("🚨 %s is stealing your %s! Catch them and Snatch it back!", thief.DisplayName, itemLabel(kind, item)))
+	PS:Notify(owner, string.format("%s is stealing your %s! Catch them and Snatch it back!", thief.DisplayName, itemLabel(kind, item)))
 end
 
 function StealService:ReturnItem(thief: Player, reason: string?)

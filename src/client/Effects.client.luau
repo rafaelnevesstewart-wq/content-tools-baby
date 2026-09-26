@@ -67,7 +67,7 @@ local function damageNumber(position: Vector3, amount: number, crit: boolean)
 	local label = Instance.new("TextLabel")
 	label.BackgroundTransparency = 1
 	label.Size = UDim2.fromScale(1, 1)
-	label.Font = Enum.Font.Bangers
+	label.Font = Enum.Font.GothamBlack
 	label.TextScaled = true
 	label.TextColor3 = crit and Color3.fromRGB(255, 200, 40) or Color3.new(1, 1, 1)
 	label.TextStrokeColor3 = crit and Color3.fromRGB(120, 20, 0) or Color3.fromRGB(40, 0, 0)

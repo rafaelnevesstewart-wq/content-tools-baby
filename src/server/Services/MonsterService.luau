@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Organic = require(script.Parent.Organic)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local MonsterService = {}
@@ -35,9 +36,7 @@ local function part(props, parent: Instance, sphere: boolean?)
 		p[key] = value
 	end
 	if sphere then
-		local mesh = Instance.new("SpecialMesh")
-		mesh.MeshType = Enum.MeshType.Sphere
-		mesh.Parent = p
+		Organic.shape(p, false)
 	end
 	p.Parent = parent
 	return p
@@ -56,7 +55,7 @@ local function buildModel(kind: string, def)
 	local hide = def.Color
 	local dark = hide:Lerp(Color3.new(0, 0, 0), 0.4)
 	local bone = Color3.fromRGB(220, 210, 185)
-	local material = kind == "Golem" and Enum.Material.Rock or Enum.Material.Slate
+	local material = kind == "Golem" and Enum.Material.Rock or Enum.Material.Leather
 	local golem = kind == "Golem"
 
 	part({ Name = "Body", Size = Vector3.new(4, 3.4, 7.5) * k, CFrame = base, Color = hide, Material = material }, model, not golem)
@@ -78,8 +77,8 @@ local function buildModel(kind: string, def)
 		Name = "Mouth",
 		Size = Vector3.new(2.1, 0.7, 2.8) * k,
 		CFrame = headCF * CFrame.new(0, -0.8 * k, -0.6 * k),
-		Color = Color3.fromRGB(70, 5, 5),
-		Material = Enum.Material.SmoothPlastic,
+		Color = Color3.fromRGB(55, 8, 10),
+		Material = Enum.Material.Leather,
 	}, model, true)
 	for i = -2, 2 do
 		part({
@@ -88,7 +87,7 @@ local function buildModel(kind: string, def)
 			Size = Vector3.new(0.25, 0.8, 0.25) * k,
 			CFrame = headCF * CFrame.new(i * 0.4 * k, -0.9 * k, -1.9 * k + math.abs(i) * 0.2 * k) * CFrame.Angles(math.pi, 0, 0),
 			Color = bone,
-			Material = Enum.Material.SmoothPlastic,
+			Material = Enum.Material.Marble,
 		}, model)
 	end
 	for _, side in { -1, 1 } do
@@ -190,7 +189,7 @@ local function healthBar(root: BasePart, def)
 	local name = Instance.new("TextLabel")
 	name.BackgroundTransparency = 1
 	name.Size = UDim2.fromScale(1, 0.55)
-	name.Font = Enum.Font.Creepster
+	name.Font = Enum.Font.Merriweather
 	name.TextScaled = true
 	name.TextColor3 = def.Eye
 	name.TextStrokeTransparency = 0.2

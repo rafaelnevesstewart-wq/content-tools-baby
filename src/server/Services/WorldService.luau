@@ -60,8 +60,8 @@ local function spawnFood()
 		Name = "Fernfruit",
 		Shape = Enum.PartType.Ball,
 		Size = Vector3.one * 2,
-		Color = Color3.fromRGB(255, 120, 150),
-		Material = Enum.Material.SmoothPlastic,
+		Color = Color3.fromRGB(135, 32, 40),
+		Material = Enum.Material.Plastic,
 		CanCollide = false,
 	})
 	placeAhead(part)

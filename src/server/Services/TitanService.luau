@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Organic = require(script.Parent.Organic)
 local Util = require(ReplicatedStorage.Shared.Util)
 
 local TitanService = {}
@@ -252,12 +253,12 @@ local function resolveLook(profile, species, mutation)
 	local look = {
 		Skin = skin,
 		Body = skin.BodyColor or species.BodyColor,
-		BodyMat = skin.BodyMaterial or species.SkinMaterial or Enum.Material.SmoothPlastic,
+		BodyMat = skin.BodyMaterial or species.SkinMaterial or Enum.Material.Leather,
 		Belly = skin.BellyColor or species.BellyColor,
 		Shell = skin.ShellColor or species.ShellColor,
-		ShellMat = skin.ShellMaterial or Enum.Material.SmoothPlastic,
+		ShellMat = skin.ShellMaterial or species.ShellMaterial or Enum.Material.Slate,
 		Accent = skin.AccentColor or species.AccentColor,
-		AccentMat = skin.AccentMaterial or Enum.Material.SmoothPlastic,
+		AccentMat = skin.AccentMaterial or Enum.Material.Slate,
 		Galaxy = skin.Galaxy == true,
 		Rainbow = false,
 	}
@@ -376,15 +377,18 @@ local function build(record, player: Player)
 	local look = resolveLook(profile, species, mutation)
 
 	local function blob(name: string, size: Vector3, color: Color3, material: Enum.Material?, offset: CFrame)
-		local part = attach(root, newPart({ Name = name, Size = size, Color = color, Material = material or Enum.Material.SmoothPlastic }), offset, model)
-		sphereMesh(part)
-		return part
+		local part = attach(root, newPart({ Name = name, Size = size, Color = color, Material = material or Enum.Material.Leather }), offset, model)
+		return Organic.shape(part, true)
 	end
 	local function tagShell(part: BasePart)
-		if look.Rainbow then
-			CollectionService:AddTag(part, "RainbowPart")
-		elseif look.Galaxy then
-			CollectionService:AddTag(part, "GalaxyPart")
+		local tag = look.Rainbow and "RainbowPart" or look.Galaxy and "GalaxyPart" or nil
+		if tag then
+			CollectionService:AddTag(part, tag)
+			for _, lumpPart in part:GetChildren() do
+				if lumpPart:IsA("BasePart") then
+					CollectionService:AddTag(lumpPart, tag)
+				end
+			end
 		end
 	end
 	-- Height of the shell's surface above the root at a given (x, z).
@@ -888,7 +892,7 @@ function TitanService:RefreshDeck(player: Player)
 			Name = "Rider",
 			Size = Vector3.one * 2.6,
 			Color = mutation.Color or def.Color,
-			Material = mutation.Material or Enum.Material.SmoothPlastic,
+			Material = mutation.Material or Enum.Material.Fabric,
 		})
 		sphereMesh(ball)
 		attach(record.Deck, ball, riderPosition(record, index, #visibleRiders), record.Items)
@@ -971,14 +975,14 @@ function TitanService:UpdateBillboard(player: Player)
 	local profile = S.PlayerService:GetProfile(player)
 	local species = (Config.Species[profile.Species] or Config.Species.Shellback).DisplayName
 	local mutation = profile.TitanMutation ~= "Normal" and (profile.TitanMutation .. " ") or ""
-	local crown = player:GetAttribute("Guardian") and "👑 " or ""
+	local crown = player:GetAttribute("Guardian") and "[Guardian] " or ""
 	record.NameLabel.Text = string.format("%s%s's %s%s", crown, player.DisplayName, mutation, species)
 	local info = Config.Stages[profile.Stage].Name
 	if profile.Molts > 0 then
 		info ..= string.format("  •  Molt %d", profile.Molts)
 	end
 	if S.PlayerService:IsLocked(player) then
-		info ..= "  •  🔒 Shell Lock"
+		info ..= "•  Shell Lock"
 	end
 	if record.Exhausted then
 		info ..= "  •  Exhausted"

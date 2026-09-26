@@ -239,8 +239,7 @@ local function buildTool(def)
 		return p
 	end
 
-	local metal = def.Key == "Maul" or def.Key == "Spear" or def.Key == "Reaper"
-	local material = metal and Enum.Material.Neon or Enum.Material.Metal
+	local material = Enum.Material.Metal
 	if def.Key == "Blade" then
 		piece(Vector3.new(0.2, 4, 0.7), CFrame.new(0, 2.7, 0), def.Color, Enum.Material.Metal)
 		piece(Vector3.new(1.6, 0.3, 0.4), CFrame.new(0, 0.75, 0), Color3.fromRGB(110, 90, 50), Enum.Material.Metal)
@@ -262,7 +261,7 @@ local function buildTool(def)
 	elseif def.Key == "Greatsword" then
 		handle.Size = Vector3.new(0.45, 2, 0.45)
 		piece(Vector3.new(0.3, 6, 1.1), CFrame.new(0, 4, 0), def.Color, Enum.Material.Metal)
-		piece(Vector3.new(0.35, 5.6, 0.2), CFrame.new(0, 4, 0), Color3.fromRGB(255, 240, 180), Enum.Material.Neon)
+		piece(Vector3.new(0.35, 5.6, 0.2), CFrame.new(0, 4, 0), Color3.fromRGB(200, 200, 205), Enum.Material.Metal)
 		piece(Vector3.new(2.6, 0.4, 0.5), CFrame.new(0, 1, 0), Color3.fromRGB(120, 90, 30), Enum.Material.Metal)
 	elseif def.Key == "Reaper" then
 		handle.Size = Vector3.new(0.4, 5, 0.4)

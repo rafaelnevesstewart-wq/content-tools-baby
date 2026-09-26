@@ -394,7 +394,7 @@ function PlayerService:AddXP(player: Player, amount: number)
 		S.CombatService:ApplyStats(player)
 		S.CombatService:RefillOnLevelUp(player)
 		Remotes.Ui:FireClient(player, { LevelUp = profile.Level })
-		self:Notify(player, string.format("⭐ LEVEL UP! You are now level %d. More health, power and damage.", profile.Level))
+		self:Notify(player, string.format("LEVEL UP! You are now level %d. More health, power and damage.", profile.Level))
 	end
 	player:SetAttribute("Level", profile.Level)
 	self:MarkDirty(player)

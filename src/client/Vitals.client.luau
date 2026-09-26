@@ -15,9 +15,9 @@ local Util = require(Shared:WaitForChild("Util"))
 local player = Players.LocalPlayer
 local state = nil
 
-local FONT = Enum.Font.FredokaOne
+local FONT = Enum.Font.GothamMedium
 local PANEL = Color3.fromRGB(28, 32, 44)
-local GOLD = Color3.fromRGB(255, 196, 70)
+local GOLD = Color3.fromRGB(214, 180, 116)
 
 local function make(className: string, props, children)
 	local instance = Instance.new(className)
@@ -81,15 +81,15 @@ local function vitalBar(row: number, color: Color3, icon: string)
 	return fill, text
 end
 
-local healthFill, healthText = vitalBar(0, Color3.fromRGB(215, 55, 55), "❤")
-local powerFill, powerText = vitalBar(1, Color3.fromRGB(70, 130, 255), "✦")
-local xpFill, xpText = vitalBar(2, GOLD, "⭐")
+local healthFill, healthText = vitalBar(0, Color3.fromRGB(150, 36, 36), "HP")
+local powerFill, powerText = vitalBar(1, Color3.fromRGB(52, 82, 150), "MP")
+local xpFill, xpText = vitalBar(2, GOLD, "XP")
 
 local strengthLabel = label({
 	Size = UDim2.fromOffset(52, 40),
 	Position = UDim2.new(1, -56, 0.5, -20),
 	TextColor3 = Color3.fromRGB(255, 150, 110),
-	Text = "💪\n100",
+	Text = "STR\n100",
 	Parent = vitals,
 })
 make("UITextSizeConstraint", { MaxTextSize = 16 }).Parent = strengthLabel
@@ -129,7 +129,7 @@ local function levelUpFlash(level: number)
 	local banner = label({
 		Size = UDim2.fromOffset(520, 80),
 		Position = UDim2.new(0.5, -260, 0.28, 0),
-		Font = Enum.Font.Bangers,
+		Font = Enum.Font.GothamBlack,
 		TextColor3 = GOLD,
 		TextStrokeTransparency = 0,
 		TextStrokeColor3 = Color3.fromRGB(80, 40, 0),
@@ -163,13 +163,13 @@ label({
 	Position = UDim2.fromOffset(16, 8),
 	TextColor3 = GOLD,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	Text = "🎒 Inventory",
+	Text = "Inventory",
 	Parent = inventory,
 })
 local closeButton = make("TextButton", {
 	Size = UDim2.fromOffset(36, 36),
 	Position = UDim2.new(1, -46, 0, 10),
-	BackgroundColor3 = Color3.fromRGB(200, 60, 60),
+	BackgroundColor3 = Color3.fromRGB(120, 44, 40),
 	Font = FONT,
 	TextScaled = true,
 	TextColor3 = Color3.new(1, 1, 1),
@@ -235,7 +235,7 @@ local function invRow(title: string, detail: string, buttonText: string?, onClic
 		local b = make("TextButton", {
 			Size = UDim2.fromOffset(84, 32),
 			Position = UDim2.new(1, -92, 0.5, -16),
-			BackgroundColor3 = Color3.fromRGB(70, 140, 220),
+			BackgroundColor3 = Color3.fromRGB(58, 84, 112),
 			Font = FONT,
 			TextScaled = true,
 			TextColor3 = Color3.new(1, 1, 1),
@@ -265,9 +265,9 @@ local function rebuildInventory()
 	invOrder = 0
 
 	invHeader("Fighter")
-	invRow("⭐ Level " .. state.Level, state.XPToNext and string.format("%d / %d XP to next level", state.XP, state.XPToNext) or "Max level!")
-	invRow("💪 Strength " .. state.Strength, "Damage with weapons and spells (100 = normal)")
-	invRow("⚔ Kills", tostring(state.Kills))
+	invRow("Level " .. state.Level, state.XPToNext and string.format("%d / %d XP to next level", state.XP, state.XPToNext) or "Max level!")
+	invRow("Strength " .. state.Strength, "Damage with weapons and spells (100 = normal)")
+	invRow("Kills", tostring(state.Kills))
 
 	invHeader("Weapons")
 	for _, weapon in Config.Weapons do
@@ -305,10 +305,10 @@ local function rebuildInventory()
 	end
 
 	invHeader("Items")
-	invRow("🪙 Coins", Util.formatNumber(state.Coins))
-	invRow("🍓 Food", string.format("%d / %d", state.Food, state.FoodCap))
-	invRow("🥚 Eggs", string.format("%d / %d", state.Eggs, state.EggSlots))
-	invRow("🧍 Riders", string.format("%d / %d", state.Riders, state.RiderSlots))
+	invRow("Coins", Util.formatNumber(state.Coins))
+	invRow("Food", string.format("%d / %d", state.Food, state.FoodCap))
+	invRow("Eggs", string.format("%d / %d", state.Eggs, state.EggSlots))
+	invRow("Riders", string.format("%d / %d", state.Riders, state.RiderSlots))
 
 	invHeader("Upgrades")
 	for _, upgrade in Config.Upgrades do
@@ -324,11 +324,11 @@ end
 local invButton = make("TextButton", {
 	Size = UDim2.fromOffset(120, 40),
 	Position = UDim2.new(0, 140, 0, 236),
-	BackgroundColor3 = Color3.fromRGB(150, 100, 60),
+	BackgroundColor3 = Color3.fromRGB(104, 78, 52),
 	Font = FONT,
 	TextScaled = true,
 	TextColor3 = Color3.new(1, 1, 1),
-	Text = "🎒 Items (I)",
+	Text = "Items (I)",
 }, { corner(12), make("UITextSizeConstraint", { MaxTextSize = 20 }) })
 invButton.Activated:Connect(toggleInventory)
 invButton.Parent = gui
@@ -353,7 +353,7 @@ local questTitle = label({
 	Position = UDim2.fromOffset(8, 4),
 	TextXAlignment = Enum.TextXAlignment.Left,
 	TextColor3 = GOLD,
-	Text = "📜 Quests",
+	Text = "Quests",
 	Parent = questPanel,
 })
 make("UITextSizeConstraint", { MaxTextSize = 18 }).Parent = questTitle
@@ -383,7 +383,7 @@ for i = 1, 3 do
 	local claim = make("TextButton", {
 		Size = UDim2.fromOffset(62, 32),
 		Position = UDim2.new(1, -62, 0, 8),
-		BackgroundColor3 = Color3.fromRGB(80, 190, 90),
+		BackgroundColor3 = Color3.fromRGB(66, 104, 66),
 		Font = FONT,
 		TextScaled = true,
 		TextColor3 = Color3.new(1, 1, 1),
@@ -403,13 +403,13 @@ local function refreshQuests()
 	if not quests then
 		return
 	end
-	questTitle.Text = string.format("📜 Quests  •  new in %s", Util.formatTime(quests.RefreshIn))
+	questTitle.Text = string.format("Quests • new in %s", Util.formatTime(quests.RefreshIn))
 	for i, row in questRows do
 		local quest = quests.List[i]
 		if quest then
-			row.Text.Text = (quest.Claimed and "✔ " or "") .. quest.Text
+			row.Text.Text = (quest.Claimed and "Done: " or "") .. quest.Text
 			row.Text.TextColor3 = quest.Claimed and Color3.fromRGB(140, 150, 160) or Color3.new(1, 1, 1)
-			row.Reward.Text = string.format("%d/%d  •  🪙%s  ⭐%d XP", quest.Progress, quest.Goal, Util.formatNumber(quest.Coins), quest.XP)
+			row.Reward.Text = string.format("%d/%d • %sg, %d XP", quest.Progress, quest.Goal, Util.formatNumber(quest.Coins), quest.XP)
 			row.Fill.Size = UDim2.fromScale(math.clamp(quest.Progress / quest.Goal, 0, 1), 1)
 			row.Claim.Visible = not quest.Claimed and quest.Progress >= quest.Goal
 		end
@@ -439,7 +439,7 @@ deathBack.Parent = deathGui
 local deathTitle = label({
 	Size = UDim2.new(0.8, 0, 0, 110),
 	Position = UDim2.new(0.1, 0, 0.32, 0),
-	Font = Enum.Font.Creepster,
+	Font = Enum.Font.Merriweather,
 	TextColor3 = Color3.fromRGB(220, 30, 30),
 	TextStrokeTransparency = 0,
 	Text = "YOU WERE SLAIN",
@@ -492,7 +492,7 @@ end)
 Remotes.State.OnClientEvent:Connect(function(newState)
 	state = newState
 	levelBadge.Text = "Lv " .. (state.Level or 1)
-	strengthLabel.Text = "💪\n" .. (state.Strength or 100)
+	strengthLabel.Text = "STR\n" .. (state.Strength or 100)
 	if state.XPToNext then
 		setBar(xpFill, xpText, state.XP, state.XPToNext, " XP")
 	else

@@ -14,9 +14,9 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local player = Players.LocalPlayer
 local state = nil
 
-local FONT = Enum.Font.FredokaOne
+local FONT = Enum.Font.GothamMedium
 local PANEL = Color3.fromRGB(28, 32, 44)
-local ACCENT = Color3.fromRGB(255, 196, 70)
+local ACCENT = Color3.fromRGB(214, 180, 116)
 
 local function make(className: string, props, children)
 	local instance = Instance.new(className)
@@ -79,8 +79,8 @@ end
 local titanLine = statLine(1, ACCENT)
 local stageLine = statLine(2)
 local growthFill = bar(3, Color3.fromRGB(110, 220, 110))
-local coinsLine = statLine(4, Color3.fromRGB(255, 225, 110))
-local foodLine = statLine(5, Color3.fromRGB(255, 150, 170))
+local coinsLine = statLine(4, Color3.fromRGB(226, 200, 140))
+local foodLine = statLine(5, Color3.fromRGB(214, 150, 150))
 local slotsLine = statLine(6)
 local healthFill = bar(7, Color3.fromRGB(230, 80, 80))
 local perksLine = statLine(8, Color3.fromRGB(170, 210, 255))
@@ -173,22 +173,22 @@ end
 
 local shopFrame -- forward declaration
 
-local feedButton = button("Feed", 1, Color3.fromRGB(80, 170, 90), function()
+local feedButton = button("Feed", 1, Color3.fromRGB(70, 86, 60), function()
 	Remotes.Action:FireServer("Feed")
 end)
-local foodButton = button("Buy Food", 2, Color3.fromRGB(200, 140, 60), function()
+local foodButton = button("Buy Food", 2, Color3.fromRGB(112, 84, 50), function()
 	Remotes.Action:FireServer("BuyFood")
 end)
-local moltButton = button("Molt!", 3, Color3.fromRGB(170, 90, 220), function()
+local moltButton = button("Molt!", 3, Color3.fromRGB(86, 64, 100), function()
 	Remotes.Action:FireServer("Molt")
 end)
-local roarButton = button("Titan Roar", 4, Color3.fromRGB(220, 70, 70), function()
+local roarButton = button("Titan Roar", 4, Color3.fromRGB(122, 46, 42), function()
 	Remotes.Action:FireServer("Roar")
 end)
-local whistleButton = button("Whistle", 5, Color3.fromRGB(70, 150, 220), function()
+local whistleButton = button("Whistle", 5, Color3.fromRGB(54, 74, 98), function()
 	Remotes.Action:FireServer("Whistle")
 end)
-button("Shop", 6, Color3.fromRGB(240, 180, 40), function()
+button("Shop", 6, Color3.fromRGB(140, 110, 56), function()
 	shopFrame.Visible = not shopFrame.Visible
 end)
 
@@ -325,7 +325,7 @@ local function shopRow(kind: string, item)
 	local priceButton = make("TextButton", {
 		Size = UDim2.fromOffset(110, 44),
 		Position = UDim2.new(1, -120, 0.5, -22),
-		BackgroundColor3 = Color3.fromRGB(80, 190, 90),
+		BackgroundColor3 = Color3.fromRGB(66, 104, 66),
 		Font = FONT,
 		TextScaled = true,
 		TextColor3 = Color3.new(1, 1, 1),
@@ -374,7 +374,7 @@ local function skinRow(skin)
 	local skinButton = make("TextButton", {
 		Size = UDim2.fromOffset(110, 44),
 		Position = UDim2.new(1, -120, 0.5, -22),
-		BackgroundColor3 = Color3.fromRGB(80, 190, 90),
+		BackgroundColor3 = Color3.fromRGB(66, 104, 66),
 		Font = FONT,
 		TextScaled = true,
 		TextColor3 = Color3.new(1, 1, 1),
@@ -420,7 +420,7 @@ local function actionRow(title: string, description: string)
 	local actionButton = make("TextButton", {
 		Size = UDim2.fromOffset(120, 44),
 		Position = UDim2.new(1, -130, 0.5, -22),
-		BackgroundColor3 = Color3.fromRGB(80, 190, 90),
+		BackgroundColor3 = Color3.fromRGB(66, 104, 66),
 		Font = FONT,
 		TextScaled = true,
 		TextColor3 = Color3.new(1, 1, 1),
@@ -506,8 +506,8 @@ local function refresh()
 		stageLine.Text = state.StageName .. "  (fully grown!)"
 		growthFill.Size = UDim2.fromScale(1, 1)
 	end
-	coinsLine.Text = string.format("🪙 %s  (+%s/s)", Util.formatNumber(state.Coins), Util.formatNumber(state.Income))
-	foodLine.Text = string.format("🍓 Food %d / %d", state.Food, state.FoodCap)
+	coinsLine.Text = string.format("Gold %s (+%s/s)", Util.formatNumber(state.Coins), Util.formatNumber(state.Income))
+	foodLine.Text = string.format("Food %d / %d", state.Food, state.FoodCap)
 	slotsLine.Text = string.format("Riders %d/%d   Eggs %d/%d", state.Riders, state.RiderSlots, state.Eggs, state.EggSlots)
 	healthFill.Size = UDim2.fromScale(math.clamp(state.Health / math.max(state.MaxHealth, 1), 0, 1), 1)
 
@@ -528,13 +528,13 @@ local function refresh()
 		table.insert(perks, "Snack " .. Util.formatTime(state.GrowthSnackLeft))
 	end
 	if state.LockedFor > 0 then
-		table.insert(perks, "🔒 " .. math.ceil(state.LockedFor) .. "s")
+		table.insert(perks, "Shell Lock " .. math.ceil(state.LockedFor) .. "s")
 	end
 	perksLine.Text = #perks > 0 and table.concat(perks, " • ") or "Night streak: " .. state.NightsStreak
 
 	feedButton.Text = string.format("Feed (%d)", state.Food)
 	foodButton.Visible = state.GrowthToNext ~= nil
-	foodButton.Text = "Buy Food 🪙" .. Util.formatNumber(state.FoodCrateCost)
+	foodButton.Text = "Buy Food " .. Util.formatNumber(state.FoodCrateCost) .. "g"
 	moltButton.Visible = state.CanMolt
 	roarButton.Visible = state.CanRoar and ReplicatedStorage:GetAttribute("Phase") == "Night"
 	whistleButton.Visible = table.find(state.Passes, "TitanWhistle") ~= nil
@@ -546,14 +546,14 @@ local function refresh()
 			entry.Button.Text = "Owned"
 			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
 		elseif weapon.Currency == "Coins" and weapon.MinLevel and (state.Level or 1) < weapon.MinLevel then
-			entry.Button.Text = "🔒 Level " .. weapon.MinLevel
+			entry.Button.Text = "Level " .. weapon.MinLevel
 			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
 		elseif weapon.Currency == "Coins" then
-			entry.Button.Text = "🪙 " .. Util.formatNumber(weapon.Price)
-			entry.Button.BackgroundColor3 = Color3.fromRGB(210, 160, 50)
+			entry.Button.Text = Util.formatNumber(weapon.Price) .. "g"
+			entry.Button.BackgroundColor3 = Color3.fromRGB(146, 116, 62)
 		else
 			entry.Button.Text = "R$ " .. weapon.Price
-			entry.Button.BackgroundColor3 = Color3.fromRGB(80, 190, 90)
+			entry.Button.BackgroundColor3 = Color3.fromRGB(66, 104, 66)
 		end
 	end
 	for key, entry in spellRows do
@@ -564,8 +564,8 @@ local function refresh()
 			entry.Button.Text = "Max level"
 			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
 		else
-			entry.Button.Text = (level == 0 and "Unlock 🪙" or "Upgrade 🪙") .. Util.formatNumber(cost)
-			entry.Button.BackgroundColor3 = state.Coins >= cost and Color3.fromRGB(210, 160, 50) or Color3.fromRGB(120, 100, 60)
+			entry.Button.Text = (level == 0 and "Unlock " or "Upgrade ") .. Util.formatNumber(cost) .. "g"
+			entry.Button.BackgroundColor3 = state.Coins >= cost and Color3.fromRGB(146, 116, 62) or Color3.fromRGB(96, 84, 62)
 		end
 	end
 	for key, entry in upgradeRows do
@@ -576,8 +576,8 @@ local function refresh()
 			entry.Button.Text = "Max level"
 			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
 		else
-			entry.Button.Text = "🪙 " .. Util.formatNumber(cost)
-			entry.Button.BackgroundColor3 = state.Coins >= cost and Color3.fromRGB(210, 160, 50) or Color3.fromRGB(120, 100, 60)
+			entry.Button.Text = Util.formatNumber(cost) .. "g"
+			entry.Button.BackgroundColor3 = state.Coins >= cost and Color3.fromRGB(146, 116, 62) or Color3.fromRGB(96, 84, 62)
 		end
 	end
 
@@ -588,19 +588,19 @@ local function refresh()
 			skinButton.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
 		elseif skinOwned(key) then
 			skinButton.Text = "Equip"
-			skinButton.BackgroundColor3 = Color3.fromRGB(70, 140, 220)
+			skinButton.BackgroundColor3 = Color3.fromRGB(58, 84, 112)
 		elseif skin.Currency == "Coins" then
-			skinButton.Text = "🪙 " .. Util.formatNumber(skin.Price)
-			skinButton.BackgroundColor3 = Color3.fromRGB(210, 160, 50)
+			skinButton.Text = Util.formatNumber(skin.Price) .. "g"
+			skinButton.BackgroundColor3 = Color3.fromRGB(146, 116, 62)
 		else
 			skinButton.Text = "R$ " .. skin.Price
-			skinButton.BackgroundColor3 = Color3.fromRGB(80, 190, 90)
+			skinButton.BackgroundColor3 = Color3.fromRGB(66, 104, 66)
 		end
 	end
 	for key, entry in passButtons do
 		local owned = table.find(state.Passes, key) ~= nil
 		entry.Button.Text = owned and "Owned" or ("R$ " .. entry.Item.Price)
-		entry.Button.BackgroundColor3 = owned and Color3.fromRGB(90, 95, 110) or Color3.fromRGB(80, 190, 90)
+		entry.Button.BackgroundColor3 = owned and Color3.fromRGB(90, 95, 110) or Color3.fromRGB(66, 104, 66)
 	end
 end
 
@@ -625,11 +625,11 @@ RunService.RenderStepped:Connect(function()
 	local storm = (ReplicatedStorage:GetAttribute("StormUntil") or 0) > workspace:GetServerTimeNow()
 	if phase == "Night" then
 		local boss = ReplicatedStorage:GetAttribute("BossNight") and " • Storm King!" or ""
-		phaseLabel.Text = string.format("🌙 Nightfall %d%s • %s", ReplicatedStorage:GetAttribute("NightNumber") or 0, boss, Util.formatTime(left))
+		phaseLabel.Text = string.format("Nightfall %d%s • %s", ReplicatedStorage:GetAttribute("NightNumber") or 0, boss, Util.formatTime(left))
 		phaseLabel.TextColor3 = Color3.fromRGB(190, 190, 255)
 	else
 		local biome = ReplicatedStorage:GetAttribute("Biome") or "Fern Valley"
-		phaseLabel.Text = string.format("%s Migration • %s • %s", storm and "⚡" or "☀", biome, Util.formatTime(left))
+		phaseLabel.Text = string.format("%sMigration • %s • %s", storm and "Storm • " or "", biome, Util.formatTime(left))
 		phaseLabel.TextColor3 = storm and Color3.fromRGB(220, 180, 255) or Color3.fromRGB(255, 235, 160)
 	end
 	roarButton.Visible = state ~= nil and state.CanRoar and phase == "Night"
