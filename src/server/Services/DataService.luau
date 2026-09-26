@@ -34,6 +34,10 @@ local function defaultProfile()
 		PurchaseIds = {},
 		OwnedSkins = { "Classic" },
 		EquippedSkin = "Classic",
+		Weapons = {},
+		Spells = {},
+		Upgrades = { Strength = 0, Armor = 0, Swiftness = 0, AutoPicker = 0 },
+		Kills = 0,
 	}
 end
 

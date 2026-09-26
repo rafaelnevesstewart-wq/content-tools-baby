@@ -29,6 +29,7 @@ end
 local laneHalf = math.ceil(Config.Herd.MaxLanes / 2) * Config.Herd.LaneSpacing
 MapBuilder.BandInner = Config.Herd.PathRadius - laneHalf - 40
 MapBuilder.BandOuter = Config.Herd.PathRadius + laneHalf + 40
+MapBuilder.TravelPoints = {} -- filled in by build(): place name -> Vector3
 
 local function part(className: string, props, parent: Instance)
 	local p = Instance.new(className)
@@ -258,16 +259,100 @@ local function tree(position: Vector3, biomeIndex: number, parent: Instance)
 			Color = biome.Leaf,
 			Material = Enum.Material.Neon,
 		}, parent)
+	elseif rng:NextNumber() < 0.3 then
+		-- Dead tree: bare, twisted branches.
+		for _ = 1, 4 do
+			local branchLength = rng:NextNumber(6, 12)
+			local yaw = rng:NextNumber(0, math.pi * 2)
+			part("Part", {
+				Name = "Branch",
+				Size = Vector3.new(1.2, branchLength, 1.2),
+				CFrame = CFrame.new(position + Vector3.new(0, height * rng:NextNumber(0.6, 0.95), 0))
+					* CFrame.Angles(0, yaw, rng:NextNumber(0.6, 1.1))
+					* CFrame.new(0, branchLength / 2, 0),
+				Color = Color3.fromRGB(70, 55, 45),
+				Material = Enum.Material.Wood,
+			}, parent)
+		end
 	else
-		part("Part", {
-			Name = "Crown",
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.one * rng:NextNumber(14, 24),
-			Position = position + Vector3.new(0, height, 0),
-			Color = biome.Leaf:Lerp(Color3.fromRGB(120, 200, 80), rng:NextNumber(0, 0.4)),
-			Material = Enum.Material.Grass,
-		}, parent)
+		-- Leafy canopy made of several overlapping clumps.
+		for _ = 1, 4 do
+			local size = rng:NextNumber(10, 18)
+			part("Part", {
+				Name = "Canopy",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.one * size,
+				Position = position + Vector3.new(rng:NextNumber(-5, 5), height + rng:NextNumber(-3, 4), rng:NextNumber(-5, 5)),
+				Color = biome.Leaf:Lerp(Color3.fromRGB(30, 50, 25), rng:NextNumber(0.2, 0.6)),
+				Material = Enum.Material.LeafyGrass,
+			}, parent)
+		end
 	end
+end
+
+local function torch(position: Vector3, parent: Instance)
+	part("Part", {
+		Name = "TorchPost",
+		Size = Vector3.new(0.8, 8, 0.8),
+		Position = position + Vector3.new(0, 4, 0),
+		Color = Color3.fromRGB(60, 45, 35),
+		Material = Enum.Material.Wood,
+	}, parent)
+	local bowl = part("Part", {
+		Name = "TorchBowl",
+		Size = Vector3.new(2, 1, 2),
+		Position = position + Vector3.new(0, 8.5, 0),
+		Color = Color3.fromRGB(50, 50, 55),
+		Material = Enum.Material.Metal,
+	}, parent)
+	local fire = Instance.new("Fire")
+	fire.Size = 4
+	fire.Heat = 8
+	fire.Parent = bowl
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 150, 60)
+	light.Range = 30
+	light.Brightness = 1.5
+	light.Shadows = true
+	light.Parent = bowl
+end
+
+-- A base building in town: walking up to it opens that shop tab.
+local function baseBuilding(cf: CFrame, title: string, tab: string, color: Color3, parent: Instance)
+	local model = house(cf, Vector3.new(24, 14, 16), Color3.fromRGB(90, 80, 70), color, parent, Enum.Material.Cobblestone)
+	model.Name = title
+	local sign = part("Part", {
+		Name = "Sign",
+		Size = Vector3.new(12, 3, 0.5),
+		CFrame = cf * CFrame.new(0, 10.5, -8.4),
+		Color = Color3.fromRGB(60, 40, 30),
+		Material = Enum.Material.Wood,
+	}, model)
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.LightInfluence = 0
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 40
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.Fantasy
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(255, 220, 150)
+	label.Text = title
+	label.Parent = gui
+	gui.Parent = sign
+	local door = model:FindFirstChild("Door")
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Enter"
+	prompt.ObjectText = title
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = 12
+	prompt.RequiresLineOfSight = false
+	prompt:SetAttribute("OpenTab", tab)
+	prompt.Parent = door
+	torch((cf * CFrame.new(-7, 0, -11)).Position, model)
+	torch((cf * CFrame.new(7, 0, -11)).Position, model)
 end
 
 local function boulder(position: Vector3, biomeIndex: number, parent: Instance)
@@ -330,6 +415,20 @@ local function buildTerrain()
 		local biomeIndex = MapBuilder.biomeIndexAt(a)
 		terrain:FillBall(polar(a, r, -30), rng:NextNumber(50, 90), MapBuilder.Biomes[biomeIndex].Terrain)
 	end
+	-- Patches of mud, rock, sand and ice so the ground isn't one flat colour.
+	local patchMaterials = {
+		{ Enum.Material.Mud, Enum.Material.LeafyGrass, Enum.Material.Ground },
+		{ Enum.Material.Sand, Enum.Material.Sandstone, Enum.Material.Ground },
+		{ Enum.Material.Glacier, Enum.Material.Ice, Enum.Material.Rock },
+		{ Enum.Material.Ground, Enum.Material.Rock, Enum.Material.CrackedLava },
+	}
+	for _ = 1, 140 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(260, 1900)
+		local options = patchMaterials[MapBuilder.biomeIndexAt(a)]
+		terrain:FillCylinder(CFrame.new(polar(a, r, -1)), 2, rng:NextNumber(15, 60), options[rng:NextInteger(1, #options)])
+	end
+
 	-- Lakes in Fern Valley and a frozen one in the Tundra.
 	terrain:FillCylinder(CFrame.new(polar(0.55, MapBuilder.BandOuter + 120, -3)), 6, 70, Enum.Material.Water)
 	terrain:FillCylinder(CFrame.new(polar(1.1, MapBuilder.BandOuter + 140, -3)), 6, 50, Enum.Material.Water)
@@ -409,8 +508,8 @@ local function buildTown(parent: Instance)
 	)
 
 	-- Houses in a ring facing the plaza.
-	local wallColors = { Color3.fromRGB(235, 220, 190), Color3.fromRGB(200, 150, 110), Color3.fromRGB(180, 200, 220), Color3.fromRGB(230, 190, 190) }
-	local roofColors = { Color3.fromRGB(170, 70, 60), Color3.fromRGB(70, 90, 140), Color3.fromRGB(80, 120, 70), Color3.fromRGB(120, 80, 60) }
+	local wallColors = { Color3.fromRGB(120, 105, 90), Color3.fromRGB(100, 80, 65), Color3.fromRGB(95, 95, 95), Color3.fromRGB(110, 90, 80) }
+	local roofColors = { Color3.fromRGB(70, 40, 35), Color3.fromRGB(45, 50, 60), Color3.fromRGB(55, 60, 45), Color3.fromRGB(60, 45, 40) }
 	for i = 0, 9 do
 		local a = i / 10 * math.pi * 2 + 0.2
 		local position = polar(a, rng:NextNumber(150, 190))
@@ -424,6 +523,15 @@ local function buildTown(parent: Instance)
 		stall(facingCenter(polar(a, 85)), awnings[i % 4 + 1], town)
 	end
 	tower(CFrame.new(polar(math.pi * 1.25, 115)), 70, town)
+
+	-- The base: an armory, a spell shrine and a forge for upgrades.
+	baseBuilding(facingCenter(polar(0.45, 118)), "Armory", "Weapons", Color3.fromRGB(110, 40, 35), town)
+	baseBuilding(facingCenter(polar(2.55, 118)), "Spell Shrine", "Spells", Color3.fromRGB(60, 50, 110), town)
+	baseBuilding(facingCenter(polar(4.95, 118)), "Forge", "Upgrades", Color3.fromRGB(90, 60, 30), town)
+	MapBuilder.TravelPoints.Base = polar(0, 55, 2)
+	for i = 0, 7 do
+		torch(polar(i / 8 * math.pi * 2 + 0.2, 68), town)
+	end
 
 	-- Welcome arches where the town meets the trail.
 	for i = 0, 3 do
@@ -439,6 +547,7 @@ local function buildOutposts(parent: Instance)
 		local folder = Instance.new("Model")
 		folder.Name = MapBuilder.Biomes[index].Name .. " Outpost"
 		local mid = (index - 0.5) * math.pi / 2
+		MapBuilder.TravelPoints[MapBuilder.Biomes[index].Name] = polar(mid - 0.12, r, 2)
 		if index == 1 then
 			-- Wooden cabins and a windmill.
 			for i = -1, 1 do

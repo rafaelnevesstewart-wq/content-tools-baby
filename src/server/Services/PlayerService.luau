@@ -84,6 +84,7 @@ function PlayerService:_onAdded(player: Player)
 		NightDamage = 0,
 		BossDamage = 0,
 		LastAction = 0,
+		LastTravel = 0,
 	}
 	sessions[player] = session
 
@@ -95,6 +96,9 @@ function PlayerService:_onAdded(player: Player)
 	local stage = Instance.new("StringValue")
 	stage.Name = "Stage"
 	stage.Parent = leaderstats
+	local kills = Instance.new("IntValue")
+	kills.Name = "Kills"
+	kills.Parent = leaderstats
 	leaderstats.Parent = player
 
 	-- Growth while away.
@@ -122,7 +126,7 @@ function PlayerService:_onCharacter(player: Player, character: Model)
 	character:WaitForChild("HumanoidRootPart", 10)
 	task.wait(0.1)
 	S.TitanService:PlaceOnDeck(player)
-	S.CycleService:GiveSling(player)
+	S.CombatService:OnCharacter(player, character)
 end
 
 function PlayerService:_onRemoving(player: Player)
@@ -496,6 +500,121 @@ function PlayerService:OnPassesChanged(player: Player)
 	self:Notify(player, "Pass unlocked. Thank you!")
 end
 
+-- Weapons, spells and upgrades -------------------------------------------------
+
+function PlayerService:GrantWeapon(player: Player, key: string): boolean
+	local profile = self:GetProfile(player)
+	local def = Util.find(Config.Weapons, "Key", key)
+	if not profile or not def then
+		return false
+	end
+	if not table.find(profile.Weapons, key) then
+		table.insert(profile.Weapons, key)
+		self:Notify(player, string.format("New weapon: %s! Check your backpack.", def.Name))
+	end
+	S.CombatService:GiveWeapons(player)
+	self:MarkDirty(player)
+	return true
+end
+
+function PlayerService:_buyWeapon(player: Player, key: string)
+	local profile = self:GetProfile(player)
+	local def = Util.find(Config.Weapons, "Key", key)
+	if not def or def.Currency ~= "Coins" or table.find(profile.Weapons, key) then
+		return
+	end
+	if profile.Coins < def.Price then
+		self:Notify(player, string.format("You need %s coins for the %s.", Util.formatNumber(def.Price), def.Name))
+		return
+	end
+	self:AddCoins(player, -def.Price)
+	self:GrantWeapon(player, key)
+end
+
+function PlayerService:SpellCost(player: Player, key: string): number?
+	local def = Util.find(Config.Spells, "Key", key)
+	local level = self:GetProfile(player).Spells[key] or 0
+	if not def or level >= Config.SpellMaxLevel then
+		return nil
+	end
+	if level == 0 then
+		return def.UnlockCost
+	end
+	return Config.SpellUpgradeCost * level * level
+end
+
+function PlayerService:_buySpell(player: Player, key: string)
+	local profile = self:GetProfile(player)
+	local cost = self:SpellCost(player, key)
+	local def = Util.find(Config.Spells, "Key", key)
+	if not cost or not def then
+		return
+	end
+	if profile.Coins < cost then
+		self:Notify(player, string.format("You need %s coins.", Util.formatNumber(cost)))
+		return
+	end
+	self:AddCoins(player, -cost)
+	profile.Spells[key] = (profile.Spells[key] or 0) + 1
+	self:Notify(player, string.format("%s is now level %d! Press %s to cast.", def.Name, profile.Spells[key], def.Hotkey))
+	self:MarkDirty(player)
+end
+
+function PlayerService:UpgradeCost(player: Player, key: string): number?
+	local def = Util.find(Config.Upgrades, "Key", key)
+	local level = self:GetProfile(player).Upgrades[key] or 0
+	if not def or level >= def.MaxLevel then
+		return nil
+	end
+	return math.floor(def.BaseCost * def.Growth ^ level)
+end
+
+function PlayerService:_buyUpgrade(player: Player, key: string)
+	local profile = self:GetProfile(player)
+	local cost = self:UpgradeCost(player, key)
+	local def = Util.find(Config.Upgrades, "Key", key)
+	if not cost or not def then
+		return
+	end
+	if profile.Coins < cost then
+		self:Notify(player, string.format("You need %s coins.", Util.formatNumber(cost)))
+		return
+	end
+	self:AddCoins(player, -cost)
+	profile.Upgrades[key] = (profile.Upgrades[key] or 0) + 1
+	S.CombatService:ApplyStats(player)
+	self:Notify(player, string.format("%s upgraded to level %d!", def.Name, profile.Upgrades[key]))
+	self:MarkDirty(player)
+end
+
+function PlayerService:_travel(player: Player, place: string)
+	local session = sessions[player]
+	if os.clock() - session.LastTravel < 8 then
+		self:Notify(player, string.format("Travel is recharging (%ds).", math.ceil(8 - (os.clock() - session.LastTravel))))
+		return
+	end
+	if S.TitanService:IsDriving(player) then
+		self:Notify(player, "Get off the saddle first.")
+		return
+	end
+	local character = player.Character
+	if not character then
+		return
+	end
+	if place == "Titan" then
+		S.StealService:DropCarried(player, "travelled away")
+		S.TitanService:PlaceOnDeck(player)
+	else
+		local point = S.WorldService:TravelPoint(place)
+		if not point then
+			return
+		end
+		S.StealService:DropCarried(player, "travelled away")
+		character:PivotTo(CFrame.new(point + Vector3.new(0, 4, 0)))
+	end
+	session.LastTravel = os.clock()
+end
+
 -- Skins ---------------------------------------------------------------------
 
 function PlayerService:OwnsSkin(player: Player, key: string): boolean
@@ -576,6 +695,19 @@ function PlayerService:_onAction(player: Player, action, arg)
 	if not session or type(action) ~= "string" then
 		return
 	end
+	-- Combat and driving input have their own cooldowns and arrive often.
+	if action == "Attack" then
+		S.CombatService:Attack(player, arg)
+		return
+	elseif action == "Cast" then
+		S.CombatService:Cast(player, arg)
+		return
+	elseif action == "Drive" then
+		if type(arg) == "table" then
+			S.TitanService:SetDriveInput(player, arg.Throttle, arg.Steer)
+		end
+		return
+	end
 	if os.clock() - session.LastAction < 0.15 then
 		return
 	end
@@ -613,6 +745,14 @@ function PlayerService:_onAction(player: Player, action, arg)
 		else
 			self:Notify(player, "Titan Whistle is a game pass.")
 		end
+	elseif action == "BuyWeapon" and type(arg) == "string" then
+		self:_buyWeapon(player, arg)
+	elseif action == "BuySpell" and type(arg) == "string" then
+		self:_buySpell(player, arg)
+	elseif action == "BuyUpgrade" and type(arg) == "string" then
+		self:_buyUpgrade(player, arg)
+	elseif action == "Travel" and type(arg) == "string" then
+		self:_travel(player, arg)
 	elseif action == "BuySkin" and type(arg) == "string" then
 		self:_buySkinWithCoins(player, arg)
 	elseif action == "EquipSkin" and type(arg) == "string" then
@@ -681,6 +821,7 @@ function PlayerService:_tick(player: Player, session, dt: number)
 	if leaderstats then
 		leaderstats.Coins.Value = math.floor(profile.Coins)
 		leaderstats.Stage.Value = Config.Stages[profile.Stage].Name
+		leaderstats.Kills.Value = profile.Kills
 	end
 	session.Dirty = true
 	self:_flush(player, session)
@@ -709,6 +850,14 @@ function PlayerService:_updateHerdBonds()
 		end
 		session.HerdBond = bonded
 	end
+end
+
+function PlayerService:_costTable(player: Player, list, costFn)
+	local costs = {}
+	for _, def in list do
+		costs[def.Key] = costFn(self, player, def.Key) or -1
+	end
+	return costs
 end
 
 function PlayerService:_flush(player: Player, session)
@@ -749,6 +898,13 @@ function PlayerService:_flush(player: Player, session)
 		NightsStreak = profile.NightsSurvivedStreak,
 		OwnedSkins = profile.OwnedSkins,
 		EquippedSkin = profile.EquippedSkin,
+		Weapons = profile.Weapons,
+		Spells = profile.Spells,
+		Upgrades = profile.Upgrades,
+		Kills = profile.Kills,
+		Driving = S.TitanService:IsDriving(player),
+		SpellCosts = self:_costTable(player, Config.Spells, self.SpellCost),
+		UpgradeCosts = self:_costTable(player, Config.Upgrades, self.UpgradeCost),
 	})
 end
 

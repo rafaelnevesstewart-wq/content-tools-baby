@@ -8,7 +8,7 @@ This repo holds the first playable build: one full day and night loop with every
 
 | System | Where |
 |---|---|
-| Titans that grow in 6 stages (Hatchling to Ancient) and physically carry players on their backs. Each species has its own look (spikes, moss, tusks and trunk, fins), plus big eyes, feet, a tail, deck lanterns and a flag | `src/server/Services/TitanService.luau` |
+| Titans that grow in 6 stages (Hatchling to Ancient) and physically carry players on their backs. Dark stone skin, glowing slit eyes, horned brows, jaws with teeth, steaming nostrils, claws, scars and a spiked tail, plus species features (ridge spikes, thorny moss, tusks) | `src/server/Services/TitanService.luau` |
 | Ladders on both sides of every titan, with a plank to the deck and a **Climb** button at the bottom | `TitanService` |
 | 9 titan skins: 2 bought with coins, 6 with Robux (Candy Pop to Golden King) | `Config.Skins`, `PlayerService`, shop screen |
 | Terrain map: mountains, foothills, lakes, lava pools, the town of Titan's Rest in the middle and an outpost in each biome | `src/server/Services/MapBuilder.luau` |
@@ -16,7 +16,14 @@ This repo holds the first playable build: one full day and night loop with every
 | Foraging food, digging up eggs, taming wild Riders | `WorldService` |
 | Coins per second from Riders, mutations (Golden to Void), rarities, hatching | `PlayerService` |
 | Molt (rebirth): permanent +15% coins, +1 Rider slot and a new mutation roll | `PlayerService` |
-| Nightfall: beasts attack every titan, Pebble Sling, Titan Roar, a Storm King boss every 5th night, shared dawn loot | `CycleService` |
+| Monsters: Gloomhounds, Thornbacks and Golems roam ahead of the herd by day and hunt in waves at Nightfall, with a Storm King boss every 5th night. Kills drop coins and food | `src/server/Services/MonsterService.luau`, `CycleService` |
+| Weapons: Blade and Sling free, Crossbow, Cleaver and Spear for coins, Maul (shockwave) and Reaper (lifesteal) for Robux | `Config.Weapons`, `src/server/Services/CombatService.luau` |
+| Spells on Z X C V B: Fireball, Chain Lightning, Frost Nova (attack), Shield and Heal (defence), each upgradable to level 5 | `Config.Spells`, `CombatService`, `src/client/Combat.client.luau` |
+| PvP everywhere except the town safe zone, with kill rewards and a Kills leaderboard | `CombatService` |
+| Upgrades at the Forge: Strength, Armor, Swiftness and the food Auto-Picker | `Config.Upgrades`, `PlayerService`, `WorldService` |
+| Drive your titan: sit in the saddle on its back, W/S to walk and A/D to turn. Get off and it walks back to the herd | `TitanService`, `Combat.client.luau` |
+| Town base with an Armory, Spell Shrine and Forge, plus a Travel menu (Base, My Titan, each biome outpost) | `MapBuilder`, `WorldService`, `Combat.client.luau` |
+| Darker world: fog, heavy clouds, lightning, torches, dead trees, a Titan Roar at night and shared dawn loot | `CycleService`, `MapBuilder` |
 | Stealing: Shell Lock, egg-only protection for small titans, Snatch Back, Leap between titans, Call Home for homesick Riders | `StealService` |
 | Perks: Herd Bond, Mutation Resonance, Weathered, Homecoming, Guardian crown | spread across the services above |
 | Shop: 7 game passes and 5 developer products with receipt handling | `ShopService`, `src/client/Hud.client.luau` |

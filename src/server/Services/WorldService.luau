@@ -3,15 +3,19 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Players = game:GetService("Players")
+
 local Config = require(ReplicatedStorage.Shared.Config)
 local MapBuilder = require(script.Parent.MapBuilder)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Util = require(ReplicatedStorage.Shared.Util)
 
 local WorldService = {}
 local S
 
 local rng = Random.new()
-local pickups = {} -- list of { Part, Kind }
+local pickups = {} -- every pickup part (food, dig spots, wild Riders)
+local foods = {} -- just the food parts, for the Auto-Picker
 local pickupFolder
 
 local function wrapPi(a: number): number
@@ -71,6 +75,7 @@ local function spawnFood()
 		placeAhead(part)
 	end)
 	table.insert(pickups, part)
+	table.insert(foods, part)
 end
 
 local function spawnDigSpot()
@@ -138,6 +143,34 @@ local function spawnWildRider()
 	table.insert(pickups, part)
 end
 
+function WorldService:TravelPoint(place: string): Vector3?
+	if place == "Base" then
+		return MapBuilder.TravelPoints.Base
+	end
+	return MapBuilder.TravelPoints[place]
+end
+
+-- Auto-Picker upgrade: grabs food within a radius of the player.
+local function autoPick()
+	for _, player in Players:GetPlayers() do
+		local profile = S.PlayerService:GetProfile(player)
+		local level = profile and profile.Upgrades.AutoPicker or 0
+		local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if level > 0 and hrp then
+			local radius = Config.AutoPickerRadius[math.min(level, #Config.AutoPickerRadius)]
+			for _, food in foods do
+				local offset = (food.Position - hrp.Position) * Vector3.new(1, 0, 1)
+				if offset.Magnitude <= radius and math.abs(food.Position.Y - hrp.Position.Y) < radius then
+					if S.PlayerService:AddFood(player, rng:NextInteger(1, 3)) <= 0 then
+						break
+					end
+					placeAhead(food)
+				end
+			end
+		end
+	end
+end
+
 function WorldService:BiomeName(): string
 	return MapBuilder.Biomes[MapBuilder.biomeIndexAt(S.TitanService:GetAngle())].Name
 end
@@ -148,6 +181,20 @@ end
 
 function WorldService:Start()
 	MapBuilder.build()
+	-- Base buildings in town open their shop tab.
+	for _, prompt in workspace.Map:GetDescendants() do
+		if prompt:IsA("ProximityPrompt") and prompt:GetAttribute("OpenTab") then
+			prompt.Triggered:Connect(function(player)
+				Remotes.Ui:FireClient(player, { Open = prompt:GetAttribute("OpenTab") })
+			end)
+		end
+	end
+	task.spawn(function()
+		while true do
+			task.wait(0.4)
+			autoPick()
+		end
+	end)
 	pickupFolder = Instance.new("Folder")
 	pickupFolder.Name = "Pickups"
 	pickupFolder.Parent = workspace

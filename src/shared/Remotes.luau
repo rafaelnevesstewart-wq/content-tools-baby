@@ -2,11 +2,12 @@
 --   Action (client -> server): action name plus an optional argument
 --   Notify (server -> client): a short toast message
 --   State  (server -> client): the player's profile snapshot for the HUD
+--   Ui     (server -> client): open a HUD panel, e.g. a shop tab at the town base
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local NAMES = { "Action", "Notify", "State" }
+local NAMES = { "Action", "Notify", "State", "Ui" }
 
 local Remotes = {}
 

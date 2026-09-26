@@ -78,6 +78,11 @@ function ShopService:StudioGrant(player: Player, kind: string, key: string)
 		if Util.find(Config.DevProducts, "Key", key) then
 			return S.PlayerService:GrantProduct(player, key)
 		end
+	elseif kind == "Weapon" then
+		local weapon = Util.find(Config.Weapons, "Key", key)
+		if weapon and weapon.Currency == "Robux" then
+			return S.PlayerService:GrantWeapon(player, key)
+		end
 	elseif kind == "Skin" then
 		local skin = Util.find(Config.Skins, "Key", key)
 		if skin and skin.Currency == "Robux" then
@@ -91,7 +96,8 @@ function ShopService:_processReceipt(receipt)
 	local player = Players:GetPlayerByUserId(receipt.PlayerId)
 	local product = Util.find(Config.DevProducts, "Id", receipt.ProductId)
 	local skin = Util.find(Config.Skins, "Id", receipt.ProductId)
-	if not player or not (product or skin) then
+	local weapon = Util.find(Config.Weapons, "Id", receipt.ProductId)
+	if not player or not (product or skin or weapon) then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	local profile = S.PlayerService:GetProfile(player)
@@ -101,10 +107,12 @@ function ShopService:_processReceipt(receipt)
 	if table.find(profile.PurchaseIds, receipt.PurchaseId) then
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
-	local key = product and product.Key or skin.Key
+	local key = (product or skin or weapon).Key
 	local ok, granted = pcall(function()
 		if skin then
 			return S.PlayerService:GrantSkin(player, skin.Key)
+		elseif weapon then
+			return S.PlayerService:GrantWeapon(player, weapon.Key)
 		end
 		return S.PlayerService:GrantProduct(player, key)
 	end)

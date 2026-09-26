@@ -109,7 +109,7 @@ function TitanService:HerdCenter(): Vector3
 	return Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
 end
 
-local function targetCFrame(record, t: number): CFrame
+local function herdCFrame(record, t: number): CFrame
 	local r = Config.Herd.PathRadius + laneOffset(record.Lane) * Config.Herd.LaneSpacing
 	local s = record.Scale
 	local y = 12 * s
@@ -123,6 +123,120 @@ local function targetCFrame(record, t: number): CFrame
 	return CFrame.lookAt(position, position + tangent)
 end
 
+-- Driving ----------------------------------------------------------------------
+
+local groundParams = RaycastParams.new()
+groundParams.FilterType = Enum.RaycastFilterType.Include
+groundParams.FilterDescendantsInstances = { workspace.Terrain }
+
+local function groundY(x: number, z: number): number
+	local hit = workspace:Raycast(Vector3.new(x, 800, z), Vector3.new(0, -1600, 0), groundParams)
+	return hit and hit.Position.Y or 0
+end
+
+local function yawOf(cf: CFrame): number
+	local look = cf.LookVector
+	return math.atan2(-look.X, -look.Z)
+end
+
+-- Moves a titan that is being driven, or walking back to the herd after
+-- its rider got off. Returns the titan's new target CFrame.
+local function stepFree(record, dt: number, t: number): CFrame
+	local s = record.Scale
+	local cf = record.FreeCF or herdCFrame(record, t)
+	local position = cf.Position
+	local yaw = record.Yaw or yawOf(cf)
+	local moving = false
+	if record.Mode == "Driven" then
+		local input = record.DriveInput
+		yaw -= input.Steer * Config.Drive.TurnRate * dt
+		local forward = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw))
+		local speed = record.Exhausted and Config.Drive.Speed * 0.4 or Config.Drive.Speed
+		position += forward * input.Throttle * speed * dt
+		local flat = Vector3.new(position.X, 0, position.Z)
+		if flat.Magnitude > Config.Drive.MaxRadius then
+			flat = flat.Unit * Config.Drive.MaxRadius
+		end
+		position = Vector3.new(flat.X, position.Y, flat.Z)
+		moving = input.Throttle ~= 0 or input.Steer ~= 0
+	else -- Returning
+		local target = herdCFrame(record, t)
+		local delta = Vector3.new(target.X - position.X, 0, target.Z - position.Z)
+		if delta.Magnitude < 4 then
+			record.Mode = "Herd"
+			record.FreeCF = nil
+			record.Yaw = nil
+			return target
+		end
+		position += delta.Unit * math.min(delta.Magnitude, Config.Drive.ReturnSpeed * dt)
+		yaw = math.atan2(-delta.X, -delta.Z)
+		moving = true
+	end
+	local y = groundY(position.X, position.Z) + 12 * s
+	if record.Exhausted then
+		y -= 4 * s
+	elseif moving then
+		y += math.sin(t * 4) * 0.35 * s
+	end
+	record.Yaw = yaw
+	record.FreeCF = CFrame.new(position.X, y, position.Z) * CFrame.Angles(0, yaw, 0)
+	return record.FreeCF
+end
+
+local function currentTarget(record, dt: number, t: number): CFrame
+	if record.Mode == "Herd" then
+		return herdCFrame(record, t)
+	end
+	return stepFree(record, dt, t)
+end
+
+function TitanService:_onSaddle(record, saddle: VehicleSeat)
+	local occupant = saddle.Occupant
+	if occupant then
+		local who = Players:GetPlayerFromCharacter(occupant.Parent)
+		if who ~= record.Player then
+			task.defer(function()
+				occupant.Sit = false
+				occupant.Jump = true
+			end)
+			if who then
+				S.PlayerService:Notify(who, "Only the titan's owner can ride in the saddle.")
+			end
+			return
+		end
+		if record.Mode == "Herd" then
+			record.FreeCF = herdCFrame(record, os.clock())
+			record.Yaw = yawOf(record.FreeCF)
+		end
+		record.Mode = "Driven"
+		record.DriveInput = { Throttle = 0, Steer = 0 }
+		pcall(function()
+			record.Root:SetNetworkOwner(nil)
+		end)
+		S.PlayerService:Notify(record.Player, "You're driving your titan! W/S to walk, A/D to turn, Jump to get off.")
+	elseif record.Mode == "Driven" then
+		record.Mode = "Returning"
+		record.DriveInput = nil
+		S.PlayerService:Notify(record.Player, "Your titan heads back to the herd.")
+	end
+end
+
+function TitanService:SetDriveInput(player: Player, throttle, steer)
+	local record = titans[player]
+	if not record or record.Mode ~= "Driven" or type(throttle) ~= "number" or type(steer) ~= "number" then
+		return
+	end
+	if throttle ~= throttle or steer ~= steer then -- NaN
+		return
+	end
+	record.DriveInput = { Throttle = math.clamp(throttle, -1, 1), Steer = math.clamp(steer, -1, 1) }
+end
+
+function TitanService:IsDriving(player: Player): boolean
+	local record = titans[player]
+	return record ~= nil and record.Mode == "Driven"
+end
+
 -- Building -------------------------------------------------------------------
 
 -- Works out the colours and materials for a titan from its species, equipped
@@ -133,7 +247,7 @@ local function resolveLook(profile, species, mutation)
 	local look = {
 		Skin = skin,
 		Body = skin.BodyColor or species.BodyColor,
-		BodyMat = skin.BodyMaterial or Enum.Material.SmoothPlastic,
+		BodyMat = skin.BodyMaterial or species.SkinMaterial or Enum.Material.SmoothPlastic,
 		Belly = skin.BellyColor or species.BellyColor,
 		Shell = skin.ShellColor or species.ShellColor,
 		ShellMat = skin.ShellMaterial or Enum.Material.SmoothPlastic,
@@ -248,7 +362,7 @@ local function build(record, player: Player)
 		Size = Vector3.new(4, 4, 4),
 		Transparency = 1,
 		Massless = false,
-		CFrame = targetCFrame(record, os.clock()),
+		CFrame = record.Mode == "Herd" and herdCFrame(record, os.clock()) or (record.FreeCF or herdCFrame(record, os.clock())),
 	})
 	root.Parent = model
 	model.PrimaryPart = root
@@ -288,28 +402,88 @@ local function build(record, player: Player)
 		local plate = blob(
 			"ShellPlate",
 			Vector3.new(4, 1.2, 4) * s,
-			look.Shell:Lerp(Color3.new(1, 1, 1), 0.18),
+			look.Shell:Lerp(Color3.new(0, 0, 0), 0.2),
 			look.ShellMat,
 			CFrame.new(px, shellSurfaceY(px, pz) - 0.2 * s, pz) * CFrame.Angles(math.sin(a) * 0.6, 0, -math.cos(a) * 0.6)
 		)
 		tagShell(plate)
 	end
 
-	-- Head with big friendly eyes.
+	-- Head: heavy brow, glowing slit eyes, a jaw full of teeth and horns.
 	local headOffset = CFrame.new(0, body.Y * 0.15, -(body.Z / 2 + 2.6 * s))
-	local head = blob("Head", Vector3.new(7.5, 6.5, 7.5) * s, look.Body, look.BodyMat, headOffset)
+	local head = blob("Head", Vector3.new(7.5, 6.2, 8) * s, look.Body, look.BodyMat, headOffset)
+	local dark = look.Body:Lerp(Color3.new(0, 0, 0), 0.35)
+	local bone = Color3.fromRGB(225, 215, 190)
+	local eyeColor = look.Skin.Key == "Classic" and Color3.fromRGB(255, 150, 20) or look.Accent
 	for _, side in { -1, 1 } do
-		local eyeOffset = headOffset * CFrame.new(side * 2.1 * s, 1.1 * s, -3 * s)
-		blob("Eye", Vector3.new(2.2, 2.5, 1.4) * s, Color3.new(1, 1, 1), nil, eyeOffset)
-		blob("Pupil", Vector3.new(1.2, 1.5, 0.8) * s, Color3.fromRGB(20, 20, 30), nil, eyeOffset * CFrame.new(0, -0.1 * s, -0.55 * s))
-		blob("Shine", Vector3.one * 0.45 * s, Color3.new(1, 1, 1), Enum.Material.Neon, eyeOffset * CFrame.new(0.3 * s, 0.35 * s, -0.95 * s))
-		blob("Cheek", Vector3.new(1.6, 0.9, 0.5) * s, Color3.fromRGB(255, 150, 160), nil, headOffset * CFrame.new(side * 2.7 * s, -0.7 * s, -2.8 * s))
-	end
-	if profile.Species ~= "Tuskhorn" then
-		blob("Snout", Vector3.new(5, 3.4, 3) * s, look.Body:Lerp(look.Belly, 0.4), look.BodyMat, headOffset * CFrame.new(0, -1.3 * s, -3 * s))
-		for _, side in { -1, 1 } do
-			blob("Nostril", Vector3.one * 0.5 * s, Color3.fromRGB(30, 30, 30), nil, headOffset * CFrame.new(side * 0.8 * s, -0.8 * s, -4.4 * s))
+		local eyeOffset = headOffset * CFrame.new(side * 2.2 * s, 1 * s, -3.3 * s) * CFrame.Angles(0, 0, side * 0.25)
+		blob("EyeSocket", Vector3.new(2.4, 1.4, 1.2) * s, Color3.fromRGB(15, 10, 10), nil, eyeOffset)
+		local eye = blob("Eye", Vector3.new(1.9, 0.7, 0.6) * s, eyeColor, Enum.Material.Neon, eyeOffset * CFrame.new(0, 0, -0.45 * s))
+		if side == 1 then
+			light(eye, eyeColor, 14 * s, 1.5)
 		end
+		blob(
+			"Brow",
+			Vector3.new(3, 1, 2.2) * s,
+			dark,
+			look.BodyMat,
+			headOffset * CFrame.new(side * 2.1 * s, 1.9 * s, -2.9 * s) * CFrame.Angles(0.3, 0, -side * 0.35)
+		)
+		-- Curved horns in two segments.
+		local hornBase = headOffset * CFrame.new(side * 2.6 * s, 2.6 * s, 0.5 * s) * CFrame.Angles(-0.6, 0, -side * 0.5)
+		blob("Horn", Vector3.new(1.4, 4, 1.4) * s, bone, Enum.Material.Slate, hornBase)
+		blob(
+			"Horn",
+			Vector3.new(0.9, 3.2, 0.9) * s,
+			bone:Lerp(dark, 0.3),
+			Enum.Material.Slate,
+			hornBase * CFrame.new(0, 2.8 * s, 0.4 * s) * CFrame.Angles(-0.7, 0, 0)
+		)
+	end
+	-- Jaws and teeth.
+	local snoutOffset = headOffset * CFrame.new(0, -1.1 * s, -3.4 * s)
+	if profile.Species ~= "Tuskhorn" then
+		blob("Snout", Vector3.new(5, 2.8, 4) * s, look.Body, look.BodyMat, snoutOffset)
+	end
+	blob("Jaw", Vector3.new(4.6, 1.4, 4.4) * s, dark, look.BodyMat, snoutOffset * CFrame.new(0, -1.9 * s, 0.2 * s) * CFrame.Angles(0.18, 0, 0))
+	blob("Mouth", Vector3.new(4.2, 0.9, 3.6) * s, Color3.fromRGB(60, 10, 10), nil, snoutOffset * CFrame.new(0, -1.2 * s, 0))
+	for i = -3, 3 do
+		local x = i * 0.6 * s
+		local tooth = Instance.new("WedgePart")
+		tooth.Name = "Tooth"
+		tooth.Size = Vector3.new(0.35, 0.9, 0.35) * s
+		tooth.Color = bone
+		tooth.Anchored = false
+		tooth.CanCollide = false
+		tooth.Massless = true
+		attach(root, tooth, snoutOffset * CFrame.new(x, -1.1 * s, -1.7 * s + math.abs(i) * 0.25 * s) * CFrame.Angles(math.pi, 0, 0), model)
+		if i % 2 == 0 then
+			local lower = tooth:Clone()
+			attach(root, lower, snoutOffset * CFrame.new(x + 0.3 * s, -1.6 * s, -1.6 * s + math.abs(i) * 0.25 * s), model)
+		end
+	end
+	-- Hot breath from the nostrils.
+	local nostril = blob("Nostril", Vector3.new(1.4, 0.6, 0.6) * s, Color3.fromRGB(20, 15, 15), nil, snoutOffset * CFrame.new(0, 0.6 * s, -1.9 * s))
+	particles(nostril, {
+		Rate = 3,
+		Lifetime = NumberRange.new(1.5, 2.5),
+		Speed = NumberRange.new(2, 4),
+		SpreadAngle = Vector2.new(15, 15),
+		EmissionDirection = Enum.NormalId.Front,
+		LightEmission = 0,
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6 * s), NumberSequenceKeypoint.new(1, 2.5 * s) }),
+		Transparency = NumberSequence.new(0.6, 1),
+		Color = ColorSequence.new(Color3.fromRGB(200, 200, 200)),
+	})
+	-- Battle scars.
+	for i = 1, 3 do
+		local side = i % 2 == 0 and -1 or 1
+		attach(
+			root,
+			newPart({ Name = "Scar", Size = Vector3.new(0.3, 0.3, 4 * s), Color = look.Belly:Lerp(Color3.fromRGB(150, 70, 70), 0.4) }),
+			CFrame.new(side * body.X * 0.49, -body.Y * 0.05 + i * 0.8 * s, (i - 2) * 3 * s) * CFrame.Angles(0.5 * side, 0, 0),
+			model
+		)
 	end
 
 	-- Species features.
@@ -327,17 +501,25 @@ local function build(record, player: Player)
 				)
 			end
 		end
-		blob("Beak", Vector3.new(2.4, 1.2, 2) * s, look.Accent, look.AccentMat, headOffset * CFrame.new(0, -2.3 * s, -4 * s))
+		for i = -2, 2 do
+			blob(
+				"RidgeSpike",
+				Vector3.new(1.6, 4.5, 2.2) * s,
+				look.Accent,
+				look.AccentMat,
+				CFrame.new(0, shellSurfaceY(0, i * shellC * 0.35) + 1.4 * s, i * shellC * 0.35)
+			)
+		end
 	elseif profile.Species == "Mossback" then
 		for i = 0, 13 do
 			local a = i / 14 * math.pi * 2
 			local px, pz = math.cos(a) * shellA * 0.95, math.sin(a) * shellC * 0.95
-			blob("Moss", Vector3.new(3, 2, 3) * s, Color3.fromRGB(70, 140, 55), Enum.Material.Grass, CFrame.new(px, shellSurfaceY(px * 0.9, pz * 0.9), pz))
+			blob("Moss", Vector3.new(3, 2, 3) * s, Color3.fromRGB(50, 80, 40), Enum.Material.Grass, CFrame.new(px, shellSurfaceY(px * 0.9, pz * 0.9), pz))
 			if i % 2 == 0 then
-				blob("Flower", Vector3.one * 1.1 * s, look.Accent, Enum.Material.Neon, CFrame.new(px, shellSurfaceY(px * 0.9, pz * 0.9) + 1.1 * s, pz))
+				blob("Thorn", Vector3.new(0.6, 2.2, 0.6) * s, look.Accent, look.AccentMat, CFrame.new(px, shellSurfaceY(px * 0.9, pz * 0.9) + 1.1 * s, pz))
 			end
 		end
-		blob("Beard", Vector3.new(4, 3, 2) * s, Color3.fromRGB(70, 140, 55), Enum.Material.Grass, headOffset * CFrame.new(0, -3 * s, -2 * s))
+		blob("Beard", Vector3.new(4, 3, 2) * s, Color3.fromRGB(50, 80, 40), Enum.Material.Grass, headOffset * CFrame.new(0, -3.4 * s, -2 * s))
 	elseif profile.Species == "Tuskhorn" then
 		for _, side in { -1, 1 } do
 			blob(
@@ -350,7 +532,7 @@ local function build(record, player: Player)
 			blob(
 				"Ear",
 				Vector3.new(0.7, 6, 5.5) * s,
-				look.Body:Lerp(Color3.fromRGB(255, 170, 170), 0.25),
+				dark,
 				look.BodyMat,
 				headOffset * CFrame.new(side * 4 * s, 0.5 * s, 0.5 * s) * CFrame.Angles(0, side * 0.35, side * 0.15)
 			)
@@ -398,7 +580,7 @@ local function build(record, player: Player)
 		blob("CrownGem", Vector3.one * 0.9 * s, look.Accent, Enum.Material.Neon, crownBase * CFrame.new(0, 0.3 * s, -1.9 * s))
 	end
 
-	-- Chunky legs with feet and toes.
+	-- Heavy legs with clawed feet.
 	local legHeight = 10 * s
 	for _, x in { -1, 1 } do
 		for _, z in { -1, 1 } do
@@ -418,7 +600,13 @@ local function build(record, player: Player)
 			local footOffset = CFrame.new(x * body.X * 0.32, -12 * s + 0.9 * s, z * body.Z * 0.3 - 0.4 * s)
 			blob("Foot", Vector3.new(5.4, 1.8, 6) * s, look.Body:Lerp(Color3.new(0, 0, 0), 0.12), look.BodyMat, footOffset)
 			for toe = -1, 1 do
-				blob("Toe", Vector3.new(1.1, 0.9, 1.1) * s, Color3.fromRGB(245, 240, 225), nil, footOffset * CFrame.new(toe * 1.5 * s, 0, -2.8 * s))
+				blob(
+					"Claw",
+					Vector3.new(0.8, 0.8, 2.6) * s,
+					Color3.fromRGB(35, 30, 28),
+					Enum.Material.Slate,
+					footOffset * CFrame.new(toe * 1.6 * s, -0.2 * s, -3 * s) * CFrame.Angles(0.35, 0, 0)
+				)
 			end
 		end
 	end
@@ -429,6 +617,7 @@ local function build(record, player: Player)
 	for i, size in tailSizes do
 		tailZ += size.Z * s * 0.6
 		blob("Tail", size * s, look.Body, look.BodyMat, CFrame.new(0, -body.Y * 0.1 - i * 0.6 * s, tailZ))
+		blob("TailSpike", Vector3.new(0.7, 2.2, 0.9) * s, look.Accent, look.AccentMat, CFrame.new(0, -body.Y * 0.1 - i * 0.6 * s + size.Y * s * 0.5, tailZ))
 	end
 
 	addEffects(shell, look, mutation, s)
@@ -542,6 +731,30 @@ local function build(record, player: Player)
 		mastOffset * CFrame.new(0, 2.6, 1.9),
 		model
 	)
+
+	-- Saddle: the owner sits here to drive the titan.
+	local saddle = Instance.new("VehicleSeat")
+	saddle.Name = "Saddle"
+	saddle.Size = Vector3.new(3, 1.2, 3)
+	saddle.Color = Color3.fromRGB(90, 40, 30)
+	saddle.Material = Enum.Material.Fabric
+	saddle.Anchored = false
+	saddle.Massless = true
+	saddle.CanCollide = true
+	saddle.MaxSpeed = 0
+	saddle.Torque = 0
+	saddle.TurnSpeed = 0
+	saddle.HeadsUpDisplay = false
+	attach(root, saddle, CFrame.new(0, deckY + 1.1, -deckSize.Z * 0.2), model)
+	attach(
+		root,
+		newPart({ Name = "SaddleBack", Size = Vector3.new(3, 2, 0.6), Color = Color3.fromRGB(70, 30, 22), Material = Enum.Material.Fabric }),
+		CFrame.new(0, deckY + 2.2, -deckSize.Z * 0.2 + 1.5),
+		model
+	)
+	saddle:GetPropertyChangedSignal("Occupant"):Connect(function()
+		TitanService:_onSaddle(record, saddle)
+	end)
 
 	-- Leap post at the back of the deck: jump across to a neighbouring titan.
 	local post = attach(
@@ -771,7 +984,7 @@ function TitanService:SpawnTitan(player: Player)
 		lane += 1
 	end
 	lanesTaken[lane] = player
-	local record = { Player = player, Lane = lane, Exhausted = false }
+	local record = { Player = player, Lane = lane, Exhausted = false, Mode = "Herd" }
 	titans[player] = record
 	build(record, player)
 	self:RefreshDeck(player)
@@ -801,6 +1014,9 @@ function TitanService:Rebuild(player: Player)
 		if hrp and self:IsOnDeck(record, hrp.Position) then
 			table.insert(riders, other)
 		end
+	end
+	if record.Mode == "Driven" then
+		record.Mode = "Returning"
 	end
 	if record.Model then
 		record.Model:Destroy()
@@ -923,7 +1139,7 @@ function TitanService:Start()
 		local t = os.clock()
 		for _, record in titans do
 			if record.AlignPosition and record.AlignPosition.Parent then
-				local cf = targetCFrame(record, t)
+				local cf = currentTarget(record, dt, t)
 				record.AlignPosition.Position = cf.Position
 				record.AlignOrientation.CFrame = cf
 			end

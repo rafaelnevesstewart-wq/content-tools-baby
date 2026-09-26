@@ -8,6 +8,8 @@ local ORDER = {
 	"TitanService",
 	"WorldService",
 	"CycleService",
+	"MonsterService",
+	"CombatService",
 	"StealService",
 }
 

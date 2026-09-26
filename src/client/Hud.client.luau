@@ -202,7 +202,7 @@ shopFrame = make("Frame", {
 	BackgroundColor3 = PANEL,
 }, {
 	corner(16),
-	make("UISizeConstraint", { MaxSize = Vector2.new(620, 560), MinSize = Vector2.new(300, 300) }),
+	make("UISizeConstraint", { MaxSize = Vector2.new(680, 600), MinSize = Vector2.new(320, 320) }),
 })
 shopFrame.Parent = gui
 
@@ -227,17 +227,56 @@ close.Activated:Connect(function()
 end)
 close.Parent = shopFrame
 
-local list = make("ScrollingFrame", {
-	Size = UDim2.new(1, -24, 1, -64),
-	Position = UDim2.fromOffset(12, 56),
+-- One scrolling list per tab, with a row of tab buttons above them.
+local TAB_NAMES = { "Weapons", "Spells", "Upgrades", "Skins", "Passes", "Boosts" }
+local tabLists, tabButtons = {}, {}
+local tabBar = make("Frame", {
+	Size = UDim2.new(1, -24, 0, 34),
+	Position = UDim2.fromOffset(12, 54),
 	BackgroundTransparency = 1,
-	AutomaticCanvasSize = Enum.AutomaticSize.Y,
-	CanvasSize = UDim2.new(),
-	ScrollBarThickness = 6,
 }, {
-	make("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
+	make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }),
 })
-list.Parent = shopFrame
+tabBar.Parent = shopFrame
+
+local function showTab(name: string)
+	for tabName, tabList in tabLists do
+		tabList.Visible = tabName == name
+		tabButtons[tabName].BackgroundColor3 = tabName == name and ACCENT or Color3.fromRGB(60, 66, 84)
+	end
+end
+
+for _, name in TAB_NAMES do
+	local tabList = make("ScrollingFrame", {
+		Name = name,
+		Size = UDim2.new(1, -24, 1, -104),
+		Position = UDim2.fromOffset(12, 96),
+		BackgroundTransparency = 1,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		ScrollBarThickness = 6,
+		Visible = false,
+	}, {
+		make("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	tabList.Parent = shopFrame
+	tabLists[name] = tabList
+	local tabButton = make("TextButton", {
+		Size = UDim2.new(1 / #TAB_NAMES, -6, 1, 0),
+		BackgroundColor3 = Color3.fromRGB(60, 66, 84),
+		Font = FONT,
+		TextScaled = true,
+		TextColor3 = Color3.new(1, 1, 1),
+		Text = name,
+	}, { corner(8), make("UITextSizeConstraint", { MaxTextSize = 16 }) })
+	tabButton.Activated:Connect(function()
+		showTab(name)
+	end)
+	tabButton.Parent = tabBar
+	tabButtons[name] = tabButton
+end
+local list = tabLists.Weapons
+showTab("Weapons")
 
 local passButtons = {}
 
@@ -356,14 +395,86 @@ local function skinRow(skin)
 	skinButtons[skin.Key] = { Button = skinButton, Skin = skin }
 end
 
+-- A generic row: title, description and one action button.
+local function actionRow(title: string, description: string)
+	order += 1
+	local row = make("Frame", { Size = UDim2.new(1, -8, 0, 64), BackgroundColor3 = Color3.fromRGB(44, 50, 66), LayoutOrder = order }, { corner(10) })
+	local titleLabel = text({ Size = UDim2.new(1, -140, 0, 26), Position = UDim2.fromOffset(10, 6), Text = title, Parent = row })
+	local descriptionLabel = text({
+		Size = UDim2.new(1, -140, 0, 24),
+		Position = UDim2.fromOffset(10, 34),
+		Text = description,
+		TextColor3 = Color3.fromRGB(190, 200, 215),
+		Parent = row,
+	})
+	descriptionLabel:FindFirstChildOfClass("UITextSizeConstraint").MaxTextSize = 16
+	local actionButton = make("TextButton", {
+		Size = UDim2.fromOffset(120, 44),
+		Position = UDim2.new(1, -130, 0.5, -22),
+		BackgroundColor3 = Color3.fromRGB(80, 190, 90),
+		Font = FONT,
+		TextScaled = true,
+		TextColor3 = Color3.new(1, 1, 1),
+		Text = "",
+	}, { corner(10), make("UITextSizeConstraint", { MaxTextSize = 18 }) })
+	actionButton.Parent = row
+	row.Parent = list
+	return titleLabel, actionButton
+end
+
+local weaponButtons, spellRows, upgradeRows = {}, {}, {}
+
+list = tabLists.Weapons
+for _, weapon in Config.Weapons do
+	local blurb = string.format("%s  •  %d dmg  •  %s", weapon.Description, weapon.Damage, weapon.Kind)
+	local _, weaponButton = actionRow(weapon.Name, blurb)
+	weaponButton.Activated:Connect(function()
+		if not state or weapon.Currency == "Free" or table.find(state.Weapons, weapon.Key) then
+			return
+		end
+		if weapon.Currency == "Coins" then
+			Remotes.Action:FireServer("BuyWeapon", weapon.Key)
+		elseif weapon.Id ~= 0 then
+			MarketplaceService:PromptProductPurchase(player, weapon.Id)
+		elseif RunService:IsStudio() then
+			toast("Studio test: unlocking " .. weapon.Name .. " for free")
+			Remotes.Action:FireServer("StudioGrant", { Kind = "Weapon", Key = weapon.Key })
+		else
+			toast(weapon.Name .. " is coming soon!")
+		end
+	end)
+	weaponButtons[weapon.Key] = { Button = weaponButton, Weapon = weapon }
+end
+
+list = tabLists.Spells
+for _, spell in Config.Spells do
+	local titleLabel, spellButton = actionRow(spell.Name, string.format("[%s] %s  •  %s", spell.Hotkey, spell.Description, spell.Type))
+	spellButton.Activated:Connect(function()
+		Remotes.Action:FireServer("BuySpell", spell.Key)
+	end)
+	spellRows[spell.Key] = { Title = titleLabel, Button = spellButton, Spell = spell }
+end
+
+list = tabLists.Upgrades
+for _, upgrade in Config.Upgrades do
+	local titleLabel, upgradeButton = actionRow(upgrade.Name, upgrade.Description)
+	upgradeButton.Activated:Connect(function()
+		Remotes.Action:FireServer("BuyUpgrade", upgrade.Key)
+	end)
+	upgradeRows[upgrade.Key] = { Title = titleLabel, Button = upgradeButton, Upgrade = upgrade }
+end
+
+list = tabLists.Skins
 header("Titan Skins")
 for _, skin in Config.Skins do
 	skinRow(skin)
 end
+list = tabLists.Passes
 header("Game Passes (forever)")
 for _, pass in Config.GamePasses do
 	shopRow("Pass", pass)
 end
+list = tabLists.Boosts
 header("Boosts and Coins")
 for _, product in Config.DevProducts do
 	shopRow("Product", product)
@@ -418,6 +529,45 @@ local function refresh()
 	roarButton.Visible = state.CanRoar and ReplicatedStorage:GetAttribute("Phase") == "Night"
 	whistleButton.Visible = table.find(state.Passes, "TitanWhistle") ~= nil
 
+	for key, entry in weaponButtons do
+		local weapon = entry.Weapon
+		local owned = weapon.Currency == "Free" or table.find(state.Weapons, key) ~= nil
+		if owned then
+			entry.Button.Text = "Owned"
+			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
+		elseif weapon.Currency == "Coins" then
+			entry.Button.Text = "🪙 " .. Util.formatNumber(weapon.Price)
+			entry.Button.BackgroundColor3 = Color3.fromRGB(210, 160, 50)
+		else
+			entry.Button.Text = "R$ " .. weapon.Price
+			entry.Button.BackgroundColor3 = Color3.fromRGB(80, 190, 90)
+		end
+	end
+	for key, entry in spellRows do
+		local level = state.Spells[key] or 0
+		local cost = state.SpellCosts[key] or -1
+		entry.Title.Text = string.format("%s  (Lv %d/%d)", entry.Spell.Name, level, Config.SpellMaxLevel)
+		if cost < 0 then
+			entry.Button.Text = "Max level"
+			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
+		else
+			entry.Button.Text = (level == 0 and "Unlock 🪙" or "Upgrade 🪙") .. Util.formatNumber(cost)
+			entry.Button.BackgroundColor3 = state.Coins >= cost and Color3.fromRGB(210, 160, 50) or Color3.fromRGB(120, 100, 60)
+		end
+	end
+	for key, entry in upgradeRows do
+		local level = state.Upgrades[key] or 0
+		local cost = state.UpgradeCosts[key] or -1
+		entry.Title.Text = string.format("%s  (Lv %d/%d)", entry.Upgrade.Name, level, entry.Upgrade.MaxLevel)
+		if cost < 0 then
+			entry.Button.Text = "Max level"
+			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
+		else
+			entry.Button.Text = "🪙 " .. Util.formatNumber(cost)
+			entry.Button.BackgroundColor3 = state.Coins >= cost and Color3.fromRGB(210, 160, 50) or Color3.fromRGB(120, 100, 60)
+		end
+	end
+
 	for key, entry in skinButtons do
 		local skinButton, skin = entry.Button, entry.Skin
 		if state.EquippedSkin == key then
@@ -447,6 +597,14 @@ Remotes.State.OnClientEvent:Connect(function(newState)
 end)
 
 Remotes.Notify.OnClientEvent:Connect(toast)
+
+-- Walking into a base building opens its shop tab.
+Remotes.Ui.OnClientEvent:Connect(function(message)
+	if type(message) == "table" and tabLists[message.Open] then
+		shopFrame.Visible = true
+		showTab(message.Open)
+	end
+end)
 
 RunService.RenderStepped:Connect(function()
 	local phase = ReplicatedStorage:GetAttribute("Phase") or "Day"

@@ -25,31 +25,35 @@ Config.Herd = {
 Config.Species = {
 	Shellback = {
 		DisplayName = "Shellback",
-		BodyColor = Color3.fromRGB(104, 170, 96),
-		BellyColor = Color3.fromRGB(230, 220, 160),
-		ShellColor = Color3.fromRGB(150, 104, 62),
-		AccentColor = Color3.fromRGB(240, 200, 110),
+		BodyColor = Color3.fromRGB(70, 82, 60),
+		BellyColor = Color3.fromRGB(120, 112, 88),
+		ShellColor = Color3.fromRGB(72, 58, 44),
+		AccentColor = Color3.fromRGB(190, 180, 160),
+		SkinMaterial = Enum.Material.Slate,
 	},
 	Mossback = {
 		DisplayName = "Mossback",
-		BodyColor = Color3.fromRGB(150, 126, 100),
-		BellyColor = Color3.fromRGB(225, 205, 175),
-		ShellColor = Color3.fromRGB(86, 150, 66),
-		AccentColor = Color3.fromRGB(255, 140, 190),
+		BodyColor = Color3.fromRGB(78, 70, 58),
+		BellyColor = Color3.fromRGB(110, 100, 82),
+		ShellColor = Color3.fromRGB(52, 78, 40),
+		AccentColor = Color3.fromRGB(160, 60, 70),
+		SkinMaterial = Enum.Material.Rock,
 	},
 	Tuskhorn = {
 		DisplayName = "Tuskhorn",
-		BodyColor = Color3.fromRGB(160, 116, 92),
-		BellyColor = Color3.fromRGB(215, 180, 150),
-		ShellColor = Color3.fromRGB(110, 78, 60),
-		AccentColor = Color3.fromRGB(250, 245, 230),
+		BodyColor = Color3.fromRGB(88, 68, 58),
+		BellyColor = Color3.fromRGB(120, 100, 88),
+		ShellColor = Color3.fromRGB(60, 46, 40),
+		AccentColor = Color3.fromRGB(225, 215, 190),
+		SkinMaterial = Enum.Material.Slate,
 	},
 	Driftfin = {
 		DisplayName = "Driftfin",
-		BodyColor = Color3.fromRGB(84, 132, 196),
-		BellyColor = Color3.fromRGB(215, 235, 250),
-		ShellColor = Color3.fromRGB(46, 84, 150),
-		AccentColor = Color3.fromRGB(120, 240, 255),
+		BodyColor = Color3.fromRGB(44, 62, 84),
+		BellyColor = Color3.fromRGB(96, 112, 124),
+		ShellColor = Color3.fromRGB(26, 38, 60),
+		AccentColor = Color3.fromRGB(80, 220, 255),
+		SkinMaterial = Enum.Material.Slate,
 	},
 }
 Config.SpeciesOrder = { "Shellback", "Mossback", "Tuskhorn", "Driftfin" }
@@ -137,16 +141,11 @@ Config.Molt = {
 }
 
 Config.Nightfall = {
-	WaveInterval = 7,
-	MaxBeasts = 24,
-	SpawnRadius = 160,
-	Beast = { Health = 60, Damage = 6, Speed = 14, AttackEvery = 1.5, Size = Vector3.new(4, 3, 6) },
-	Boss = { Health = 1800, Damage = 30, Speed = 9, AttackEvery = 2, Size = Vector3.new(14, 10, 20) },
+	WaveInterval = 8,
+	MaxMonsters = 24,
+	SpawnRadius = 170,
 	LootPerSurvivor = 120, -- coins added to the shared pool per surviving titan
 	BossLootMult = 3,
-	SlingDamage = 20,
-	SlingRange = 80,
-	SlingCooldown = 0.4,
 	RoarStage = 4,
 	RoarRadius = 70,
 	RoarStun = 3,
@@ -299,6 +298,265 @@ Config.Products = {
 	CoinPouchMin = 1000,
 	CoinChestSeconds = 4800,
 	CoinChestMin = 8000,
+}
+
+-- Combat ----------------------------------------------------------------------
+
+Config.Combat = {
+	PvPEnabled = true,
+	SafeZoneRadius = 240, -- Titan's Rest (the town in the middle) is a no-fighting zone
+	SpawnProtection = 8, -- seconds of protection after respawning
+	KillRewardBase = 50,
+	KillRewardPerStage = 20,
+	BaseHealth = 100,
+	BaseWalkSpeed = 16,
+}
+
+-- Weapons. Free ones everybody owns; Coins ones are bought in the shop; Robux
+-- ones are developer products (set Id after creating them, 0 = Studio test only).
+-- Kind: "Melee" hits everything in front of you, "Ranged" fires at what you aim at.
+Config.Weapons = {
+	{
+		Key = "Blade",
+		Name = "Hunter's Blade",
+		Kind = "Melee",
+		Damage = 22,
+		Range = 11,
+		Cooldown = 0.5,
+		Currency = "Free",
+		Price = 0,
+		Color = Color3.fromRGB(190, 195, 205),
+		Description = "A trusty short sword.",
+	},
+	{
+		Key = "Sling",
+		Name = "Pebble Sling",
+		Kind = "Ranged",
+		Damage = 12,
+		Range = 90,
+		Cooldown = 0.4,
+		Currency = "Free",
+		Price = 0,
+		Color = Color3.fromRGB(150, 110, 70),
+		Description = "Fast pebbles from far away.",
+	},
+	{
+		Key = "Crossbow",
+		Name = "Bone Crossbow",
+		Kind = "Ranged",
+		Damage = 34,
+		Range = 150,
+		Cooldown = 0.85,
+		Currency = "Coins",
+		Price = 3000,
+		Color = Color3.fromRGB(230, 220, 200),
+		Description = "Heavy bolts with long range.",
+	},
+	{
+		Key = "Cleaver",
+		Name = "Titan Cleaver",
+		Kind = "Melee",
+		Damage = 55,
+		Range = 14,
+		Cooldown = 0.9,
+		Currency = "Coins",
+		Price = 12000,
+		Color = Color3.fromRGB(120, 125, 135),
+		Description = "A huge axe that hits everything in front of you.",
+	},
+	{
+		Key = "Spear",
+		Name = "Storm Spear",
+		Kind = "Ranged",
+		Damage = 60,
+		Range = 130,
+		Cooldown = 0.7,
+		Currency = "Coins",
+		Price = 35000,
+		Color = Color3.fromRGB(120, 180, 255),
+		Description = "Thrown lightning that pierces through foes.",
+	},
+	{
+		Key = "Maul",
+		Name = "Thunder Maul",
+		Kind = "Melee",
+		Damage = 95,
+		Range = 16,
+		Cooldown = 1.2,
+		Currency = "Robux",
+		Price = 249,
+		Id = 0,
+		Color = Color3.fromRGB(90, 200, 255),
+		Shock = true,
+		Description = "Each smash sends out a shockwave.",
+	},
+	{
+		Key = "Reaper",
+		Name = "Soul Reaper",
+		Kind = "Melee",
+		Damage = 120,
+		Range = 16,
+		Cooldown = 1.0,
+		Currency = "Robux",
+		Price = 449,
+		Id = 0,
+		Color = Color3.fromRGB(170, 40, 60),
+		Lifesteal = 0.25,
+		Description = "A cursed scythe. Heals you for a quarter of the damage.",
+	},
+}
+
+-- Spells: two attack spells, one control spell and two defence spells.
+-- Unlock with coins, then upgrade to level 5. Keys are for keyboard players.
+Config.Spells = {
+	{
+		Key = "Fireball",
+		Name = "Fireball",
+		Type = "Attack",
+		Hotkey = "Z",
+		Cooldown = 6,
+		Damage = 40,
+		DamagePerLevel = 18,
+		Radius = 12,
+		Range = 140,
+		UnlockCost = 1500,
+		Color = Color3.fromRGB(255, 120, 30),
+		Description = "Explodes where it lands.",
+	},
+	{
+		Key = "Lightning",
+		Name = "Lightning Strike",
+		Type = "Attack",
+		Hotkey = "X",
+		Cooldown = 10,
+		Damage = 75,
+		DamagePerLevel = 30,
+		Range = 160,
+		Chains = 2,
+		UnlockCost = 6000,
+		Color = Color3.fromRGB(150, 200, 255),
+		Description = "Strikes your target, then jumps to more.",
+	},
+	{
+		Key = "FrostNova",
+		Name = "Frost Nova",
+		Type = "Attack",
+		Hotkey = "C",
+		Cooldown = 14,
+		Damage = 20,
+		DamagePerLevel = 10,
+		Radius = 26,
+		Stun = 2.5,
+		UnlockCost = 4000,
+		Color = Color3.fromRGB(170, 230, 255),
+		Description = "Freezes everything around you in place.",
+	},
+	{
+		Key = "Shield",
+		Name = "Stone Shield",
+		Type = "Defence",
+		Hotkey = "V",
+		Cooldown = 16,
+		Absorb = 60,
+		AbsorbPerLevel = 35,
+		Duration = 6,
+		UnlockCost = 2500,
+		Color = Color3.fromRGB(220, 190, 120),
+		Description = "Blocks incoming damage for a few seconds.",
+	},
+	{
+		Key = "Heal",
+		Name = "Healing Light",
+		Type = "Defence",
+		Hotkey = "B",
+		Cooldown = 14,
+		Heal = 40,
+		HealPerLevel = 20,
+		UnlockCost = 2000,
+		Color = Color3.fromRGB(120, 255, 150),
+		Description = "Heals you straight away.",
+	},
+}
+Config.SpellMaxLevel = 5
+Config.SpellUpgradeCost = 2500 -- multiplied by the current level squared
+
+-- Coin upgrades. Cost for the next level = BaseCost * Growth^level.
+Config.Upgrades = {
+	{ Key = "Strength", Name = "Strength", MaxLevel = 10, BaseCost = 800, Growth = 1.7, Description = "+10% damage with weapons and spells per level." },
+	{ Key = "Armor", Name = "Armor", MaxLevel = 10, BaseCost = 800, Growth = 1.7, Description = "+20 max health per level." },
+	{ Key = "Swiftness", Name = "Swiftness", MaxLevel = 6, BaseCost = 1000, Growth = 1.9, Description = "Run faster (+1.5 speed per level)." },
+	{
+		Key = "AutoPicker",
+		Name = "Auto-Picker",
+		MaxLevel = 5,
+		BaseCost = 400,
+		Growth = 2.6,
+		Description = "Automatically grabs food around you. Bigger radius each level.",
+	},
+}
+Config.AutoPickerRadius = { 14, 22, 32, 46, 65 }
+
+-- Monsters. Day monsters roam near the herd; night monsters hunt in waves.
+Config.Monsters = {
+	Gloomhound = {
+		Name = "Gloomhound",
+		Health = 70,
+		Damage = 9,
+		Speed = 18,
+		AttackEvery = 1.2,
+		Size = 1,
+		Aggro = 70,
+		Reward = 25,
+		Color = Color3.fromRGB(40, 38, 48),
+		Eye = Color3.fromRGB(255, 40, 40),
+	},
+	Thornback = {
+		Name = "Thornback",
+		Health = 160,
+		Damage = 16,
+		Speed = 13,
+		AttackEvery = 1.6,
+		Size = 1.5,
+		Aggro = 60,
+		Reward = 60,
+		Color = Color3.fromRGB(70, 55, 45),
+		Eye = Color3.fromRGB(255, 170, 30),
+	},
+	Golem = {
+		Name = "Stone Golem",
+		Health = 420,
+		Damage = 30,
+		Speed = 8,
+		AttackEvery = 2.2,
+		Size = 2.2,
+		Aggro = 55,
+		Reward = 150,
+		Color = Color3.fromRGB(95, 95, 100),
+		Eye = Color3.fromRGB(120, 220, 255),
+	},
+	StormKing = {
+		Name = "Storm King",
+		Health = 2500,
+		Damage = 45,
+		Speed = 9,
+		AttackEvery = 2,
+		Size = 5,
+		Aggro = 140,
+		Reward = 800,
+		Color = Color3.fromRGB(45, 25, 70),
+		Eye = Color3.fromRGB(200, 120, 255),
+		Boss = true,
+	},
+}
+Config.DayMonsters = { Count = 8, Kinds = { "Gloomhound", "Gloomhound", "Thornback", "Golem" } }
+Config.NightMonsterKinds = { "Gloomhound", "Gloomhound", "Gloomhound", "Thornback", "Thornback", "Golem" }
+
+-- Driving your titan from the saddle.
+Config.Drive = {
+	Speed = 28,
+	TurnRate = 1.1, -- radians per second
+	ReturnSpeed = 30, -- speed when it walks back to the herd after you get off
+	MaxRadius = 1550, -- stay inside the mountains
 }
 
 Config.DataStoreName = "GrowATitan_v1"
