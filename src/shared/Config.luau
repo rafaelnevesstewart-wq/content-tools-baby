@@ -310,6 +310,26 @@ Config.Combat = {
 	KillRewardPerStage = 20,
 	BaseHealth = 100,
 	BaseWalkSpeed = 16,
+	RespawnTime = 5, -- seconds on the death screen before you wake up on your titan
+}
+
+-- Fighting experience. Killing monsters (and players) gives XP; each level
+-- adds max health, max power and damage.
+Config.Leveling = {
+	MaxLevel = 50,
+	XPBase = 100, -- XP needed to go from level 1 to 2
+	XPGrowth = 1.3, -- each level needs this much more
+	HealthPerLevel = 8,
+	PowerPerLevel = 6,
+	DamagePerLevel = 0.03, -- +3% damage per level
+	PlayerKillXP = 40, -- plus PlayerKillXPPerLevel for each level the victim has
+	PlayerKillXPPerLevel = 8,
+}
+
+-- Power (mana) pays for spells and refills over time.
+Config.Power = {
+	Base = 100,
+	RegenPerSecond = 6,
 }
 
 -- Weapons. Free ones everybody owns; Coins ones are bought in the shop; Robux
@@ -414,6 +434,7 @@ Config.Spells = {
 		Name = "Fireball",
 		Type = "Attack",
 		Hotkey = "Z",
+		PowerCost = 20,
 		Cooldown = 6,
 		Damage = 40,
 		DamagePerLevel = 18,
@@ -428,6 +449,7 @@ Config.Spells = {
 		Name = "Lightning Strike",
 		Type = "Attack",
 		Hotkey = "X",
+		PowerCost = 35,
 		Cooldown = 10,
 		Damage = 75,
 		DamagePerLevel = 30,
@@ -442,6 +464,7 @@ Config.Spells = {
 		Name = "Frost Nova",
 		Type = "Attack",
 		Hotkey = "C",
+		PowerCost = 30,
 		Cooldown = 14,
 		Damage = 20,
 		DamagePerLevel = 10,
@@ -456,6 +479,7 @@ Config.Spells = {
 		Name = "Stone Shield",
 		Type = "Defence",
 		Hotkey = "V",
+		PowerCost = 25,
 		Cooldown = 16,
 		Absorb = 60,
 		AbsorbPerLevel = 35,
@@ -469,6 +493,7 @@ Config.Spells = {
 		Name = "Healing Light",
 		Type = "Defence",
 		Hotkey = "B",
+		PowerCost = 25,
 		Cooldown = 14,
 		Heal = 40,
 		HealPerLevel = 20,
@@ -498,6 +523,19 @@ Config.AutoPickerRadius = { 14, 22, 32, 46, 65 }
 
 -- Monsters. Day monsters roam near the herd; night monsters hunt in waves.
 Config.Monsters = {
+	Gloomling = {
+		Name = "Gloomling",
+		Health = 30,
+		Damage = 3,
+		Speed = 10,
+		AttackEvery = 1.5,
+		Size = 0.6,
+		Aggro = 35,
+		Reward = 6,
+		XP = 12,
+		Color = Color3.fromRGB(60, 55, 70),
+		Eye = Color3.fromRGB(255, 120, 60),
+	},
 	Gloomhound = {
 		Name = "Gloomhound",
 		Health = 70,
@@ -507,6 +545,7 @@ Config.Monsters = {
 		Size = 1,
 		Aggro = 70,
 		Reward = 25,
+		XP = 25,
 		Color = Color3.fromRGB(40, 38, 48),
 		Eye = Color3.fromRGB(255, 40, 40),
 	},
@@ -519,6 +558,7 @@ Config.Monsters = {
 		Size = 1.5,
 		Aggro = 60,
 		Reward = 60,
+		XP = 60,
 		Color = Color3.fromRGB(70, 55, 45),
 		Eye = Color3.fromRGB(255, 170, 30),
 	},
@@ -531,6 +571,7 @@ Config.Monsters = {
 		Size = 2.2,
 		Aggro = 55,
 		Reward = 150,
+		XP = 150,
 		Color = Color3.fromRGB(95, 95, 100),
 		Eye = Color3.fromRGB(120, 220, 255),
 	},
@@ -543,11 +584,14 @@ Config.Monsters = {
 		Size = 5,
 		Aggro = 140,
 		Reward = 800,
+		XP = 1200,
 		Color = Color3.fromRGB(45, 25, 70),
 		Eye = Color3.fromRGB(200, 120, 255),
 		Boss = true,
 	},
 }
+-- Weak Gloomlings always prowl just outside town: a safe first fight.
+Config.StarterMonsters = { Count = 10, Kind = "Gloomling", InnerRadius = 265, OuterRadius = 380 }
 Config.DayMonsters = { Count = 8, Kinds = { "Gloomhound", "Gloomhound", "Thornback", "Golem" } }
 Config.NightMonsterKinds = { "Gloomhound", "Gloomhound", "Gloomhound", "Thornback", "Thornback", "Golem" }
 

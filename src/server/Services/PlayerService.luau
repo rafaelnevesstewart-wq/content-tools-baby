@@ -88,6 +88,7 @@ function PlayerService:_onAdded(player: Player)
 		LastTravel = 0,
 	}
 	sessions[player] = session
+	player:SetAttribute("Level", profile.Level)
 
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
@@ -360,6 +361,42 @@ function PlayerService:AddCoins(player: Player, amount: number)
 		return
 	end
 	profile.Coins = math.max(0, profile.Coins + amount)
+	self:MarkDirty(player)
+end
+
+-- Fighting experience --------------------------------------------------------
+
+function PlayerService:XPToNext(level: number): number?
+	if level >= Config.Leveling.MaxLevel then
+		return nil
+	end
+	return math.floor(Config.Leveling.XPBase * Config.Leveling.XPGrowth ^ (level - 1))
+end
+
+function PlayerService:AddXP(player: Player, amount: number)
+	local profile = self:GetProfile(player)
+	if not profile or amount <= 0 then
+		return
+	end
+	profile.XP += math.floor(amount)
+	local levelled = false
+	local need = self:XPToNext(profile.Level)
+	while need and profile.XP >= need do
+		profile.XP -= need
+		profile.Level += 1
+		levelled = true
+		need = self:XPToNext(profile.Level)
+	end
+	if not need then
+		profile.XP = 0
+	end
+	if levelled then
+		S.CombatService:ApplyStats(player)
+		S.CombatService:RefillOnLevelUp(player)
+		Remotes.Ui:FireClient(player, { LevelUp = profile.Level })
+		self:Notify(player, string.format("⭐ LEVEL UP! You are now level %d. More health, power and damage.", profile.Level))
+	end
+	player:SetAttribute("Level", profile.Level)
 	self:MarkDirty(player)
 end
 
@@ -930,6 +967,10 @@ function PlayerService:_flush(player: Player, session)
 		Spells = profile.Spells,
 		Upgrades = profile.Upgrades,
 		Kills = profile.Kills,
+		Level = profile.Level,
+		XP = profile.XP,
+		XPToNext = self:XPToNext(profile.Level),
+		Strength = S.CombatService:Strength(player),
 		Driving = S.TitanService:IsDriving(player),
 		SpellCosts = self:_costTable(player, Config.Spells, self.SpellCost),
 		UpgradeCosts = self:_costTable(player, Config.Upgrades, self.UpgradeCost),

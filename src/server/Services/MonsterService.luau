@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local MonsterService = {}
 local S
@@ -106,7 +107,7 @@ local function buildModel(kind: string, def)
 			light.Parent = eye
 		end
 		-- Ears or horns.
-		if kind == "Gloomhound" then
+		if kind == "Gloomhound" or kind == "Gloomling" then
 			part({
 				ClassName = "WedgePart",
 				Name = "Ear",
@@ -319,7 +320,13 @@ function MonsterService:Damage(monster, amount: number, attacker: Player?): bool
 		local reward = math.floor(monster.Def.Reward * (1 + S.CycleService:NightNumber() * 0.1))
 		S.PlayerService:AddCoins(attacker, reward)
 		local food = S.PlayerService:AddFood(attacker, rng:NextInteger(1, 3) * math.ceil(monster.Def.Size))
-		S.PlayerService:Notify(attacker, string.format("Killed a %s! +%d coins%s", monster.Def.Name, reward, food > 0 and (", +" .. food .. " food") or ""))
+		local xp = math.floor(monster.Def.XP * (monster.Night and (1 + S.CycleService:NightNumber() * 0.1) or 1))
+		S.PlayerService:Notify(
+			attacker,
+			string.format("Killed a %s! +%d XP, +%d coins%s", monster.Def.Name, xp, reward, food > 0 and (", +" .. food .. " food") or "")
+		)
+		S.PlayerService:AddXP(attacker, xp)
+		Remotes.Ui:FireClient(attacker, { XPGain = xp, At = monster.Root.Position })
 	end
 	if monster.Def.Boss then
 		S.PlayerService:NotifyAll("The Storm King has fallen!")
@@ -423,6 +430,9 @@ local function step(monster, dt: number, t: number)
 		if (monster.Wander - flat).Magnitude < 4 then
 			local a = rng:NextNumber(0, math.pi * 2)
 			monster.Wander = monster.Home + Vector3.new(math.cos(a), 0, math.sin(a)) * rng:NextNumber(10, 50)
+			if monster.Starter and monster.Wander.Magnitude < Config.StarterMonsters.InnerRadius then
+				monster.Wander = monster.Wander.Unit * Config.StarterMonsters.InnerRadius -- stay out of town
+			end
 		end
 		goal = monster.Wander
 		distance = (goal - flat).Magnitude
@@ -457,12 +467,29 @@ local function step(monster, dt: number, t: number)
 	end
 end
 
+-- Keeps weak Gloomlings prowling just outside town, day and night.
+local function keepStarterPack()
+	local count = 0
+	for _, monster in monsters do
+		if monster.Starter then
+			count += 1
+		end
+	end
+	local def = Config.StarterMonsters
+	for _ = count + 1, def.Count do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(def.InnerRadius, def.OuterRadius)
+		local monster = MonsterService:Spawn(def.Kind, Vector3.new(math.cos(a) * r, 0, math.sin(a) * r), false)
+		monster.Starter = true
+	end
+end
+
 -- Keeps a pack of day monsters roaming just ahead of the herd.
 local function keepDayPack()
 	local herdAngle = S.TitanService:GetAngle()
 	local dayCount = 0
 	for _, monster in table.clone(monsters) do
-		if not monster.Night then
+		if not monster.Night and not monster.Starter then
 			local p = monster.Root.Position
 			local a = math.atan2(p.Z, p.X)
 			if wrapPi(a - herdAngle) < -0.45 then
@@ -499,6 +526,7 @@ function MonsterService:Start()
 	end)
 	while true do
 		keepDayPack()
+		keepStarterPack()
 		task.wait(3)
 	end
 end

@@ -38,6 +38,8 @@ local function defaultProfile()
 		Spells = {},
 		Upgrades = { Strength = 0, Armor = 0, Swiftness = 0, AutoPicker = 0 },
 		Kills = 0,
+		Level = 1,
+		XP = 0,
 	}
 end
 

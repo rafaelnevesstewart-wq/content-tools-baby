@@ -19,6 +19,9 @@ This repo holds the first playable build: one full day and night loop with every
 | Monsters: Gloomhounds, Thornbacks and Golems roam ahead of the herd by day and hunt in waves at Nightfall, with a Storm King boss every 5th night. Kills drop coins and food | `src/server/Services/MonsterService.luau`, `CycleService` |
 | Weapons: Blade and Sling free, Crossbow, Cleaver and Spear for coins, Maul (shockwave) and Reaper (lifesteal) for Robux | `Config.Weapons`, `src/server/Services/CombatService.luau` |
 | Spells on Z X C V B: Fireball, Chain Lightning, Frost Nova (attack), Shield and Heal (defence), each upgradable to level 5 | `Config.Spells`, `CombatService`, `src/client/Combat.client.luau` |
+| Fighting XP and levels (up to 50): each kill gives XP, each level adds health, power and damage. Weak Gloomlings always prowl just outside town for a first fight | `PlayerService`, `MonsterService`, `Config.Leveling` |
+| Health, power (mana for spells) and XP bars with your level and strength, plus an inventory (I) to see and equip your gear | `src/client/Vitals.client.luau` |
+| Death: your body ragdolls and crumbles into smoke, a "You were slain" screen says who got you, then you rise again on your titan | `CombatService`, `Vitals.client.luau` |
 | PvP everywhere except the town safe zone, with kill rewards and a Kills leaderboard | `CombatService` |
 | Upgrades at the Forge: Strength, Armor, Swiftness and the food Auto-Picker | `Config.Upgrades`, `PlayerService`, `WorldService` |
 | Drive your titan: sit in the saddle on its back, W/S to walk and A/D to turn. Get off and it walks back to the herd | `TitanService`, `Combat.client.luau` |

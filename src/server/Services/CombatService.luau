@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Util = require(ReplicatedStorage.Shared.Util)
 
 local CombatService = {}
@@ -15,7 +16,8 @@ local S
 
 local cooldowns = {} -- [Player] = { [key] = os.clock() when ready }
 local shields = {} -- [Player] = { Amount, Until, Visual }
-local lastHit = {} -- [Player] = { Attacker, At }
+local lastHit = {} -- [Player] = { Attacker, Source, At }
+local power = {} -- [Player] = current power (mana)
 local effectsFolder
 
 local ARC_DOT = 0.35 -- how wide a melee swing is (dot product with facing)
@@ -52,8 +54,37 @@ local function upgradeLevel(player: Player, key: string): number
 	return profile and profile.Upgrades[key] or 0
 end
 
+local function levelOf(player: Player): number
+	local profile = S.PlayerService:GetProfile(player)
+	return profile and profile.Level or 1
+end
+
 local function damageMult(player: Player): number
-	return 1 + upgradeLevel(player, "Strength") * 0.1
+	return 1 + upgradeLevel(player, "Strength") * 0.1 + (levelOf(player) - 1) * Config.Leveling.DamagePerLevel
+end
+
+-- Strength as shown on the HUD: 100 = normal damage.
+function CombatService:Strength(player: Player): number
+	return math.floor(damageMult(player) * 100 + 0.5)
+end
+
+function CombatService:MaxPower(player: Player): number
+	return Config.Power.Base + (levelOf(player) - 1) * Config.Leveling.PowerPerLevel
+end
+
+local function setPower(player: Player, amount: number)
+	local maxPower = CombatService:MaxPower(player)
+	power[player] = math.clamp(amount, 0, maxPower)
+	player:SetAttribute("Power", math.floor(power[player]))
+	player:SetAttribute("MaxPower", maxPower)
+end
+
+function CombatService:RefillOnLevelUp(player: Player)
+	setPower(player, self:MaxPower(player))
+	local humanoid = humanoidOf(player)
+	if humanoid and humanoid.Health > 0 then
+		humanoid.Health = humanoid.MaxHealth
+	end
 end
 
 function CombatService:InSafeZone(position: Vector3): boolean
@@ -139,13 +170,8 @@ function CombatService:DamagePlayer(victim: Player, amount: number, attacker: Pl
 	if amount <= 0 then
 		return
 	end
-	if attacker then
-		lastHit[victim] = { Attacker = attacker, At = os.clock() }
-	end
+	lastHit[victim] = { Attacker = attacker, Source = sourceName, At = os.clock() }
 	humanoid.Health = math.max(0, humanoid.Health - amount)
-	if sourceName and humanoid.Health <= 0 then
-		S.PlayerService:Notify(victim, "You were taken down by a " .. sourceName .. ".")
-	end
 end
 
 local function hit(target, amount: number, attacker: Player)
@@ -237,7 +263,7 @@ function CombatService:ApplyStats(player: Player)
 	if not humanoid then
 		return
 	end
-	local maxHealth = Config.Combat.BaseHealth + upgradeLevel(player, "Armor") * 20
+	local maxHealth = Config.Combat.BaseHealth + upgradeLevel(player, "Armor") * 20 + (levelOf(player) - 1) * Config.Leveling.HealthPerLevel
 	local wasFull = humanoid.Health >= humanoid.MaxHealth - 0.01
 	humanoid.MaxHealth = maxHealth
 	if wasFull then
@@ -251,23 +277,76 @@ function CombatService:OnCharacter(player: Player, character: Model)
 	if not humanoid then
 		return
 	end
+	humanoid.BreakJointsOnDeath = false -- we ragdoll the body instead (see _onDied)
 	self:ApplyStats(player)
+	humanoid.Health = humanoid.MaxHealth
+	setPower(player, self:MaxPower(player))
 	self:GiveWeapons(player)
 	local forceField = Instance.new("ForceField")
 	forceField.Visible = true
 	forceField.Parent = character
 	Debris:AddItem(forceField, Config.Combat.SpawnProtection)
 	humanoid.Died:Connect(function()
-		self:_onDied(player)
+		self:_onDied(player, character)
 	end)
 end
 
-function CombatService:_onDied(victim: Player)
+-- The body goes limp, darkens and crumbles into smoke.
+local function ragdoll(character: Model)
+	for _, motor in character:GetDescendants() do
+		if motor:IsA("Motor6D") and motor.Part0 and motor.Part1 then
+			local a0 = Instance.new("Attachment")
+			a0.CFrame = motor.C0
+			a0.Parent = motor.Part0
+			local a1 = Instance.new("Attachment")
+			a1.CFrame = motor.C1
+			a1.Parent = motor.Part1
+			local socket = Instance.new("BallSocketConstraint")
+			socket.Attachment0 = a0
+			socket.Attachment1 = a1
+			socket.LimitsEnabled = true
+			socket.TwistLimitsEnabled = true
+			socket.Parent = motor.Part1
+			motor.Enabled = false
+		end
+	end
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		hrp.AssemblyLinearVelocity += hrp.CFrame.LookVector * -18 + Vector3.new(0, 10, 0)
+		local smoke = Instance.new("ParticleEmitter")
+		smoke.Color = ColorSequence.new(Color3.fromRGB(40, 10, 10), Color3.fromRGB(15, 15, 15))
+		smoke.Size = NumberSequence.new(1.5, 4)
+		smoke.Transparency = NumberSequence.new(0.3, 1)
+		smoke.Lifetime = NumberRange.new(1.5, 2.5)
+		smoke.Speed = NumberRange.new(1, 3)
+		smoke.Rate = 25
+		smoke.SpreadAngle = Vector2.new(180, 180)
+		smoke.Parent = hrp
+	end
+	task.delay(1, function()
+		for _, p in character:GetDescendants() do
+			if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
+				TweenService:Create(p, TweenInfo.new(Config.Combat.RespawnTime - 1.5), { Color = Color3.fromRGB(20, 18, 18), Transparency = 0.6 }):Play()
+			end
+		end
+	end)
+end
+
+function CombatService:_onDied(victim: Player, character: Model)
 	S.StealService:DropCarried(victim, "knocked out")
 	self:_dropShield(victim)
+	pcall(ragdoll, character)
 	local last = lastHit[victim]
 	lastHit[victim] = nil
-	if not last or os.clock() - last.At > 10 or not last.Attacker.Parent then
+	local recent = last and os.clock() - last.At <= 10
+	local by = nil
+	if recent and last.Attacker then
+		by = last.Attacker.DisplayName
+	elseif recent and last.Source then
+		by = "a " .. last.Source
+	end
+	Remotes.Ui:FireClient(victim, { Died = { By = by, Respawn = Config.Combat.RespawnTime } })
+	if not recent or not last.Attacker or not last.Attacker.Parent then
 		return
 	end
 	local killer = last.Attacker
@@ -278,7 +357,9 @@ function CombatService:_onDied(victim: Player)
 	if killerProfile then
 		killerProfile.Kills += 1
 	end
-	S.PlayerService:Notify(killer, string.format("You defeated %s! +%d coins", victim.DisplayName, reward))
+	local xp = Config.Leveling.PlayerKillXP + (victimProfile and victimProfile.Level or 1) * Config.Leveling.PlayerKillXPPerLevel
+	S.PlayerService:Notify(killer, string.format("You defeated %s! +%d coins, +%d XP", victim.DisplayName, reward, xp))
+	S.PlayerService:AddXP(killer, xp)
 	S.PlayerService:Notify(victim, string.format("%s defeated you.", killer.DisplayName))
 end
 
@@ -399,9 +480,15 @@ function CombatService:Cast(player: Player, arg)
 		S.PlayerService:Notify(player, def.Name .. " isn't unlocked yet. Get it in the Shop.")
 		return
 	end
+	local have = power[player] or 0
+	if have < def.PowerCost then
+		S.PlayerService:Notify(player, string.format("Not enough power for %s (%d needed).", def.Name, def.PowerCost))
+		return
+	end
 	if not ready(player, def.Key, def.Cooldown) then
 		return
 	end
+	setPower(player, have - def.PowerCost)
 	local direction = typeof(arg.Dir) == "Vector3" and arg.Dir.Magnitude > 0.5 and arg.Dir.Unit or hrp.CFrame.LookVector
 	local mult = damageMult(player)
 
@@ -484,6 +571,7 @@ function CombatService:Cast(player: Player, arg)
 		if #struck == 0 then
 			S.PlayerService:Notify(player, "No target in sight for Lightning Strike.")
 			cooldowns[player][def.Key] = os.clock() + 1
+			setPower(player, (power[player] or 0) + def.PowerCost) -- refund
 		end
 	elseif def.Key == "FrostNova" then
 		local damage = spellPower(def, level, "Damage", "DamagePerLevel") * mult
@@ -566,6 +654,7 @@ end
 
 function CombatService:Init(services)
 	S = services
+	Players.RespawnTime = Config.Combat.RespawnTime
 	effectsFolder = Instance.new("Folder")
 	effectsFolder.Name = "Effects"
 	effectsFolder.Parent = workspace
@@ -573,7 +662,23 @@ function CombatService:Init(services)
 		cooldowns[player] = nil
 		shields[player] = nil
 		lastHit[player] = nil
+		power[player] = nil
 	end)
+end
+
+function CombatService:Start()
+	-- Power slowly refills.
+	while true do
+		local dt = task.wait(0.25)
+		for _, player in Players:GetPlayers() do
+			if power[player] then
+				local humanoid = humanoidOf(player)
+				if humanoid and humanoid.Health > 0 then
+					setPower(player, power[player] + Config.Power.RegenPerSecond * dt)
+				end
+			end
+		end
+	end
 end
 
 return CombatService

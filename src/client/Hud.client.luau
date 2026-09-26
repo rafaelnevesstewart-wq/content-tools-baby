@@ -101,7 +101,7 @@ corner(18).Parent = phaseLabel
 
 local toastHolder = make("Frame", {
 	Size = UDim2.new(0, 460, 0, 200),
-	Position = UDim2.new(0.5, -230, 1, -290),
+	Position = UDim2.new(0.5, -230, 1, -390),
 	BackgroundTransparency = 1,
 }, {
 	make(
@@ -197,12 +197,14 @@ end)
 shopFrame = make("Frame", {
 	Name = "Shop",
 	Visible = false,
-	Size = UDim2.new(0.6, 0, 0.7, 0),
-	Position = UDim2.new(0.2, 0, 0.15, 0),
+	-- Centred on screen whatever its size.
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Size = UDim2.new(0.62, 0, 0.72, 0),
+	Position = UDim2.fromScale(0.5, 0.5),
 	BackgroundColor3 = PANEL,
 }, {
 	corner(16),
-	make("UISizeConstraint", { MaxSize = Vector2.new(680, 600), MinSize = Vector2.new(320, 320) }),
+	make("UISizeConstraint", { MaxSize = Vector2.new(720, 620), MinSize = Vector2.new(320, 320) }),
 })
 shopFrame.Parent = gui
 
@@ -252,13 +254,20 @@ for _, name in TAB_NAMES do
 		Size = UDim2.new(1, -24, 1, -104),
 		Position = UDim2.fromOffset(12, 96),
 		BackgroundTransparency = 1,
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(),
-		ScrollBarThickness = 6,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		ScrollBarThickness = 10,
+		ScrollBarImageColor3 = ACCENT,
+		VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
 		Visible = false,
-	}, {
-		make("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
 	})
+	-- Size the scrollable area to the rows so the mouse wheel, touch drag and
+	-- the scroll bar can reach every item.
+	local layout = make("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder })
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		tabList.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 12)
+	end)
+	layout.Parent = tabList
 	tabList.Parent = shopFrame
 	tabLists[name] = tabList
 	local tabButton = make("TextButton", {
@@ -448,7 +457,8 @@ end
 
 list = tabLists.Spells
 for _, spell in Config.Spells do
-	local titleLabel, spellButton = actionRow(spell.Name, string.format("[%s] %s  •  %s", spell.Hotkey, spell.Description, spell.Type))
+	local titleLabel, spellButton =
+		actionRow(spell.Name, string.format("[%s] %s  •  %s  •  %d power", spell.Hotkey, spell.Description, spell.Type, spell.PowerCost))
 	spellButton.Activated:Connect(function()
 		Remotes.Action:FireServer("BuySpell", spell.Key)
 	end)

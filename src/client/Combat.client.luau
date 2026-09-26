@@ -92,6 +92,10 @@ local function cast(spell)
 	if os.clock() < (readyAt[spell.Key] or 0) then
 		return
 	end
+	if (player:GetAttribute("Power") or 0) < spell.PowerCost then
+		Remotes.Action:FireServer("Cast", { Key = spell.Key }) -- server says how much power is needed
+		return
+	end
 	readyAt[spell.Key] = os.clock() + spell.Cooldown
 	Remotes.Action:FireServer("Cast", { Key = spell.Key, Dir = aimDirection() })
 end
