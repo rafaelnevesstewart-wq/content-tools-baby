@@ -339,6 +339,93 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	end
 end)
 
+-- Quest tracker -------------------------------------------------------------------------
+
+local questPanel = make("Frame", {
+	Size = UDim2.fromOffset(250, 186),
+	Position = UDim2.fromOffset(12, 286),
+	BackgroundColor3 = PANEL,
+	BackgroundTransparency = 0.15,
+}, { corner(12) })
+questPanel.Parent = gui
+local questTitle = label({
+	Size = UDim2.new(1, -16, 0, 22),
+	Position = UDim2.fromOffset(8, 4),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextColor3 = GOLD,
+	Text = "📜 Quests",
+	Parent = questPanel,
+})
+make("UITextSizeConstraint", { MaxTextSize = 18 }).Parent = questTitle
+
+local questRows = {}
+for i = 1, 3 do
+	local row = make("Frame", { Size = UDim2.new(1, -16, 0, 48), Position = UDim2.fromOffset(8, 28 + (i - 1) * 52), BackgroundTransparency = 1 })
+	local text = label({ Size = UDim2.new(1, -70, 0, 20), TextXAlignment = Enum.TextXAlignment.Left, Text = "", Parent = row })
+	make("UITextSizeConstraint", { MaxTextSize = 15 }).Parent = text
+	local reward = label({
+		Size = UDim2.new(1, -70, 0, 14),
+		Position = UDim2.fromOffset(0, 20),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(190, 200, 215),
+		Text = "",
+		Parent = row,
+	})
+	make("UITextSizeConstraint", { MaxTextSize = 12 }).Parent = reward
+	local back = make(
+		"Frame",
+		{ Size = UDim2.new(1, -70, 0, 8), Position = UDim2.fromOffset(0, 37), BackgroundColor3 = Color3.fromRGB(45, 48, 60) },
+		{ corner(4) }
+	)
+	local fill = make("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.fromRGB(120, 210, 110) }, { corner(4) })
+	fill.Parent = back
+	back.Parent = row
+	local claim = make("TextButton", {
+		Size = UDim2.fromOffset(62, 32),
+		Position = UDim2.new(1, -62, 0, 8),
+		BackgroundColor3 = Color3.fromRGB(80, 190, 90),
+		Font = FONT,
+		TextScaled = true,
+		TextColor3 = Color3.new(1, 1, 1),
+		Text = "Claim",
+		Visible = false,
+	}, { corner(8), make("UITextSizeConstraint", { MaxTextSize = 16 }) })
+	claim.Activated:Connect(function()
+		Remotes.Action:FireServer("ClaimQuest", i)
+	end)
+	claim.Parent = row
+	row.Parent = questPanel
+	questRows[i] = { Text = text, Reward = reward, Fill = fill, Claim = claim }
+end
+
+local function refreshQuests()
+	local quests = state and state.Quests
+	if not quests then
+		return
+	end
+	questTitle.Text = string.format("📜 Quests  •  new in %s", Util.formatTime(quests.RefreshIn))
+	for i, row in questRows do
+		local quest = quests.List[i]
+		if quest then
+			row.Text.Text = (quest.Claimed and "✔ " or "") .. quest.Text
+			row.Text.TextColor3 = quest.Claimed and Color3.fromRGB(140, 150, 160) or Color3.new(1, 1, 1)
+			row.Reward.Text = string.format("%d/%d  •  🪙%s  ⭐%d XP", quest.Progress, quest.Goal, Util.formatNumber(quest.Coins), quest.XP)
+			row.Fill.Size = UDim2.fromScale(math.clamp(quest.Progress / quest.Goal, 0, 1), 1)
+			row.Claim.Visible = not quest.Claimed and quest.Progress >= quest.Goal
+		end
+	end
+end
+
+-- Reading the quest board in town makes the tracker pulse.
+local function pulseQuests()
+	local stroke = make("UIStroke", { Color = GOLD, Thickness = 3 })
+	stroke.Parent = questPanel
+	TweenService:Create(stroke, TweenInfo.new(1.5), { Transparency = 1 }):Play()
+	task.delay(1.6, function()
+		stroke:Destroy()
+	end)
+end
+
 -- Death screen ----------------------------------------------------------------------
 
 local deathGui = make("ScreenGui", { Name = "DeathScreen", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 20, Enabled = false })
@@ -413,6 +500,7 @@ Remotes.State.OnClientEvent:Connect(function(newState)
 		xpText.Text = "MAX LEVEL"
 	end
 	rebuildInventory()
+	refreshQuests()
 end)
 
 Remotes.Ui.OnClientEvent:Connect(function(message)
@@ -425,6 +513,8 @@ Remotes.Ui.OnClientEvent:Connect(function(message)
 		levelUpFlash(message.LevelUp)
 	elseif message.XPGain then
 		xpPopup(message.XPGain)
+	elseif message.Open == "Quests" then
+		pulseQuests()
 	end
 end)
 

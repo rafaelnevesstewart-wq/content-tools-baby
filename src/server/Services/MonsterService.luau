@@ -294,6 +294,46 @@ local function collapse(monster)
 	Debris:AddItem(model, 4)
 end
 
+-- A struck monster flashes, bleeds dark sparks and is pushed back a little.
+function MonsterService:Flinch(monster, from: Vector3?, distance: number)
+	local root = monster.Root
+	if not from or not root.Parent then
+		return
+	end
+	local away = Vector3.new(root.Position.X - from.X, 0, root.Position.Z - from.Z)
+	if away.Magnitude > 0.1 then
+		monster.Model:PivotTo(monster.Model:GetPivot() + away.Unit * distance)
+	end
+	monster.StunnedUntil = math.max(monster.StunnedUntil, os.clock() + 0.15)
+	local flash = monster.Model:FindFirstChild("HitFlash")
+	if not flash then
+		flash = Instance.new("Highlight")
+		flash.Name = "HitFlash"
+		flash.FillColor = Color3.fromRGB(255, 40, 40)
+		flash.OutlineTransparency = 1
+		flash.FillTransparency = 1
+		flash.DepthMode = Enum.HighlightDepthMode.Occluded
+		flash.Parent = monster.Model
+	end
+	flash.FillTransparency = 0.35
+	task.delay(0.12, function()
+		if flash.Parent then
+			flash.FillTransparency = 1
+		end
+	end)
+	local blood = Instance.new("ParticleEmitter")
+	blood.Color = ColorSequence.new(Color3.fromRGB(90, 0, 0), Color3.fromRGB(30, 0, 0))
+	blood.Size = NumberSequence.new(0.35 * monster.Def.Size, 0)
+	blood.Lifetime = NumberRange.new(0.3, 0.6)
+	blood.Speed = NumberRange.new(8, 16)
+	blood.SpreadAngle = Vector2.new(60, 60)
+	blood.Acceleration = Vector3.new(0, -60, 0)
+	blood.Rate = 0
+	blood.Parent = root
+	blood:Emit(12)
+	Debris:AddItem(blood, 1)
+end
+
 -- Returns true if the hit killed it.
 function MonsterService:Damage(monster, amount: number, attacker: Player?): boolean
 	if monster.Health <= 0 then
@@ -326,6 +366,7 @@ function MonsterService:Damage(monster, amount: number, attacker: Player?): bool
 			string.format("Killed a %s! +%d XP, +%d coins%s", monster.Def.Name, xp, reward, food > 0 and (", +" .. food .. " food") or "")
 		)
 		S.PlayerService:AddXP(attacker, xp)
+		S.QuestService:Progress(attacker, "Kill", 1)
 		Remotes.Ui:FireClient(attacker, { XPGain = xp, At = monster.Root.Position })
 	end
 	if monster.Def.Boss then

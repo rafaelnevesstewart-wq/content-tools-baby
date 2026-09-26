@@ -588,6 +588,10 @@ function PlayerService:_buyWeapon(player: Player, key: string)
 	if not def or def.Currency ~= "Coins" or table.find(profile.Weapons, key) then
 		return
 	end
+	if def.MinLevel and profile.Level < def.MinLevel then
+		self:Notify(player, string.format("The %s needs level %d. Fight monsters to earn XP!", def.Name, def.MinLevel))
+		return
+	end
 	if profile.Coins < def.Price then
 		self:Notify(player, string.format("You need %s coins for the %s.", Util.formatNumber(def.Price), def.Name))
 		return
@@ -789,6 +793,7 @@ function PlayerService:_onAction(player: Player, action, arg)
 			profile.Food = 0
 			self:AddGrowth(player, food * Config.Growth.FoodValue * self:GrowthMult(player))
 			self:Notify(player, string.format("Fed %d food to your titan.", food))
+			S.QuestService:Progress(player, "Feed", food)
 		end
 	elseif action == "BuyFood" then
 		local def = Config.Stages[profile.Stage]
@@ -816,6 +821,8 @@ function PlayerService:_onAction(player: Player, action, arg)
 		self:_buySpell(player, arg)
 	elseif action == "BuyUpgrade" and type(arg) == "string" then
 		self:_buyUpgrade(player, arg)
+	elseif action == "ClaimQuest" then
+		S.QuestService:Claim(player, arg)
 	elseif action == "Travel" and type(arg) == "string" then
 		self:_travel(player, arg)
 	elseif action == "BuySkin" and type(arg) == "string" then
@@ -969,6 +976,7 @@ function PlayerService:_flush(player: Player, session)
 		Kills = profile.Kills,
 		Level = profile.Level,
 		XP = profile.XP,
+		Quests = S.QuestService:Snapshot(player),
 		XPToNext = self:XPToNext(profile.Level),
 		Strength = S.CombatService:Strength(player),
 		Driving = S.TitanService:IsDriving(player),

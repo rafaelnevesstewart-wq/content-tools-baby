@@ -22,6 +22,10 @@ This repo holds the first playable build: one full day and night loop with every
 | Fighting XP and levels (up to 50): each kill gives XP, each level adds health, power and damage. Weak Gloomlings always prowl just outside town for a first fight | `PlayerService`, `MonsterService`, `Config.Leveling` |
 | Health, power (mana for spells) and XP bars with your level and strength, plus an inventory (I) to see and equip your gear | `src/client/Vitals.client.luau` |
 | Death: your body ragdolls and crumbles into smoke, a "You were slain" screen says who got you, then you rise again on your titan | `CombatService`, `Vitals.client.luau` |
+| Combat feel: damage numbers, 12% critical hits, monsters flinch, flash and bleed, weapon swings with sounds, a red flash and camera shake when you're hurt, ground shake near walking titans, rain in storms | `CombatService`, `MonsterService`, `src/client/Effects.client.luau` |
+| Quest Board in town: 3 quests at a time (hunt, forage, feed, chests, spells), fresh every 20 minutes, tracked on screen | `src/server/Services/QuestService.luau`, `Vitals.client.luau` |
+| Treasure chests ahead of the herd: hold to open, the lid swings up, coins, food and XP spill out | `QuestService` |
+| Balance: Robux buys time, style and sidegrade weapons. The strongest weapon (Kingslayer Greatsword) is free-to-play only, coin weapons unlock by level, and PvP rewards can't be farmed on the same player | `Config.luau` |
 | PvP everywhere except the town safe zone, with kill rewards and a Kills leaderboard | `CombatService` |
 | Upgrades at the Forge: Strength, Armor, Swiftness and the food Auto-Picker | `Config.Upgrades`, `PlayerService`, `WorldService` |
 | Drive your titan: sit in the saddle on its back, W/S to walk and A/D to turn. Get off and it walks back to the herd | `TitanService`, `Combat.client.luau` |

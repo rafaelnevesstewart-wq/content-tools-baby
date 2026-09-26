@@ -545,6 +545,9 @@ local function refresh()
 		if owned then
 			entry.Button.Text = "Owned"
 			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
+		elseif weapon.Currency == "Coins" and weapon.MinLevel and (state.Level or 1) < weapon.MinLevel then
+			entry.Button.Text = "🔒 Level " .. weapon.MinLevel
+			entry.Button.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
 		elseif weapon.Currency == "Coins" then
 			entry.Button.Text = "🪙 " .. Util.formatNumber(weapon.Price)
 			entry.Button.BackgroundColor3 = Color3.fromRGB(210, 160, 50)

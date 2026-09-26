@@ -355,6 +355,74 @@ local function baseBuilding(cf: CFrame, title: string, tab: string, color: Color
 	torch((cf * CFrame.new(7, 0, -11)).Position, model)
 end
 
+-- A notice board with the day's quests pinned to it.
+local function questBoard(cf: CFrame, parent: Instance)
+	local model = Instance.new("Model")
+	model.Name = "QuestBoard"
+	local wood = Color3.fromRGB(95, 65, 40)
+	for _, x in { -4, 4 } do
+		part(
+			"Part",
+			{ Name = "Post", Size = Vector3.new(0.8, 9, 0.8), CFrame = cf * CFrame.new(x, 4.5, 0), Color = wood, Material = Enum.Material.Wood },
+			model
+		)
+	end
+	part("Part", {
+		Name = "Roof",
+		Size = Vector3.new(10.5, 0.6, 2.4),
+		CFrame = cf * CFrame.new(0, 9.2, 0),
+		Color = Color3.fromRGB(70, 45, 30),
+		Material = Enum.Material.WoodPlanks,
+	}, model)
+	local board = part("Part", {
+		Name = "Board",
+		Size = Vector3.new(7.4, 5, 0.4),
+		CFrame = cf * CFrame.new(0, 5.2, 0),
+		Color = Color3.fromRGB(140, 105, 70),
+		Material = Enum.Material.WoodPlanks,
+	}, model)
+	for i = 0, 5 do
+		part("Part", {
+			Name = "Notice",
+			Size = Vector3.new(1.6, 1.9, 0.05),
+			CFrame = cf * CFrame.new(-2.6 + (i % 3) * 2.6, 6.3 - (i // 3) * 2.3, -0.23) * CFrame.Angles(0, 0, math.rad(math.random(-8, 8))),
+			Color = Color3.fromRGB(235, 225, 195),
+			Material = Enum.Material.Fabric,
+		}, model)
+	end
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.LightInfluence = 0
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 30
+	local title = part("Part", {
+		Name = "Sign",
+		Size = Vector3.new(7, 1.2, 0.3),
+		CFrame = cf * CFrame.new(0, 8.3, -0.1),
+		Color = Color3.fromRGB(60, 40, 30),
+		Material = Enum.Material.Wood,
+	}, model)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.Fantasy
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(255, 220, 150)
+	label.Text = "QUESTS"
+	label.Parent = gui
+	gui.Parent = title
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Read"
+	prompt.ObjectText = "Quest Board"
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = 12
+	prompt.RequiresLineOfSight = false
+	prompt:SetAttribute("OpenTab", "Quests")
+	prompt.Parent = board
+	torch((cf * CFrame.new(-6.5, 0, -2)).Position, model)
+	model.Parent = parent
+end
+
 local function boulder(position: Vector3, biomeIndex: number, parent: Instance)
 	local size = rng:NextNumber(6, 18)
 	part("Part", {
@@ -528,6 +596,7 @@ local function buildTown(parent: Instance)
 	baseBuilding(facingCenter(polar(0.45, 118)), "Armory", "Weapons", Color3.fromRGB(110, 40, 35), town)
 	baseBuilding(facingCenter(polar(2.55, 118)), "Spell Shrine", "Spells", Color3.fromRGB(60, 50, 110), town)
 	baseBuilding(facingCenter(polar(4.95, 118)), "Forge", "Upgrades", Color3.fromRGB(90, 60, 30), town)
+	questBoard(facingCenter(polar(-0.3, 48)), town)
 	MapBuilder.TravelPoints.Base = polar(0, 55, 2)
 	for i = 0, 7 do
 		torch(polar(i / 8 * math.pi * 2 + 0.2, 68), town)

@@ -72,6 +72,7 @@ local function spawnFood()
 			S.PlayerService:Notify(player, "Backpack full! Feed your titan.")
 			return
 		end
+		S.QuestService:Progress(player, "Forage", added)
 		placeAhead(part)
 	end)
 	table.insert(pickups, part)
@@ -161,9 +162,11 @@ local function autoPick()
 			for _, food in foods do
 				local offset = (food.Position - hrp.Position) * Vector3.new(1, 0, 1)
 				if offset.Magnitude <= radius and math.abs(food.Position.Y - hrp.Position.Y) < radius then
-					if S.PlayerService:AddFood(player, rng:NextInteger(1, 3)) <= 0 then
+					local added = S.PlayerService:AddFood(player, rng:NextInteger(1, 3))
+					if added <= 0 then
 						break
 					end
+					S.QuestService:Progress(player, "Forage", added)
 					placeAhead(food)
 				end
 			end

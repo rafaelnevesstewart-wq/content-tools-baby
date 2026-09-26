@@ -40,6 +40,7 @@ local function defaultProfile()
 		Kills = 0,
 		Level = 1,
 		XP = 0,
+		Quests = { List = {}, RefreshAt = 0 },
 	}
 end
 

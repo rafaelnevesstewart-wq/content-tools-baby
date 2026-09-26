@@ -18,6 +18,8 @@ local cooldowns = {} -- [Player] = { [key] = os.clock() when ready }
 local shields = {} -- [Player] = { Amount, Until, Visual }
 local lastHit = {} -- [Player] = { Attacker, Source, At }
 local power = {} -- [Player] = current power (mana)
+local recentKills = {} -- [killer] = { [victim UserId] = os.clock() of last rewarded kill }
+local rng = Random.new()
 local effectsFolder
 
 local ARC_DOT = 0.35 -- how wide a melee swing is (dot product with facing)
@@ -172,14 +174,36 @@ function CombatService:DamagePlayer(victim: Player, amount: number, attacker: Pl
 	end
 	lastHit[victim] = { Attacker = attacker, Source = sourceName, At = os.clock() }
 	humanoid.Health = math.max(0, humanoid.Health - amount)
+	Remotes.Ui:FireClient(victim, { Hurt = amount })
 end
 
+-- Lands one hit: rolls a critical, shows the damage number to the attacker,
+-- and makes monsters flinch back from the blow.
 local function hit(target, amount: number, attacker: Player)
-	if target.Monster then
-		S.MonsterService:Damage(target.Monster, amount, attacker)
-	elseif target.Player then
-		CombatService:DamagePlayer(target.Player, amount, attacker)
+	local crit = rng:NextNumber() < Config.Combat.CritChance
+	if crit then
+		amount *= Config.Combat.CritMult
 	end
+	amount = math.floor(amount + 0.5)
+	if target.Monster then
+		local monster = target.Monster
+		if monster.Health <= 0 then
+			return
+		end
+		local from = rootOf(attacker)
+		local killed = S.MonsterService:Damage(monster, amount, attacker)
+		if not killed then
+			S.MonsterService:Flinch(monster, from and from.Position or nil, crit and 4 or 2)
+		end
+	elseif target.Player then
+		local humanoid = humanoidOf(target.Player)
+		local before = humanoid and humanoid.Health or 0
+		CombatService:DamagePlayer(target.Player, amount, attacker)
+		if not humanoid or humanoid.Health >= before then
+			return -- blocked (safe zone, spawn shield, stone shield)
+		end
+	end
+	Remotes.Ui:FireClient(attacker, { Hit = { Position = target.Position, Amount = amount, Crit = crit } })
 end
 
 -- Weapons ----------------------------------------------------------------------
@@ -235,6 +259,11 @@ local function buildTool(def)
 		handle.Size = Vector3.new(0.5, 3.4, 0.5)
 		piece(Vector3.new(2.4, 1.6, 1.6), CFrame.new(0, 2.2, 0), Color3.fromRGB(70, 75, 85), Enum.Material.Metal)
 		piece(Vector3.new(2.5, 0.3, 1.7), CFrame.new(0, 2.2, 0), def.Color, Enum.Material.Neon)
+	elseif def.Key == "Greatsword" then
+		handle.Size = Vector3.new(0.45, 2, 0.45)
+		piece(Vector3.new(0.3, 6, 1.1), CFrame.new(0, 4, 0), def.Color, Enum.Material.Metal)
+		piece(Vector3.new(0.35, 5.6, 0.2), CFrame.new(0, 4, 0), Color3.fromRGB(255, 240, 180), Enum.Material.Neon)
+		piece(Vector3.new(2.6, 0.4, 0.5), CFrame.new(0, 1, 0), Color3.fromRGB(120, 90, 30), Enum.Material.Metal)
 	elseif def.Key == "Reaper" then
 		handle.Size = Vector3.new(0.4, 5, 0.4)
 		piece(Vector3.new(0.2, 0.8, 3.6), CFrame.new(0, 2.6, -1.6) * CFrame.Angles(0.3, 0, 0), def.Color, material)
@@ -350,6 +379,15 @@ function CombatService:_onDied(victim: Player, character: Model)
 		return
 	end
 	local killer = last.Attacker
+	-- No reward for farming the same player over and over.
+	local killerLog = recentKills[killer] or {}
+	recentKills[killer] = killerLog
+	local lastKill = killerLog[victim.UserId]
+	if lastKill and os.clock() - lastKill < Config.Combat.PvPRepeatCooldown then
+		S.PlayerService:Notify(killer, string.format("You defeated %s again. No reward for a while: find new rivals!", victim.DisplayName))
+		return
+	end
+	killerLog[victim.UserId] = os.clock()
 	local victimProfile = S.PlayerService:GetProfile(victim)
 	local reward = Config.Combat.KillRewardBase + (victimProfile and victimProfile.Stage or 1) * Config.Combat.KillRewardPerStage
 	S.PlayerService:AddCoins(killer, reward)
@@ -395,11 +433,15 @@ function CombatService:Attack(player: Player, arg)
 			Transparency = 0.3,
 		})
 		fade(slash, 0.2)
+		local aim = typeof(arg.Dir) == "Vector3" and Vector3.new(arg.Dir.X, 0, arg.Dir.Z) or facing
+		aim = aim.Magnitude > 0.1 and aim.Unit or facing
 		local hits, dealt = 0, 0
 		for _, target in targets(player) do
 			local offset = target.Position - hrp.Position
+			local flat = Vector3.new(offset.X, 0, offset.Z)
+			local direction = flat.Magnitude > 0.1 and flat.Unit or facing
 			local distance = offset.Magnitude - target.Radius
-			if distance <= def.Range and offset.Unit:Dot(facing) > ARC_DOT then
+			if distance <= def.Range + 1.5 and (direction:Dot(facing) > ARC_DOT or direction:Dot(aim) > ARC_DOT) then
 				hit(target, damage, player)
 				hits += 1
 				dealt += damage
@@ -489,6 +531,7 @@ function CombatService:Cast(player: Player, arg)
 		return
 	end
 	setPower(player, have - def.PowerCost)
+	S.QuestService:Progress(player, "Spell", 1)
 	local direction = typeof(arg.Dir) == "Vector3" and arg.Dir.Magnitude > 0.5 and arg.Dir.Unit or hrp.CFrame.LookVector
 	local mult = damageMult(player)
 
@@ -663,6 +706,7 @@ function CombatService:Init(services)
 		shields[player] = nil
 		lastHit[player] = nil
 		power[player] = nil
+		recentKills[player] = nil
 	end)
 end
 

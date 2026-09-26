@@ -159,7 +159,34 @@ Config.Perks = {
 	VipIncomeMult = 1.1,
 }
 
--- Monetisation. Set Id to the real asset id after creating each item on the Creator Hub.
+-- Quests from the board in town: 3 at a time, a fresh set every RefreshMinutes.
+-- Rewards per unit of the goal, scaled up by +15% for each fighter level.
+Config.Quests = {
+	RefreshMinutes = 20,
+	LevelBonus = 0.15,
+	Templates = {
+		{ Stat = "Kill", Text = "Defeat %d monsters", Goals = { 6, 12, 20 }, CoinsEach = 45, XPEach = 10 },
+		{ Stat = "Forage", Text = "Pick up %d food", Goals = { 15, 30, 45 }, CoinsEach = 12, XPEach = 3 },
+		{ Stat = "Feed", Text = "Feed your titan %d food", Goals = { 20, 40 }, CoinsEach = 10, XPEach = 2 },
+		{ Stat = "Chest", Text = "Open %d treasure chests", Goals = { 2, 3, 5 }, CoinsEach = 160, XPEach = 30 },
+		{ Stat = "Spell", Text = "Cast %d spells", Goals = { 8, 15 }, CoinsEach = 25, XPEach = 6 },
+	},
+}
+
+-- Treasure chests scattered ahead of the herd. Hold to open.
+Config.Chests = {
+	Count = 7,
+	HoldTime = 1.2,
+	CoinsBase = 120,
+	CoinsPerStage = 60,
+	IncomeSeconds = 45, -- or this many seconds of your income, if that is more
+	XP = 25,
+}
+
+-- Monetisation. Balance rule: Robux buys time, style and convenience, never
+-- the strongest power. The best weapon (Kingslayer Greatsword) is free-to-play
+-- only, and the Robux weapons are sidegrades with special effects.
+-- Set Id to the real asset id after creating each item on the Creator Hub.
 -- Items with Id = 0 show in the shop but cannot be bought yet.
 Config.GamePasses = {
 	{ Key = "TitanWhistle", Name = "Titan Whistle", Price = 49, Id = 0, Description = "Teleport back to your titan any time." },
@@ -308,6 +335,9 @@ Config.Combat = {
 	SpawnProtection = 8, -- seconds of protection after respawning
 	KillRewardBase = 50,
 	KillRewardPerStage = 20,
+	CritChance = 0.12, -- chance a hit lands as a critical
+	CritMult = 1.75,
+	PvPRepeatCooldown = 90, -- no reward for killing the same player again this soon
 	BaseHealth = 100,
 	BaseWalkSpeed = 16,
 	RespawnTime = 5, -- seconds on the death screen before you wake up on your titan
@@ -340,7 +370,7 @@ Config.Weapons = {
 		Key = "Blade",
 		Name = "Hunter's Blade",
 		Kind = "Melee",
-		Damage = 22,
+		Damage = 26,
 		Range = 11,
 		Cooldown = 0.5,
 		Currency = "Free",
@@ -352,7 +382,7 @@ Config.Weapons = {
 		Key = "Sling",
 		Name = "Pebble Sling",
 		Kind = "Ranged",
-		Damage = 12,
+		Damage = 14,
 		Range = 90,
 		Cooldown = 0.4,
 		Currency = "Free",
@@ -367,8 +397,9 @@ Config.Weapons = {
 		Damage = 34,
 		Range = 150,
 		Cooldown = 0.85,
+		MinLevel = 3,
 		Currency = "Coins",
-		Price = 3000,
+		Price = 2500,
 		Color = Color3.fromRGB(230, 220, 200),
 		Description = "Heavy bolts with long range.",
 	},
@@ -379,8 +410,9 @@ Config.Weapons = {
 		Damage = 55,
 		Range = 14,
 		Cooldown = 0.9,
+		MinLevel = 8,
 		Currency = "Coins",
-		Price = 12000,
+		Price = 10000,
 		Color = Color3.fromRGB(120, 125, 135),
 		Description = "A huge axe that hits everything in front of you.",
 	},
@@ -391,18 +423,32 @@ Config.Weapons = {
 		Damage = 60,
 		Range = 130,
 		Cooldown = 0.7,
+		MinLevel = 15,
 		Currency = "Coins",
-		Price = 35000,
+		Price = 30000,
 		Color = Color3.fromRGB(120, 180, 255),
 		Description = "Thrown lightning that pierces through foes.",
+	},
+	{
+		Key = "Greatsword",
+		Name = "Kingslayer Greatsword",
+		Kind = "Melee",
+		Damage = 115,
+		Range = 15,
+		Cooldown = 1.1,
+		Currency = "Coins",
+		MinLevel = 25,
+		Price = 120000,
+		Color = Color3.fromRGB(240, 210, 120),
+		Description = "The strongest blade in the land. Earned, never bought with Robux.",
 	},
 	{
 		Key = "Maul",
 		Name = "Thunder Maul",
 		Kind = "Melee",
-		Damage = 95,
+		Damage = 70,
 		Range = 16,
-		Cooldown = 1.2,
+		Cooldown = 1.1,
 		Currency = "Robux",
 		Price = 249,
 		Id = 0,
@@ -414,15 +460,15 @@ Config.Weapons = {
 		Key = "Reaper",
 		Name = "Soul Reaper",
 		Kind = "Melee",
-		Damage = 120,
+		Damage = 80,
 		Range = 16,
 		Cooldown = 1.0,
 		Currency = "Robux",
 		Price = 449,
 		Id = 0,
 		Color = Color3.fromRGB(170, 40, 60),
-		Lifesteal = 0.25,
-		Description = "A cursed scythe. Heals you for a quarter of the damage.",
+		Lifesteal = 0.2,
+		Description = "A cursed scythe. Heals you for a fifth of the damage.",
 	},
 }
 
@@ -531,7 +577,7 @@ Config.Monsters = {
 		AttackEvery = 1.5,
 		Size = 0.6,
 		Aggro = 35,
-		Reward = 6,
+		Reward = 10,
 		XP = 12,
 		Color = Color3.fromRGB(60, 55, 70),
 		Eye = Color3.fromRGB(255, 120, 60),
@@ -544,7 +590,7 @@ Config.Monsters = {
 		AttackEvery = 1.2,
 		Size = 1,
 		Aggro = 70,
-		Reward = 25,
+		Reward = 35,
 		XP = 25,
 		Color = Color3.fromRGB(40, 38, 48),
 		Eye = Color3.fromRGB(255, 40, 40),
@@ -557,7 +603,7 @@ Config.Monsters = {
 		AttackEvery = 1.6,
 		Size = 1.5,
 		Aggro = 60,
-		Reward = 60,
+		Reward = 80,
 		XP = 60,
 		Color = Color3.fromRGB(70, 55, 45),
 		Eye = Color3.fromRGB(255, 170, 30),
@@ -570,7 +616,7 @@ Config.Monsters = {
 		AttackEvery = 2.2,
 		Size = 2.2,
 		Aggro = 55,
-		Reward = 150,
+		Reward = 200,
 		XP = 150,
 		Color = Color3.fromRGB(95, 95, 100),
 		Eye = Color3.fromRGB(120, 220, 255),
@@ -583,7 +629,7 @@ Config.Monsters = {
 		AttackEvery = 2,
 		Size = 5,
 		Aggro = 140,
-		Reward = 800,
+		Reward = 1500,
 		XP = 1200,
 		Color = Color3.fromRGB(45, 25, 70),
 		Eye = Color3.fromRGB(200, 120, 255),
