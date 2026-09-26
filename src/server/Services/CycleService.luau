@@ -69,7 +69,6 @@ local function setupSky()
 
 	clouds = Instance.new("Clouds")
 	clouds.Parent = workspace.Terrain
-	workspace.Terrain.Decoration = true -- swaying grass blades
 	workspace.Terrain.WaterColor = Color3.fromRGB(30, 50, 55)
 	workspace.Terrain.WaterTransparency = 0.6
 	workspace.Terrain.WaterWaveSize = 0.2
