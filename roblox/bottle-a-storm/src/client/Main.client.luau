@@ -11,6 +11,7 @@ local order = {
 	"Climate",
 	"Season",
 	"Rewards",
+	"Style",
 	"PedestalMenu",
 	"Battle",
 	"HUD",

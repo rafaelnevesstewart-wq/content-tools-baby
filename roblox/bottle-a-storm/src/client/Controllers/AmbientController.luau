@@ -190,9 +190,10 @@ function AmbientController.start()
 	folder.Parent = workspace
 
 	buildIslets()
-	buildRainbow(Vector3.new(-150, -10, -330), Vector3.new(60, -10, -380), 90)
-	buildRainbow(Vector3.new(330, -10, 120), Vector3.new(360, -10, -80), 80)
-	buildRainbow(Vector3.new(-380, -10, 200), Vector3.new(-220, -10, 380), 85)
+	-- Out past the ring of player islands.
+	buildRainbow(Vector3.new(-190, -10, -440), Vector3.new(75, -10, -490), 90)
+	buildRainbow(Vector3.new(440, -10, 150), Vector3.new(470, -10, -100), 80)
+	buildRainbow(Vector3.new(-490, -10, 250), Vector3.new(-280, -10, 480), 85)
 	buildBirds()
 	buildBalloons()
 

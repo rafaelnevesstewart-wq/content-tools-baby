@@ -8,15 +8,15 @@ local Config = {}
 Config.MaxPlots = 8
 
 Config.World = {
-	CenterRadius = 110, -- the shared "Wild Skies" island where storms roam
-	WildRoamRadius = 95,
+	CenterRadius = 165, -- the shared "Wild Skies" island where storms roam
+	WildRoamRadius = 145,
 	PlotRadius = 58,
-	PlotRingDistance = 280, -- distance from the world center to each player island
+	PlotRingDistance = 340, -- distance from the world center to each player island
 	VoidKillY = -120, -- fall below this and you respawn
 }
 
 Config.Wild = {
-	MaxStorms = 18,
+	MaxStorms = 26,
 	SpawnInterval = 2.5, -- seconds between spawn attempts
 	HoverHeight = 5,
 	DodgeRadius = 16, -- Rare+ storms run from players closer than this
@@ -236,7 +236,7 @@ Config.Race = {
 	Mutation = "Prismatic",
 	HitsNeeded = 3,
 	Speed = 24,
-	TrackRadius = 72,
+	TrackRadius = 105,
 	Rings = 10,
 	PrizeSeconds = 600,
 	PrizeMin = 2500,
@@ -321,7 +321,7 @@ Config.Flight = {
 -- Grumpy clouds: little angry clouds on the Wild Skies that drop raindrops on
 -- players. Pop them with the Cloud Blaster for Sparks.
 Config.Grumps = {
-	MaxCount = 6,
+	MaxCount = 8,
 	SpawnInterval = 8,
 	Height = 11, -- above the island
 	Speed = 7,

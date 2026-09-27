@@ -15,6 +15,7 @@ local Remotes = require(Shared.Remotes)
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 
+local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local PlotService = require(script.Parent.PlotService)
@@ -69,6 +70,16 @@ local productHandlers: { [string]: (Player, any) -> boolean } = {
 	end,
 }
 
+-- Robux cosmetics ("Cosmetic_<id>") all share one handler.
+local function handlerFor(key: string): ((Player, any) -> boolean)?
+	if string.sub(key, 1, 9) == "Cosmetic_" then
+		return function(player)
+			return CosmeticService.grantProduct(player, key)
+		end
+	end
+	return productHandlers[key]
+end
+
 local function processReceipt(receipt): Enum.ProductPurchaseDecision
 	local player = Players:GetPlayerByUserId(receipt.PlayerId)
 	local item = Products.fromId(receipt.ProductId)
@@ -81,7 +92,10 @@ local function processReceipt(receipt): Enum.ProductPurchaseDecision
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
 
-	local handler = productHandlers[item.key]
+	local handler = handlerFor(item.key)
+	if not handler then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
 	local ok, delivered = pcall(handler, player, data)
 	if not ok or not delivered then
 		warn("[Monetization] Could not deliver " .. item.key .. ": " .. tostring(delivered))
@@ -123,7 +137,10 @@ local function onDevPurchase(player: Player, key: any)
 		grantPass(player, key)
 		Notify.player(player, "🧪 Studio test: you now own " .. item.name .. ".", "success")
 	else
-		productHandlers[key](player, data)
+		local handler = handlerFor(key)
+		if handler then
+			handler(player, data)
+		end
 		IncomeService.sync(player)
 	end
 end

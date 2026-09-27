@@ -34,6 +34,7 @@ local FUNCTIONS = {
 	"ClaimQuest", -- client -> server: (index) -> (ok, message)
 	"GetTitles", -- client -> server: () -> titles and progress
 	"SetTitle", -- client -> server: (titleId or nil) -> (ok, message)
+	"Cosmetic", -- client -> server: (action, idOrValue) -> (ok, message)
 }
 
 local folder: Instance

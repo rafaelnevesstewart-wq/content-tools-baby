@@ -61,6 +61,16 @@ local function defaultData()
 		theme = "Meadow", -- island theme
 		themes = { Meadow = true },
 		titles = {}, -- unlocked title id -> true; data.title is the one shown
+		-- Cosmetics: owned ids, plus what's in use. hat, trail, back, aura and
+		-- flag are saved when set.
+		cosmetics = {
+			owned = { Marble = true },
+			pedestal = "Marble",
+			decor = {}, -- id -> true
+			pets = {}, -- id -> true
+			signColor = 1,
+			signEmoji = "🏝️",
+		},
 		-- Also saved when set: guardUid, buddyUid, mountUid, lastSeen (for offline
 		-- earnings), title.
 		storms = {}, -- { StormRecord }

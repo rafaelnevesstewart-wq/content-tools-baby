@@ -103,9 +103,64 @@ Products.DevProducts = {
 	},
 } :: { Item }
 
+-- Robux cosmetics (see CosmeticsData). Each is a Developer Product that
+-- unlocks the cosmetic forever. They're sold in the 🎨 Style window, not the
+-- Shop's Robux tab.
+Products.Cosmetics = {
+	{
+		key = "Cosmetic_GoldenCrown",
+		id = 0,
+		price = 49,
+		name = "Golden Storm Crown",
+		description = "A shiny golden crown with sparkles.",
+	},
+	{
+		key = "Cosmetic_GalaxyTrail",
+		id = 0,
+		price = 49,
+		name = "Galaxy Trail",
+		description = "A starry purple galaxy streak.",
+	},
+	{
+		key = "Cosmetic_RainbowWings",
+		id = 0,
+		price = 79,
+		name = "Rainbow Wings",
+		description = "Big glowing rainbow wings.",
+	},
+	{
+		key = "Cosmetic_HeartAura",
+		id = 0,
+		price = 39,
+		name = "Love Aura",
+		description = "Soft pink sparkles and a warm glow float up around you.",
+	},
+	{
+		key = "Cosmetic_RainbowPedestal",
+		id = 0,
+		price = 49,
+		name = "Rainbow Pedestals",
+		description = "Every pedestal a different glowing color.",
+	},
+	{
+		key = "Cosmetic_GoldenFlag",
+		id = 0,
+		price = 29,
+		name = "Golden Flag",
+		description = "A glittering gold flag.",
+	},
+	{
+		key = "Cosmetic_StormDragon",
+		id = 0,
+		price = 79,
+		name = "Baby Storm Dragon",
+		description = "A baby dragon that flies around your island.",
+	},
+} :: { Item }
+
 local byKey: { [string]: Item } = {}
 local byId: { [number]: Item } = {}
-for _, list in { Products.Passes, Products.DevProducts } do
+for _, list in { Products.Passes, Products.DevProducts, Products.Cosmetics } do
 	for _, item in list do
 		byKey[item.key] = item
 		if item.id ~= 0 then

@@ -583,7 +583,8 @@ end
 
 -- Keeps decorations off the spawn, forecast TV, portals and bridge ends.
 local function wildBlocked(p: Vector3): boolean
-	if (p - Vector3.new(0, 0, -90)).Magnitude < 14 or (p - Vector3.new(0, 0, -30)).Magnitude < 16 then
+	local spawn = Vector3.new(0, 0, -(Config.World.CenterRadius - 20))
+	if (p - spawn).Magnitude < 14 or (p - Vector3.new(0, 0, -30)).Magnitude < 16 then
 		return true
 	end
 	if p.X > -55 and p.X < 55 and p.Z > 58 and p.Z < 90 then
@@ -692,14 +693,11 @@ function WorldBuilder.build(): { PlotInfo }
 	local rng = Random.new(42)
 	local center = Vector3.new(0, 0, 0)
 	local wild = floatingIsland(world, "WildSkies", center, Config.World.CenterRadius, WILD_GRASS)
-	scatter(
-		wild,
-		CFrame.new(center),
-		rng,
-		{ trees = 16, flowers = 26, mushrooms = 10, bushes = 10 },
-		{ treeMin = 82, treeMax = Config.World.CenterRadius - 6, max = Config.World.CenterRadius - 4 },
-		wildBlocked
-	)
+	scatter(wild, CFrame.new(center), rng, { trees = 32, flowers = 55, mushrooms = 20, bushes = 22 }, {
+		treeMin = Config.World.CenterRadius * 0.72,
+		treeMax = Config.World.CenterRadius - 6,
+		max = Config.World.CenterRadius - 4,
+	}, wildBlocked)
 
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "WildSpawn"

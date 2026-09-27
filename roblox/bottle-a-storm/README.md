@@ -16,7 +16,7 @@ titles and a round of balance changes.
 
 | Feature | Where |
 |---|---|
-| Wild Skies island with 15 storms (Common → Legendary) that roam; Rare+ ones run from you | `StormSpawner`, `StormModel` |
+| Wild Skies island (330 studs across) with 15 storms (Common → Legendary) that roam; Rare+ ones run from you | `StormSpawner`, `StormModel` |
 | Catching by throwing your Storm Jar: rarer storms dodge and need 2–3 hits; 6 mutations | `CaptureService`, `ThrowController` |
 | Storm Mixer: combine two storms; 11 secret hybrid recipes, including a new Mythic tier | `MixService`, `Recipes`, `Mixer` |
 | Riding: pick a storm as your mount; speed boost plus a power based on its weather type | `RideService`, `RideController` |
@@ -165,6 +165,24 @@ Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Go
   - Hitting players counts toward the "Splash Champ" title.
 - Numbers are in `Config.Grumps`, `Config.Blaster` and `Config.Balloon`.
 
+## Cosmetics (🎨 Style)
+
+Bought in the 🎨 Style window, mostly with Sparks. A few special ones are Robux Developer
+Products (`Products.Cosmetics`). Buying something puts it on right away. Tap it again later
+to swap. Everything is built from parts on the server, so everyone sees it
+(`CosmeticService`, `CosmeticsData`, `Style`).
+
+| For | What | Sparks | Robux |
+|---|---|---|---|
+| You | 🎩 **Hats**: Rain Cloud Hat (drizzles), Lightning Crown, Rainbow Cap, Snowflake Beanie, Tornado Top Hat | ⚡2K–400K | 👑 Golden Storm Crown 49 R$ |
+| You | ✨ **Trails**: Rainbow, Sparkle, Snowflake, Lightning, Bubble | ⚡5K–600K | 🌌 Galaxy Trail 49 R$ |
+| You | 🪽 **Backs**: Storm Jar Backpack, Cloud Wings, Butterfly Wings, Mini Tornado | ⚡3K–500K | 🌈 Rainbow Wings 79 R$ |
+| You | 💫 **Auras**: Sparkle, Rain Halo, Lightning Orbit | ⚡8K–300K | 💕 Love Aura 39 R$ |
+| Island | 🏛️ **Pedestal styles**: Marble (free), Candy, Gold, Cloud, Crystal | ⚡10K–150K | 🌈 Rainbow Pedestals 49 R$ |
+| Island | ⛲ **Decorations** (use as many as you like): Lamp Posts, Fountain, Rainbow Arch, Golden Storm Statue (of your best storm), Fireworks (at night) | ⚡5K–500K | |
+| Island | 🚩 **Sign and flag**: sign color and emoji (free); flags: Storm, Lightning, Rainbow, Sky Pirate | ⚡2K–80K | ✨ Golden Flag 29 R$ |
+| Island | 🐤 **Island pets** (up to 3 kinds, 2 of each): Ducks, Bunnies (they hop), Cloud Sheep | ⚡10K–90K | 🐉 Baby Storm Dragon 79 R$ (flies) |
+
 ## Cloud Flight (game pass, 199 R$)
 
 Press `G` (☁️ Fly on phones) to hop on a fluffy cloud and fly anywhere for 30 seconds. Move as
@@ -193,6 +211,7 @@ normal; `Space` goes up and `Ctrl` or `C` goes down. After landing, the cloud re
 | Storm battle | ⚔️ Battle button | ⚔️ Battle button |
 | Fly on a cloud (Cloud Flight pass) | `G`, then `Space` up / `Ctrl` or `C` down | ☁️ Fly, then ⬆️ / ⬇️ |
 | Island themes | 🛒 Shop → 🏝️ Themes | 🛒 Shop → 🏝️ Themes |
+| Cosmetics (character and island) | 🎨 Style button | 🎨 Style button |
 
 ## Catching: throw the jar
 
@@ -415,6 +434,9 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
       With 2 players, press ⚔️ Battle to fight. Open 🎁 Rewards → 🏷️ Titles after your first
       catch. To see the rare-catch moment quickly, set `Config.Jars[1].maxRarity = 5` and
       catch an Epic.
+- [ ] Cosmetics: press 🎨 Style. Robux items are free in Studio. Put on a hat, trail, back and
+      aura. Place every decoration and pet, change the sign color and emoji, and pick a flag.
+      Check they show on your island.
 - [ ] Fighting: on the Wild Skies, press **3** and click a grumpy cloud until it pops. Stand
       still under one to get splashed. With 2 players, press **4** and throw a balloon at
       player 2 (off their island, then on it), and at a thief carrying a storm.
@@ -455,7 +477,8 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 
 ## Before publishing
 
-1. Create the passes and products on the Creator Dashboard. Paste their IDs into
+1. Create the passes and products on the Creator Dashboard, including one Developer
+   Product per Robux cosmetic (`Products.Cosmetics`). Paste their IDs into
    `src/shared/Products.luau`. Items with ID 0 show "coming soon" in live servers.
 2. Balance lives in `src/shared/Config.luau` (prices, speeds, lock times, event timers).
 3. Replace the part-built storms in `src/server/Modules/StormModel.luau` with real models
@@ -467,7 +490,7 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
               Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
               SeasonData, RewardsData (daily rewards, quests), BattleData, TitleData,
-              ThemeData, Sounds,
+              ThemeData, CosmeticsData, Sounds,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
@@ -475,13 +498,14 @@ src/server/   Main.server.luau starts the services in order
               TradeService, StealService, GuardService, BuddyService, FlightService, GrumpService,
               BalloonService, RaidService,
               IndexService, RewardService, DailyService, EventService, BattleService,
-              TitleService, AuraService, ClimateService, ThemeService, ShopService,
+              TitleService, AuraService, ClimateService, ThemeService,
+              CosmeticService, ShopService,
               MonetizationService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars),
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, Rewards, PedestalMenu, Battle,
-               BuddyController, FlightController, CombatController, Aim,
+               BuddyController, FlightController, CombatController, Aim, Style,
                BiomeController, ThrowController, RideController, Toasts, TutorialController,
                StormAnimator, AmbientController, JuiceController, Sfx,
                PromptController, ForecastController, UI
