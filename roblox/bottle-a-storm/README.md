@@ -7,8 +7,8 @@ with no uploaded art.
 ## What's in this build
 
 These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1) and
-storm mixing and riding (v1.2) and trading (v1.3), plus four extras from the doc: storm moods,
-the island sky aura, thief styles and the Climate Shift rebirth.
+storm mixing and riding (v1.2) and trading (v1.3), plus every extra from the doc: storm moods,
+the island sky aura, thief styles, the Climate Shift rebirth and the season pass.
 
 | Feature | Where |
 |---|---|
@@ -20,16 +20,17 @@ the island sky aura, thief styles and the Climate Shift rebirth.
 | Storm moods: happy storms earn more, neglected ones try to escape; pet, ride or feed them | `MoodService` |
 | Island sky aura: a cloud canopy and weather over your island from your best storm | `AuraService` |
 | Thief styles: Quick Hands, Cloud Walker or Umbrella Tank, unlocked with Sparks | `ThiefStyles`, `StealService`, `Shop` |
+| Season pass "Stormy Seasons": 30 tiers of free and premium rewards, 4-week themed seasons with exclusive storms | `SeasonService`, `SeasonData`, `Season` |
 | Climate Shift rebirth: reset Sparks for a permanent bonus and a new sky island (Arctic, Volcano, Space) with 12 exclusive storms and a Cosmic tier | `ClimateService`, `ClimateData`, `Climate`, `BiomeController` |
 | 8 player Sky Islands with pedestals, jar displays and a Collect pad for passive Sparks ⚡ | `PlotService`, `IncomeService` |
 | Stealing: grab a jar, carry it home (70% speed); Zapper tool, Lightning Rod traps, 60 s base lock | `StealService`, `PlotService` |
 | Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod, Storm Snacks, thief styles | `ShopService`, `Shop` |
 | Saving with a session lock (no duplicate storms across servers), autosave, safe shutdown | `DataService` |
-| 4 game passes (VIP, Double Pedestals, Auto-Collect, Storm Tamer) and 5 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Summon Rainbow Hour) | `MonetizationService`, `Products` |
+| 4 game passes (VIP, Double Pedestals, Auto-Collect, Storm Tamer) and 7 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Season Premium, Skip a Season Tier, Summon Rainbow Hour) | `MonetizationService`, `Products` |
 | Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night) + forecast TV | `WeatherService`, `ForecastController` |
 | Mega-Storm raid every 45 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
-Not in this build yet: the season pass.
+Everything in the design doc is now built.
 
 ## Controls
 
@@ -117,6 +118,39 @@ lightning sparks with flashes, sand or rainbow sparkles.
   anywhere on the map.
 - **Label:** "✨ Legendary Sky: Hurricane Hana", readable from far away.
 - **Updates:** within about 2 seconds of your best storm changing.
+
+## Season pass: "Stormy Seasons"
+
+Press **🎟️ Season**. The button shows how many rewards are waiting, like "(2!)".
+
+- **Seasons:** each lasts **4 weeks** and they rotate forever. Each theme has 3 exclusive storms
+  you can only get from its pass. They never appear in the wild, so they're great for trading.
+
+  | Order | Theme | Free (tier 20) | Premium (tier 10) | Premium (tier 30) |
+  |---|---|---|---|---|
+  | 1 (now, from 21 Sep 2026) | 🍂 Autumn Gusts | Leafy Breeze (Epic) | Pumpkin Tornado (Legendary) | Harvest Moon Squall (Mythic) |
+  | 2 | 🎄 Winter Wonder | Jingle Flurry | Candy Cane Cyclone | Aurora Reindeer |
+  | 3 | 🌸 Spring Showers | Blossom Drizzle | Petal Twister | Cherry Monsoon |
+  | 4 | ☀️ Summer Heatwave | Sunny Puff | Heatwave Hawk | Tropical Typhoon |
+
+- **Season Stars ⭐:** 250 per tier, 30 tiers (7,500 total, about 7–8 hours of play). You earn
+  them from:
+  - 3 a minute online
+  - 8 × rarity per catch
+  - 30 per steal
+  - 20 per mix
+  - 60 for fighting a raid, +100 if the server wins
+- **Rewards:** every tier has a free reward (top row) and a premium reward (bottom row). They
+  include Sparks (scaled to your income), Storm Snacks, Raid Shields, random storms (some
+  mutated) and the exclusives. Tap a glowing reward to claim it. Storm rewards need a free
+  pedestal; if your island is full, the claim is refused and the reward waits.
+- **Season Premium (299 R$):** unlocks the premium row for the current season, including tiers
+  you've already passed. Buying it twice gives 3 tier skips instead.
+  **Skip a Tier (49 R$)** gives 250 stars.
+- **New seasons:** stars, claims and Premium reset. Unclaimed rewards from the old season are lost.
+- **Editing:** tiers and rewards are in `src/shared/SeasonData.luau` (one line per tier), and
+  star amounts are in `Config.Season`. Themes rotate every 4 weeks no matter the real-world
+  season. Add a holiday theme by adding it to `Themes`, with its 3 storms in `StormData`.
 
 ## Climate Shift (rebirth)
 
@@ -234,6 +268,9 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
       Shift, check Sparks reset and the income bonus, walk through the ❄️ portal, catch an
       Arctic storm, feel the tint. For Space, check the low gravity. The portal back takes you
       home.
+- [ ] Season pass: open 🎟️ Season and claim tier rewards as you earn stars. In Studio, the
+      "Skip a tier" and "Unlock Premium" buttons are free, so skip to tier 10 and claim the
+      Pumpkin Tornado.
 - [ ] Trade (2 players): player 1 presses 🤝 Trade and picks player 2, and player 2 accepts.
       Add storms, press Ready on both and watch the countdown. Change something during the
       countdown and check it stops. Try trading with a full island.
@@ -260,16 +297,17 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 ```
 src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
               Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
+              SeasonData,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
-              IncomeService, CaptureService, RideService, MoodService, MixService,
+              IncomeService, CaptureService, RideService, MoodService, SeasonService, MixService,
               TradeService, StealService, RaidService, AuraService, ClimateService,
               ShopService, MonetizationService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars),
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
-  Controllers/ HUD, Shop, Mixer, Trade, Climate, BiomeController, ThrowController,
+  Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, BiomeController, ThrowController,
                RideController, Toasts,
                PromptController, ForecastController, UI
 ```
