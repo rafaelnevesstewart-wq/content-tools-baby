@@ -26,6 +26,7 @@ type LightingState = {
 	Ambient: Color3,
 	OutdoorAmbient: Color3,
 	AtmosphereColor: Color3,
+	AtmosphereDensity: number?,
 }
 local baseline: LightingState
 local override: LightingState? = nil
@@ -51,7 +52,10 @@ local function applyLighting(requested: LightingState)
 	}):Play()
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
 	if atmosphere then
-		TweenService:Create(atmosphere, info, { Color = state.AtmosphereColor }):Play()
+		TweenService:Create(atmosphere, info, {
+			Color = state.AtmosphereColor,
+			Density = state.AtmosphereDensity or baseline.AtmosphereDensity or atmosphere.Density,
+		}):Play()
 	end
 end
 
@@ -128,6 +132,7 @@ function WeatherService.init()
 		Ambient = Lighting.Ambient,
 		OutdoorAmbient = Lighting.OutdoorAmbient,
 		AtmosphereColor = if atmosphere then atmosphere.Color else Color3.fromRGB(200, 225, 255),
+		AtmosphereDensity = if atmosphere then atmosphere.Density else nil,
 	}
 	nextEvent = pickNext(nil)
 	nextAt = now() + Config.Weather.FirstEventDelay

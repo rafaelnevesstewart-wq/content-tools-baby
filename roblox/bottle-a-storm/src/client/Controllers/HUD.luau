@@ -16,6 +16,7 @@ local RaidData = require(Shared.RaidData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local Climate = require(script.Parent.Climate)
+local Rewards = require(script.Parent.Rewards)
 local Season = require(script.Parent.Season)
 local Shop = require(script.Parent.Shop)
 local Toasts = require(script.Parent.Toasts)
@@ -312,13 +313,25 @@ function HUD.start()
 	local function fitBar()
 		local camera = workspace.CurrentCamera
 		local height = if camera then camera.ViewportSize.Y else 800
-		barScale.Scale = math.clamp((height - 140) / 440, 0.6, 1)
+		barScale.Scale = math.clamp((height - 140) / 520, 0.55, 1)
 	end
 	fitBar()
 	if workspace.CurrentCamera then
 		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitBar)
 	end
 
+	local rewardsButton = iconButton(bar, 0, "🎁", "Rewards", Color3.fromRGB(150, 225, 170))
+	rewardsButton.Activated:Connect(function()
+		Rewards.toggle()
+	end)
+	local rewardsBadge = badge(rewardsButton)
+	local function refreshRewardsBadge()
+		local waiting = player:GetAttribute("RewardsReady") or 0
+		rewardsBadge.Visible = waiting > 0
+		rewardsBadge.Text = tostring(waiting)
+	end
+	player:GetAttributeChangedSignal("RewardsReady"):Connect(refreshRewardsBadge)
+	refreshRewardsBadge()
 	iconButton(bar, 1, "🛒", "Shop", UI.Colors.PanelLight).Activated:Connect(function()
 		Shop.toggle(nil)
 	end)

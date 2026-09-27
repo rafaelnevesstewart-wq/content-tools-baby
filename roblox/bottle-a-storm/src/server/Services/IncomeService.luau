@@ -11,6 +11,7 @@ local Config = require(Shared.Config)
 local Economy = require(Shared.Economy)
 local Format = require(Shared.Format)
 local Products = require(Shared.Products)
+local Signal = require(Shared.Signal)
 local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
@@ -18,8 +19,12 @@ local Juice = require(Modules.Juice)
 
 local DataService = require(script.Parent.DataService)
 local PlotService = require(script.Parent.PlotService)
+local WeatherService = require(script.Parent.WeatherService)
 
 local IncomeService = {}
+
+-- (player, amount) whenever Sparks reach a player's wallet from their storms.
+IncomeService.Collected = Signal.new()
 
 local lastCollectToast: { [Player]: number } = {}
 
@@ -42,7 +47,10 @@ function IncomeService.rateOf(player: Player): number
 	if hasPass(player, "VIP") then
 		total *= Config.Income.VIPMultiplier
 	end
-	return total * ClimateData.at(data.climate).multiplier
+	local event = WeatherService.current()
+	local eventBonus = if event then event.incomeMultiplier or 1 else 1
+	local indexBonus = 1 + Config.Index.RowBonus * (data.indexRows or 0)
+	return total * ClimateData.at(data.climate).multiplier * eventBonus * indexBonus
 end
 
 -- Pushes the profile's numbers to attributes, leaderstats and the collect pad.
@@ -58,6 +66,8 @@ function IncomeService.sync(player: Player)
 	player:SetAttribute("Pedestals", data.pedestals)
 	player:SetAttribute("MaxPedestals", Economy.maxPedestals(hasPass(player, "DoubleSlots")))
 	player:SetAttribute("BootsLevel", data.bootsLevel)
+	player:SetAttribute("Captured", data.stats.captured)
+	player:SetAttribute("IndexRows", data.indexRows or 0)
 	player:SetAttribute("TrapLevel", data.trapLevel)
 	player:SetAttribute("RaidShields", data.raidShields)
 	player:SetAttribute("ThiefStyle", data.thiefStyle)
@@ -115,17 +125,41 @@ function IncomeService.collect(player: Player)
 		lastCollectToast[player] = os.clock()
 		Juice.sound(player, "coins")
 	end
+	IncomeService.Collected:Fire(player, amount)
+end
+
+-- While you were away, your storms kept earning at a reduced rate.
+local function payOffline(player: Player)
+	local data = DataService.get(player)
+	if not data or not data.lastSeen then
+		return
+	end
+	local away = os.time() - data.lastSeen
+	data.lastSeen = os.time()
+	if away < Config.Offline.MinSeconds then
+		return
+	end
+	local seconds = math.min(away, Config.Offline.MaxHours * 3600)
+	local amount = math.floor(IncomeService.rateOf(player) * seconds * Config.Offline.Rate)
+	if amount < 1 then
+		return
+	end
+	data.sparks += amount
+	IncomeService.sync(player)
+	Juice.welcome(player, amount, away)
 end
 
 local function tick(dt: number)
 	for _, player in Players:GetPlayers() do
 		local data = DataService.get(player)
 		if data and PlotService.getPlot(player) then
+			data.lastSeen = os.time()
 			local earned = IncomeService.rateOf(player) * dt
 			if earned > 0 then
 				data.stats.sparksEarned += earned
 				if hasPass(player, "AutoCollect") then
 					data.sparks += earned
+					IncomeService.Collected:Fire(player, earned)
 				else
 					data.unclaimed += earned
 				end
@@ -155,7 +189,10 @@ function IncomeService.start()
 		createLeaderstats(player)
 		IncomeService.sync(player)
 	end)
-	PlotService.PlotAssigned:Connect(IncomeService.sync)
+	PlotService.PlotAssigned:Connect(function(player)
+		IncomeService.sync(player)
+		payOffline(player)
+	end)
 	PlotService.CollectTouched:Connect(IncomeService.collect)
 	Players.PlayerRemoving:Connect(function(player)
 		lastCollectToast[player] = nil

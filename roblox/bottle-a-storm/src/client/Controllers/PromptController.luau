@@ -1,5 +1,6 @@
--- Shows each player only the prompts that make sense for them: "Sell" on your
--- own pedestals, "Steal" on other people's, and only your own Lock button.
+-- Shows each player only the prompts that make sense for them: "Pet" and
+-- "Options" on your own pedestals, "Steal" on other people's, and only your
+-- own Lock button.
 -- These are local changes; the server still checks every trigger.
 
 local CollectionService = game:GetService("CollectionService")
@@ -42,8 +43,7 @@ local function refresh()
 		local plot = plotModel(base:GetAttribute("PlotIndex") or 0)
 		local locked = plot ~= nil and (plot:GetAttribute("LockedUntil") or 0) > now
 
-		setEnabled(base, "SellPrompt", mine and hasStorm and not stolen)
-		setEnabled(base, "RidePrompt", mine and hasStorm and not stolen)
+		setEnabled(base, "OptionsPrompt", mine and hasStorm and not stolen)
 		setEnabled(base, "PetPrompt", mine and hasStorm and not stolen)
 		local stealPrompt = base:FindFirstChild("StealPrompt")
 		if stealPrompt and stealPrompt:IsA("ProximityPrompt") and stealPrompt.HoldDuration ~= stealHold then

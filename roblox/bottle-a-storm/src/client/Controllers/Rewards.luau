@@ -1,0 +1,454 @@
+-- The 🎁 Rewards window, with three tabs:
+--   * Daily: 7-day login streak. Claim one reward a day.
+--   * Quests: 3 small goals that change every day.
+--   * Index: every storm in the game. Ones you haven't found show as "???".
+--     Finding all storms of a rarity completes a row (+5% Sparks forever).
+
+local Players = game:GetService("Players")
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Config = require(Shared.Config)
+local Remotes = require(Shared.Remotes)
+local RewardsData = require(Shared.RewardsData)
+local StormData = require(Shared.StormData)
+
+local Toasts = require(script.Parent.Toasts)
+local UI = require(script.Parent.UI)
+
+local player = Players.LocalPlayer
+
+local Rewards = {}
+
+type QuestInfo = { text: string, progress: number, target: number, claimed: boolean }
+type Info = {
+	dailyReady: boolean,
+	nextStreak: number,
+	streak: number,
+	quests: { QuestInfo },
+	discovered: { string },
+	rows: number,
+}
+
+local window: Frame
+local pages: { [string]: Frame } = {}
+local tabs: { [string]: TextButton } = {}
+local currentTab = "Daily"
+local info: Info? = nil
+local busy = false
+
+local function clear(frame: Instance)
+	for _, child in frame:GetChildren() do
+		child:Destroy()
+	end
+end
+
+-- A label whose text shrinks to fit, but never grows past `maxSize`.
+local function capped(props: { [string]: any }, maxSize: number): TextLabel
+	local label = UI.label(props)
+	UI.new("UITextSizeConstraint", { MaxTextSize = maxSize, Parent = label })
+	return label
+end
+
+local function claimWith(remote: string, arg: any?)
+	if busy then
+		return
+	end
+	busy = true
+	local ok, message = Remotes.func(remote):InvokeServer(arg)
+	busy = false
+	Toasts.show(message, if ok then "success" else "warn")
+	Rewards.refresh()
+end
+
+local function buildDaily(page: Frame, data: Info)
+	UI.label({
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "Come back every day! Miss a day and your streak starts over.",
+		TextSize = 16,
+		TextColor3 = UI.Colors.Muted,
+		Parent = page,
+	})
+	local row = UI.new("Frame", {
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 0, 120),
+		BackgroundTransparency = 1,
+		Parent = page,
+	}, { UI.list(6, Enum.FillDirection.Horizontal) })
+	for day, reward in RewardsData.Daily do
+		local claimed = if data.dailyReady then day < data.nextStreak else day <= data.streak
+		local ready = data.dailyReady and day == data.nextStreak
+		local tile = UI.new("Frame", {
+			LayoutOrder = day,
+			Size = UDim2.new(1 / #RewardsData.Daily, -6, 1, 0),
+			BackgroundColor3 = if ready
+				then UI.Colors.Good
+				elseif claimed then Color3.fromRGB(210, 240, 222)
+				else UI.Colors.PanelLight,
+			Parent = row,
+		}, {
+			UI.corner(12),
+			UI.stroke(if ready then UI.Colors.Outline else UI.Colors.Stroke, if ready then 3 else 1.5),
+		})
+		UI.label({
+			Size = UDim2.new(1, 0, 0, 22),
+			Position = UDim2.fromOffset(0, 4),
+			Text = "Day " .. day,
+			TextSize = 16,
+			TextColor3 = if ready then Color3.new(1, 1, 1) else UI.Colors.Text,
+			TextStrokeColor3 = UI.Colors.Outline,
+			TextStrokeTransparency = if ready then 0.2 else 1,
+			Parent = tile,
+		})
+		capped({
+			Size = UDim2.new(1, -8, 1, -32),
+			Position = UDim2.fromOffset(4, 28),
+			Text = RewardsData.describe(reward) .. (if claimed then "\n✓" else ""),
+			TextScaled = true,
+			TextWrapped = true,
+			TextColor3 = if day >= 6 then UI.ink(StormData.Rarities[reward.rarity or 3].color) else UI.Colors.Text,
+			TextTransparency = if claimed then 0.4 else 0,
+			Parent = tile,
+		}, 16)
+	end
+	local button = UI.button({
+		LayoutOrder = 3,
+		Size = UDim2.fromOffset(260, 48),
+		Text = if data.dailyReady then "🎁 Claim Day " .. data.nextStreak else "✓ Come back tomorrow!",
+		TextSize = 22,
+		BackgroundColor3 = if data.dailyReady then UI.Colors.Good else UI.Colors.Disabled,
+		AutoButtonColor = data.dailyReady,
+		Parent = page,
+	})
+	if data.dailyReady then
+		button.Activated:Connect(function()
+			claimWith("ClaimDaily", nil)
+		end)
+	end
+end
+
+local function buildQuests(page: Frame, data: Info)
+	UI.label({
+		LayoutOrder = 0,
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "New quests every day. Each one pays Sparks and " .. Config.Quests.RewardStars .. " ⭐ Season Stars.",
+		TextSize = 16,
+		TextColor3 = UI.Colors.Muted,
+		Parent = page,
+	})
+	for index, quest in data.quests do
+		local done = quest.progress >= quest.target
+		local card = UI.new("Frame", {
+			LayoutOrder = index,
+			Size = UDim2.new(1, 0, 0, 70),
+			BackgroundColor3 = UI.Colors.PanelLight,
+			Parent = page,
+		}, { UI.corner(12), UI.padding(8) })
+		UI.label({
+			Size = UDim2.new(1, -150, 0, 26),
+			Text = "📜 " .. quest.text,
+			TextSize = 19,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = card,
+		})
+		local bar = UI.new("Frame", {
+			Position = UDim2.fromOffset(0, 32),
+			Size = UDim2.new(1, -150, 0, 20),
+			BackgroundColor3 = UI.Colors.Track,
+			Parent = card,
+		}, { UI.corner(10) })
+		UI.new("Frame", {
+			Size = UDim2.fromScale(math.clamp(quest.progress / math.max(quest.target, 1), 0, 1), 1),
+			BackgroundColor3 = if done then UI.Colors.Good else UI.Colors.Rare,
+			Parent = bar,
+		}, { UI.corner(10) })
+		UI.label({
+			Size = UDim2.fromScale(1, 1),
+			Text = math.floor(quest.progress) .. " / " .. quest.target,
+			TextSize = 14,
+			Parent = bar,
+		})
+		local canClaim = done and not quest.claimed
+		local button = UI.button({
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.fromScale(1, 0.5),
+			Size = UDim2.fromOffset(136, 44),
+			Text = if quest.claimed then "✓ Done" elseif done then "🎁 Claim" else "In progress",
+			TextSize = 18,
+			BackgroundColor3 = if canClaim then UI.Colors.Good else UI.Colors.Disabled,
+			AutoButtonColor = canClaim,
+			Parent = card,
+		})
+		if canClaim then
+			button.Activated:Connect(function()
+				claimWith("ClaimQuest", index)
+			end)
+		end
+	end
+end
+
+-- Where to look for a storm you haven't found yet.
+local function hint(def: StormData.StormDef): string
+	if def.season then
+		return "Season pass"
+	elseif def.hybrid then
+		return "Storm Mixer"
+	elseif def.biome then
+		return "Climate island"
+	end
+	return "Wild Skies"
+end
+
+local function buildIndex(page: Frame, data: Info)
+	local found: { [string]: boolean } = {}
+	for _, id in data.discovered do
+		found[id] = true
+	end
+	local list: { StormData.StormDef } = {}
+	local totals: { [number]: { have: number, all: number } } = {}
+	local have, all = 0, 0
+	for _, def in StormData.Storms do
+		table.insert(list, def)
+		if not def.season then
+			totals[def.rarity] = totals[def.rarity] or { have = 0, all = 0 }
+			totals[def.rarity].all += 1
+			all += 1
+			if found[def.id] then
+				totals[def.rarity].have += 1
+				have += 1
+			end
+		end
+	end
+	table.sort(list, function(a, b)
+		local sa, sb = if a.season then 1 else 0, if b.season then 1 else 0
+		if sa ~= sb then
+			return sa < sb
+		end
+		if a.rarity ~= b.rarity then
+			return a.rarity < b.rarity
+		end
+		return a.name < b.name
+	end)
+
+	UI.label({
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "📖 "
+			.. have
+			.. " / "
+			.. all
+			.. " storms found · "
+			.. data.rows
+			.. " rows complete (+"
+			.. math.floor(data.rows * Config.Index.RowBonus * 100 + 0.5)
+			.. "% Sparks)",
+		TextSize = 18,
+		Parent = page,
+	})
+	local rowsLine = {}
+	for rarity, count in totals do
+		local name = StormData.Rarities[rarity].name
+		table.insert(rowsLine, {
+			rarity,
+			name .. " " .. count.have .. "/" .. count.all .. (if count.have == count.all then " ✓" else ""),
+		})
+	end
+	table.sort(rowsLine, function(a, b)
+		return a[1] < b[1]
+	end)
+	local parts = {}
+	for _, entry in rowsLine do
+		table.insert(parts, entry[2])
+	end
+	capped({
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 0, 20),
+		Text = table.concat(parts, "  ·  "),
+		TextSize = 14,
+		TextColor3 = UI.Colors.Muted,
+		TextScaled = true,
+		Parent = page,
+	}, 14)
+
+	local scroll = UI.new("ScrollingFrame", {
+		LayoutOrder = 3,
+		Size = UDim2.new(1, 0, 1, -56),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = UI.Colors.Stroke,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		Parent = page,
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(118, 64),
+			CellPadding = UDim2.fromOffset(6, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		}),
+		UI.padding(4),
+	})
+	for order, def in list do
+		local known = found[def.id] == true
+		local color = StormData.rarityOf(def).color
+		local tile = UI.new("Frame", {
+			LayoutOrder = order,
+			BackgroundColor3 = if known then UI.Colors.Panel else UI.Colors.Disabled,
+			Parent = scroll,
+		}, { UI.corner(10), UI.stroke(if known then color else UI.Colors.Muted, 2) })
+		capped({
+			Position = UDim2.fromOffset(4, 4),
+			Size = UDim2.new(1, -8, 0, 30),
+			Text = if known then def.name else "???",
+			TextScaled = true,
+			TextColor3 = if known then UI.ink(color) else UI.Colors.Muted,
+			Parent = tile,
+		}, 17)
+		capped({
+			Position = UDim2.fromOffset(4, 36),
+			Size = UDim2.new(1, -8, 0, 22),
+			Text = (if def.season then "🌟 " else "") .. StormData.rarityOf(def).name .. (if known
+				then ""
+				else " · " .. hint(def)),
+			TextScaled = true,
+			TextColor3 = UI.Colors.Muted,
+			Parent = tile,
+		}, 13)
+	end
+end
+
+local function rebuild()
+	local data = info
+	for name, page in pages do
+		page.Visible = name == currentTab
+		tabs[name].BackgroundColor3 = if name == currentTab then UI.Colors.Rare else UI.Colors.PanelLight
+	end
+	local page = pages[currentTab]
+	clear(page)
+	UI.list(10).Parent = page
+	if not data then
+		UI.label({ Size = UDim2.new(1, 0, 0, 30), Text = "Loading...", Parent = page })
+		return
+	end
+	if currentTab == "Daily" then
+		buildDaily(page, data)
+	elseif currentTab == "Quests" then
+		buildQuests(page, data)
+	else
+		buildIndex(page, data)
+	end
+end
+
+function Rewards.refresh()
+	local data = Remotes.func("GetRewards"):InvokeServer()
+	if type(data) == "table" then
+		info = data
+	end
+	if window.Visible then
+		rebuild()
+	end
+end
+
+function Rewards.open(tab: string?)
+	currentTab = tab or currentTab
+	window.Visible = true
+	rebuild()
+	task.spawn(Rewards.refresh)
+end
+
+function Rewards.toggle()
+	if window.Visible then
+		window.Visible = false
+	else
+		Rewards.open(nil)
+	end
+end
+
+function Rewards.start()
+	local screen = UI.screen("Rewards", 6)
+	window = UI.new("Frame", {
+		Name = "Window",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.94, 0.82),
+		BackgroundColor3 = UI.Colors.Panel,
+		Visible = false,
+		Parent = screen,
+	}, {
+		UI.corner(18),
+		UI.stroke(UI.Colors.Stroke, 3),
+		UI.padding(14),
+		UI.new("UISizeConstraint", { MaxSize = Vector2.new(820, 480) }),
+	})
+	UI.label({
+		Size = UDim2.new(1, -60, 0, 32),
+		Text = "🎁 Rewards",
+		TextSize = 26,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = window,
+	})
+	UI.button({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.fromOffset(44, 34),
+		Text = "✕",
+		TextSize = 22,
+		BackgroundColor3 = UI.Colors.Bad,
+		Parent = window,
+	}).Activated
+		:Connect(function()
+			window.Visible = false
+		end)
+
+	local tabRow = UI.new("Frame", {
+		Position = UDim2.fromOffset(0, 40),
+		Size = UDim2.new(1, 0, 0, 38),
+		BackgroundTransparency = 1,
+		Parent = window,
+	}, { UI.list(8, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left) })
+	for order, entry in { { "Daily", "📅 Daily" }, { "Quests", "📜 Quests" }, { "Index", "📖 Storm Index" } } do
+		local name = entry[1]
+		local button = UI.button({
+			LayoutOrder = order,
+			Size = UDim2.fromOffset(150, 38),
+			Text = entry[2],
+			TextSize = 18,
+			Parent = tabRow,
+		})
+		button.Activated:Connect(function()
+			currentTab = name
+			rebuild()
+		end)
+		tabs[name] = button
+		pages[name] = UI.new("Frame", {
+			Name = name,
+			Position = UDim2.fromOffset(0, 88),
+			Size = UDim2.new(1, 0, 1, -88),
+			BackgroundTransparency = 1,
+			Visible = false,
+			Parent = window,
+		})
+	end
+
+	-- Refresh the open window when quests progress or a new day starts.
+	player:GetAttributeChangedSignal("RewardsReady"):Connect(function()
+		if window.Visible then
+			Rewards.refresh()
+		end
+	end)
+
+	-- Pop the Daily tab open once, the first time a reward is waiting.
+	task.spawn(function()
+		local deadline = os.clock() + 30
+		while player:GetAttribute("DailyReady") == nil and os.clock() < deadline do
+			task.wait(1)
+		end
+		task.wait(4) -- let the welcome pop-ups settle first
+		if player:GetAttribute("DailyReady") == true and not window.Visible then
+			Rewards.open("Daily")
+		end
+	end)
+end
+
+return Rewards

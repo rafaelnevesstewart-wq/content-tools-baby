@@ -17,6 +17,7 @@ local Notify = require(Modules.Notify)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
+local IndexService = require(script.Parent.IndexService)
 local PlotService = require(script.Parent.PlotService)
 
 local TradeService = {}
@@ -196,7 +197,7 @@ local function execute(trade: Trade)
 		for _, record in moving[partner] do
 			record.slot = PlotService.firstFreeSlot(player) :: number
 			table.insert(data.storms, record)
-			data.discovered[record.id] = true
+			IndexService.discover(player, record.id)
 		end
 		data.sparks += trade.offers[partner].sparks
 		data.stats.trades += 1

@@ -10,6 +10,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local StormData = require(Shared.StormData)
 local ThiefStyles = require(Shared.ThiefStyles)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
@@ -17,12 +18,16 @@ local StormModel = require(Modules.StormModel)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
+local IndexService = require(script.Parent.IndexService)
 local MovementService = require(script.Parent.MovementService)
 local PlotService = require(script.Parent.PlotService)
 local RideService = require(script.Parent.RideService)
 local SeasonService = require(script.Parent.SeasonService)
 
 local StealService = {}
+
+-- (thief) when a stolen storm makes it home.
+StealService.Stolen = Signal.new()
 
 type Carry = {
 	owner: Player,
@@ -133,7 +138,8 @@ local function bank(thief: Player)
 	table.insert(thiefData.storms, record)
 	thiefData.stats.stolen += 1
 	SeasonService.addXp(thief, Config.Season.StealXp)
-	thiefData.discovered[record.id] = true
+	StealService.Stolen:Fire(thief)
+	IndexService.discover(thief, record.id)
 
 	clearCarry(thief)
 	PlotService.setSlotStolen(carry.owner, carry.slot, false)
@@ -262,6 +268,49 @@ local function beam(from: Vector3, to: Vector3)
 	Debris:AddItem(part, 0.2)
 end
 
+-- Zaps a thief who is carrying a stolen storm. Umbrella Tanks block the first
+-- zap. `zapper` is the player who zapped (nil for a guard storm).
+function StealService.zapThief(target: Player, byName: string, from: Vector3, zapper: Player?)
+	local carry = carries[target]
+	if not carry then
+		return
+	end
+	local targetRoot = rootOf(target)
+	if targetRoot then
+		beam(from, targetRoot.Position)
+	end
+	if styleOf(target) == "UmbrellaTank" and not carry.umbrellaUsed then
+		carry.umbrellaUsed = true
+		Notify.player(
+			target,
+			"☂️ Your umbrella blocked " .. byName .. "'s zap! The next one gets through.",
+			"success"
+		)
+		if zapper then
+			Notify.player(zapper, "☂️ " .. target.DisplayName .. "'s umbrella blocked your zap! Zap again!", "warn")
+		end
+		return
+	end
+	cancel(target, "⚡ " .. byName .. " zapped you! The storm flew back.")
+	if styleOf(target) ~= "UmbrellaTank" then
+		MovementService.stun(target, Config.Zapper.StunSeconds)
+	end
+	if zapper then
+		Notify.player(zapper, "⚡ Zap! You stopped " .. target.DisplayName .. ".", "success")
+	end
+end
+
+-- Players currently carrying one of `owner`'s storms.
+function StealService.thievesFrom(owner: Player): { Player }
+	local list = {}
+	for thief, carry in carries do
+		if carry.owner == owner then
+			table.insert(list, thief)
+		end
+	end
+	return list
+end
+
 local function zap(player: Player)
 	local root = rootOf(player)
 	if not root or MovementService.isStunned(player) then
@@ -288,26 +337,7 @@ local function zap(player: Player)
 		Notify.player(player, "No thief in range. The Zapper only hits players carrying a stolen storm.", "info")
 		return
 	end
-	local targetRoot = rootOf(target)
-	if targetRoot then
-		beam(root.Position, targetRoot.Position)
-	end
-	local carry = carries[target]
-	if carry and styleOf(target) == "UmbrellaTank" and not carry.umbrellaUsed then
-		carry.umbrellaUsed = true
-		Notify.player(
-			target,
-			"☂️ Your umbrella blocked " .. player.DisplayName .. "'s zap! The next one gets through.",
-			"success"
-		)
-		Notify.player(player, "☂️ " .. target.DisplayName .. "'s umbrella blocked your zap! Zap again!", "warn")
-		return
-	end
-	cancel(target, "⚡ " .. player.DisplayName .. " zapped you! The storm flew back.")
-	if styleOf(target) ~= "UmbrellaTank" then
-		MovementService.stun(target, Config.Zapper.StunSeconds)
-	end
-	Notify.player(player, "⚡ Zap! You stopped " .. target.DisplayName .. ".", "success")
+	StealService.zapThief(target, player.DisplayName, root.Position, player)
 end
 
 local function makeZapper(): Tool

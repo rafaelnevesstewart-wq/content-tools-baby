@@ -19,6 +19,11 @@ function Juice.sound(player: Player, name: string)
 	juice:FireClient(player, "sound", name)
 end
 
+-- The "welcome back" pop-up with what your storms earned while you were away.
+function Juice.welcome(player: Player, amount: number, awaySeconds: number)
+	juice:FireClient(player, "welcome", amount, awaySeconds)
+end
+
 -- Shakes the player's camera.
 function Juice.shake(player: Player, strength: number?)
 	juice:FireClient(player, "shake", strength or 1)

@@ -3,27 +3,22 @@
 -- premium reward; players claim them in the Season window. A new season
 -- (new theme and exclusive storms) starts every 4 weeks and resets progress.
 
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
-local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 local SeasonData = require(Shared.SeasonData)
-local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
-local MoodService = require(script.Parent.MoodService)
-local PlotService = require(script.Parent.PlotService)
+local RewardService = require(script.Parent.RewardService)
 
 local SeasonService = {}
 
-local rng = Random.new()
 local lastClaim: { [Player]: number } = {}
 
 local function currentSeason(): (number, SeasonData.Theme, number)
@@ -103,71 +98,6 @@ function SeasonService.grantPremium(player: Player): boolean
 	return true
 end
 
-local function randomMutation(): string
-	local total = 0
-	for _, mutation in StormData.Mutations do
-		total += mutation.weight
-	end
-	local pick = rng:NextNumber(0, total)
-	for _, mutation in StormData.Mutations do
-		pick -= mutation.weight
-		if pick <= 0 then
-			return mutation.id
-		end
-	end
-	return StormData.Mutations[1].id
-end
-
--- Puts a storm on a free pedestal. Returns an error message if there's no room.
-local function giveStorm(player: Player, data: any, def: StormData.StormDef, mutation: string?): string?
-	local slot = PlotService.firstFreeSlot(player)
-	if not slot then
-		return "Your island is full! Make room for the storm first."
-	end
-	local record: StormData.StormRecord = {
-		uid = HttpService:GenerateGUID(false),
-		id = def.id,
-		mut = mutation,
-		slot = slot,
-		at = os.time(),
-		mood = Config.Mood.Start,
-	}
-	table.insert(data.storms, record)
-	data.discovered[def.id] = true
-	PlotService.refreshSlot(player, slot)
-	Notify.player(player, "🎁 " .. StormData.displayName(record) .. " is on your island!", "rare")
-	return nil
-end
-
--- Gives one reward. Returns an error message if it couldn't be given (nothing is used up).
-local function grant(player: Player, data: any, reward: SeasonData.Reward, theme: SeasonData.Theme): string?
-	if reward.kind == "sparks" then
-		local amount = math.floor(math.max(reward.min or 0, IncomeService.rateOf(player) * 60 * (reward.minutes or 0)))
-		data.sparks += amount
-		Notify.player(player, "💰 +⚡" .. Format.number(amount) .. " Sparks!", "success")
-	elseif reward.kind == "snacks" then
-		if #data.storms == 0 then
-			return "You don't have any storms to feed yet. Catch one first!"
-		end
-		MoodService.feedAll(player)
-		Notify.player(player, "🍪 Snack time! All your storms are Happy.", "success")
-	elseif reward.kind == "shield" then
-		data.raidShields += reward.amount or 1
-		Notify.player(player, "🛡️ +" .. (reward.amount or 1) .. " Raid Shield!", "success")
-	elseif reward.kind == "storm" then
-		local options = StormData.wildOfRarity(reward.rarity or 3)
-		local def = options[rng:NextInteger(1, #options)]
-		return giveStorm(player, data, def, if reward.mutated then randomMutation() else nil)
-	elseif reward.kind == "exclusive" then
-		local def = StormData.get(theme.storms[reward.slot or 1])
-		if not def then
-			return "That storm is missing."
-		end
-		return giveStorm(player, data, def, nil)
-	end
-	return nil
-end
-
 local function claim(player: Player, tier: any, track: any): (boolean, string)
 	local data = DataService.get(player)
 	if not data or type(tier) ~= "number" or (track ~= "free" and track ~= "premium") then
@@ -195,7 +125,7 @@ local function claim(player: Player, tier: any, track: any): (boolean, string)
 	if claimed[tostring(tier)] then
 		return false, "Already claimed!"
 	end
-	local problem = grant(player, data, reward, theme)
+	local problem = RewardService.grant(player, reward, theme)
 	if problem then
 		return false, problem
 	end

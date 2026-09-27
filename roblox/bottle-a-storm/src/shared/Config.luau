@@ -119,7 +119,7 @@ Config.Pedestals = {
 	Start = 3,
 	Max = 10,
 	MaxWithPass = 20,
-	BaseCost = 150,
+	BaseCost = 60, -- cheap first upgrades so new players feel progress quickly
 	CostGrowth = 2.2,
 }
 
@@ -170,10 +170,10 @@ Config.Weather = {
 	Duration = 180,
 }
 
--- The Mega-Storm raid: a server-wide boss fight every 45 minutes.
+-- The Mega-Storm raid: a server-wide boss fight every 25 minutes.
 Config.Raid = {
-	Interval = 2700, -- seconds from one raid's start to the next
-	FirstDelay = 900, -- first raid after a server starts
+	Interval = 1500, -- seconds from one raid's start to the next (25 minutes)
+	FirstDelay = 600, -- first raid after a server starts
 	StudioFirstDelay = 45, -- shorter in Studio so you can test it
 	StudioInterval = 300,
 	WarningSeconds = 60,
@@ -198,6 +198,76 @@ Config.Raid = {
 	MVPLegendaryChance = 0.3,
 	FullIslandRewardSeconds = 600, -- reward paid as this much of the storm's income if your island is full
 	NewPlayerGraceSeconds = 600, -- players who just joined never lose a storm
+}
+
+-- New players get this storm for free the first time they join.
+Config.Starter = { StormId = "Puffcloud" }
+
+-- Catch storms quickly one after another to build a combo.
+Config.Combo = {
+	WindowSeconds = 10, -- catch again within this to keep the combo going
+	Max = 10,
+	SparksPerStep = 25, -- bonus = max(this, 3 s of income) x (combo - 1)
+	MutationBonusPerStep = 0.02, -- extra mutation chance per combo step
+}
+
+-- The golden storm hunt: a fast golden storm; first to catch it wins.
+Config.Golden = {
+	FirstDelay = 180,
+	StudioFirstDelay = 30, -- shorter in Studio so you can test it
+	Interval = 540,
+	Lifetime = 60,
+	Rarity = 3, -- Rare (any Reinforced Jar can catch it)
+	SpeedMultiplier = 1.7,
+	PrizeSeconds = 600, -- prize: 10 minutes of your income...
+	PrizeMin = 3000, -- ...or at least this
+}
+
+-- Storm races: a storm zooms around a ring track on the Wild Skies.
+Config.Race = {
+	FirstDelay = 360,
+	StudioFirstDelay = 75,
+	Interval = 720,
+	WarningSeconds = 20,
+	Lifetime = 90,
+	Rarity = 2, -- Uncommon, so even a Glass Jar can catch it
+	Mutation = "Prismatic",
+	HitsNeeded = 3,
+	Speed = 24,
+	TrackRadius = 72,
+	Rings = 10,
+	PrizeSeconds = 600,
+	PrizeMin = 2500,
+}
+
+-- Your storms keep earning while you're away.
+Config.Offline = {
+	Rate = 0.25, -- 25% of your normal income
+	MaxHours = 8,
+	MinSeconds = 120, -- ignore very short breaks
+}
+
+-- A guard storm circles your island and zaps thieves carrying your storms.
+Config.Guard = {
+	Range = 26,
+	CooldownByRarity = { 12, 10, 8, 7, 5, 4, 3 }, -- seconds between zaps
+	OrbitRadius = 24,
+	OrbitHeight = 14,
+}
+
+-- Storm Index: rewards for discovering storms and completing rarity rows.
+Config.Index = {
+	DiscoverSeconds = 60, -- a new storm pays 60 s of its income...
+	DiscoverMin = 100, -- ...or at least this
+	RowBonus = 0.05, -- +5% income forever per completed rarity row
+}
+
+-- Daily quests.
+Config.Quests = {
+	PerDay = 3,
+	RewardSeconds = 300, -- 5 minutes of your income...
+	RewardMin = 1000, -- ...or at least this
+	RewardStars = 150, -- Season Stars
 }
 
 Config.Products = {

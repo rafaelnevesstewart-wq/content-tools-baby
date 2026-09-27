@@ -8,7 +8,9 @@ with no uploaded art.
 
 These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1) and
 storm mixing and riding (v1.2) and trading (v1.3), plus every extra from the doc: storm moods,
-the island sky aura, thief styles, the Climate Shift rebirth and the season pass.
+the island sky aura, thief styles, the Climate Shift rebirth and the season pass. On top of that
+there's a gameplay update (below): a free starter storm, catch combos, Golden Hunts, Storm Races,
+guard storms, offline earnings, daily rewards, quests and the Storm Index.
 
 | Feature | Where |
 |---|---|
@@ -27,8 +29,8 @@ the island sky aura, thief styles, the Climate Shift rebirth and the season pass
 | Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod, Storm Snacks, thief styles | `ShopService`, `Shop` |
 | Saving with a session lock (no duplicate storms across servers), autosave, safe shutdown | `DataService` |
 | 4 game passes (VIP, Double Pedestals, Auto-Collect, Storm Tamer) and 7 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Season Premium, Skip a Season Tier, Summon Rainbow Hour) | `MonetizationService`, `Products` |
-| Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night) + forecast TV | `WeatherService`, `ForecastController` |
-| Mega-Storm raid every 45 min (details below) | `RaidService`, `RaidData`, `HUD` |
+| Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night, Double Sparks Hour, Mutation Storm, Fog Night) + forecast TV | `WeatherService`, `ForecastController` |
+| Mega-Storm raid every 25 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
 Everything in the design doc is now built.
 
@@ -58,6 +60,39 @@ Everything in the design doc is now built.
     with any Creator Store sound: Toolbox → Audio → right-click → Copy Asset ID, then paste
     it as `rbxassetid://…`.
 
+## Gameplay update
+
+Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Golden`, `Race`,
+`Guard`, `Offline`, `Index`, `Quests`) and `src/shared/RewardsData.luau`.
+
+- **Easier start:** new players get a free, happy Puffcloud on their island, so they earn from
+  the first second. A sparkly arrow points to the nearest wild storm until the first catch
+  (`RewardService`, `TutorialController`). Extra pedestals are cheaper (60 ⚡ to start).
+- **Combo catches:** catch again within 10 seconds to build a combo (up to x10). Each step pays
+  bonus Sparks and adds +2% mutation chance. A pink "COMBO x3!" pops up (`CaptureService`).
+- **Golden Hunt** (every 9 min): a fast Golden Rare storm zooms around the Wild Skies for
+  60 seconds. Any jar can catch it. The first to catch it wins 10 minutes of Sparks
+  (min ⚡3,000) and keeps the Golden storm (`EventService`).
+- **Storm Race** (every 12 min): rainbow rings appear around the Wild Skies with a 20 s
+  countdown. Then a Prismatic storm races through them for 90 seconds. It never dodges but
+  needs 3 hits. The winner gets 10 minutes of Sparks (min ⚡2,500) and keeps the storm.
+- **Guard storms:** press `F` on a pedestal and pick **Guard**. That storm circles above your
+  island and zaps thieves carrying your storms nearby. Rarer guards zap more often (every 12 s
+  for Common down to 3 s for Cosmic). The storm still earns on its pedestal. If it's sold,
+  traded, mixed or stolen, it stops guarding (`GuardService`).
+- **Offline earnings:** storms keep earning at 25% while you're away (up to 8 hours). A
+  "Welcome back!" pop-up shows how much when you return (`IncomeService`).
+- **Daily rewards:** a 7-day login streak in 🎁 Rewards → Daily, ending in an Epic storm on
+  day 7. Miss a day and it starts over. The window opens by itself when a reward is waiting
+  (`DailyService`, `Rewards`).
+- **Quests:** 3 small goals a day (catch, steal, mix, pet, collect, fight a Mega-Storm). Each
+  one pays 5 minutes of Sparks and 150 ⭐ Season Stars.
+- **Storm Index:** a collection book of every storm. The first time you get a new kind, it
+  pays a bonus. Completing a whole rarity row gives **+5% Sparks forever** (`IndexService`).
+- **More weather events:** Double Sparks Hour (everything earns x2), Mutation Storm (5x
+  mutation chance) and Fog Night (rarer storms appear more often in the fog).
+- **Mega-Storm raid every 25 minutes** (was 45), first one 10 minutes after a server starts.
+
 ## Controls
 
 | Action | PC | Phone |
@@ -66,11 +101,12 @@ Everything in the design doc is now built.
 | Throw the jar | click near a storm | tap near a storm |
 | Zapper / Storm Launcher | `2` / `3`, then click | tap the tool, then tap |
 | Pet your storm (or calm an escaping one) | `E` on your pedestal | tap "Pet" |
-| Pick a storm to ride | `R` on your pedestal | tap "Ride this storm" |
+| Options menu: Ride, Guard or Sell a storm | `F` on your pedestal | tap "Options" |
 | Hop on / off | `Q` | Ride button |
 | Use your ride's power | `Shift` | power button |
 | Mix storms | `E` on your cauldron | tap "Mix Storms" |
 | Trade | 🤝 Trade button | 🤝 Trade button |
+| Daily reward, quests, Storm Index | 🎁 Rewards button | 🎁 Rewards button |
 
 ## Catching: throw the jar
 
@@ -96,7 +132,7 @@ storms' income, minimum 50) and get one storm back on the first storm's pedestal
 
 ## Riding
 
-Press `R` on one of your pedestals to make that storm your ride, then `Q` to hop on. The storm
+Press `F` on one of your pedestals and pick **Ride** to make that storm your ride, then `Q` to hop on. The storm
 floats under your feet and stays on its pedestal earning Sparks. You get +2 to +10 speed by
 rarity, plus a power (`Shift`) based on its weather:
 
@@ -278,7 +314,17 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
       It gets sucked in and appears on a pedestal at home.
 - [ ] Throw at a Rare storm with a Reinforced Jar: it may dodge, and needs 2 hits (💫 1/2).
 - [ ] Sparks pile up on the yellow Collect pad. Step on it to collect.
-- [ ] Press **R** on a pedestal, then **Q** to ride. Try **Shift** for the power.
+- [ ] New player: a Puffcloud is already on your island and an arrow points to the Wild Skies.
+      Catch two storms quickly to see "COMBO x2!".
+- [ ] Press **F** on a pedestal and pick **Ride**, then **Q** to ride. Try **Shift** for the power.
+- [ ] Press **F** and pick **Guard**: the storm circles your island. With player 2, steal a storm
+      and run under it. You get zapped. Pick **Sell** and tap it twice to sell.
+- [ ] 🎁 Rewards: claim the Day 1 reward, check the quests fill up as you play, and look at the
+      Storm Index. Catch a new kind of storm to see the Index bonus.
+- [ ] Golden Hunt starts 30 s after you press Play in Studio, and a Storm Race after 75 s.
+      Catch them to see the prize.
+- [ ] Offline earnings: play, leave, and join again after 2+ minutes. (In Studio, turn on
+      Game Settings → Security → Enable Studio Access to API Services so data saves.)
 - [ ] Press **E** on the purple cauldron. Mix Fog Bun + Mist Mouse to discover Ghost Fog.
       Mix two random commons to see an unknown mix.
 - [ ] Moods: check the 😄 label on a new storm and press **E** on it to pet it. Buy Storm Snacks.
@@ -323,18 +369,20 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 ```
 src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
               Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
-              SeasonData,
+              SeasonData, RewardsData (daily rewards, quests), Sounds,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, SeasonService, MixService,
-              TradeService, StealService, RaidService, AuraService, ClimateService,
+              TradeService, StealService, GuardService, RaidService, IndexService,
+              RewardService, DailyService, EventService, AuraService, ClimateService,
               ShopService, MonetizationService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars),
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
-  Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, BiomeController, ThrowController,
-               RideController, Toasts,
+  Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, Rewards, PedestalMenu,
+               BiomeController, ThrowController, RideController, Toasts, TutorialController,
+               StormAnimator, AmbientController, JuiceController, Sfx,
                PromptController, ForecastController, UI
 ```
 
@@ -343,7 +391,6 @@ src/client/   Main.client.luau starts the controllers
 - Riding powers run on the player's own client (that's how Roblox moves characters), so an
   exploiter could fake them. That's normal for movement abilities; the server still checks
   every catch, steal and purchase.
-- No offline earnings yet: storms only earn while you're in the game.
 - All art is still made from plain parts and emoji (now much cuter). Real 3D models and
   icons would be the next big visual step.
 

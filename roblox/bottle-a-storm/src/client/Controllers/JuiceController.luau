@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 
 local Sfx = require(script.Parent.Sfx)
@@ -67,6 +68,68 @@ local function float(text: string, position: Vector3, color: Color3?)
 	Debris:AddItem(anchor, 1.4)
 end
 
+-- "2h 15m" / "45m"
+local function awayText(seconds: number): string
+	local hours = seconds // 3600
+	local minutes = (seconds % 3600) // 60
+	if hours > 0 then
+		return hours .. "h " .. minutes .. "m"
+	end
+	return math.max(1, minutes) .. "m"
+end
+
+-- The "welcome back" pop-up: what your storms earned while you were away.
+local function welcome(amount: number, awaySeconds: number)
+	local screen = UI.screen("WelcomeBack", 9)
+	local panel = UI.new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(340, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = UI.Colors.Panel,
+		Parent = screen,
+	}, { UI.corner(20), UI.stroke(UI.Colors.Spark, 4), UI.padding(16), UI.list(10) })
+	local scale = UI.new("UIScale", { Scale = 0.3, Parent = panel })
+	UI.label({
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 34),
+		Text = "👋 Welcome back!",
+		TextSize = 28,
+		Parent = panel,
+	})
+	UI.label({
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 0, 44),
+		Text = "While you were away for " .. awayText(awaySeconds) .. ", your storms made:",
+		TextSize = 17,
+		TextWrapped = true,
+		TextColor3 = UI.Colors.Muted,
+		Parent = panel,
+	})
+	UI.label({
+		LayoutOrder = 3,
+		Size = UDim2.new(1, 0, 0, 44),
+		Text = "⚡" .. Format.number(amount),
+		TextSize = 40,
+		TextColor3 = UI.Colors.Spark,
+		Parent = panel,
+	})
+	local ok = UI.button({
+		LayoutOrder = 4,
+		Size = UDim2.fromOffset(180, 46),
+		Text = "Yay!",
+		TextSize = 22,
+		BackgroundColor3 = UI.Colors.Good,
+		Parent = panel,
+	})
+	ok.Activated:Connect(function()
+		screen:Destroy()
+	end)
+	TweenService:Create(scale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+		:Play()
+	Sfx.play("coins")
+end
+
 local function shake(strength: number)
 	shakeStrength = math.max(shakeStrength, strength)
 	shakeUntil = os.clock() + 0.35
@@ -78,6 +141,8 @@ function JuiceController.start()
 			float(a, b, if typeof(c) == "Color3" then c else nil)
 		elseif kind == "sound" and type(a) == "string" then
 			Sfx.play(a)
+		elseif kind == "welcome" and type(a) == "number" and type(b) == "number" then
+			welcome(a, b)
 		elseif kind == "shake" then
 			shake(if type(a) == "number" then a else 1)
 		end

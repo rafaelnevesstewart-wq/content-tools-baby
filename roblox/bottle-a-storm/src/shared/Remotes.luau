@@ -12,7 +12,8 @@ local EVENTS = {
 	"TradeRequest", -- server -> client: (fromUserId, fromName)
 	"TradeUpdate", -- server -> client: (state or nil when the trade closes)
 	"DevPurchase", -- client -> server, Studio only: (itemKey)
-	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake
+	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake, pop-ups
+	"PedestalAction", -- client -> server: (slot, "ride" | "guard" | "sell")
 }
 
 local FUNCTIONS = {
@@ -22,6 +23,9 @@ local FUNCTIONS = {
 	"ClimateShift", -- client -> server: () -> (ok, message)
 	"GetSeason", -- client -> server: () -> your season progress
 	"SeasonClaim", -- client -> server: (tier, "free" | "premium") -> (ok, message)
+	"GetRewards", -- client -> server: () -> daily, quests and Storm Index info
+	"ClaimDaily", -- client -> server: () -> (ok, message)
+	"ClaimQuest", -- client -> server: (index) -> (ok, message)
 }
 
 local folder: Instance

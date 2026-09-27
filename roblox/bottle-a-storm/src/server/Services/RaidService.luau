@@ -15,6 +15,7 @@ local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local RaidData = require(Shared.RaidData)
 local StormData = require(Shared.StormData)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
@@ -23,6 +24,7 @@ local StormModel = require(Modules.StormModel)
 local CaptureService = require(script.Parent.CaptureService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
+local IndexService = require(script.Parent.IndexService)
 local MovementService = require(script.Parent.MovementService)
 local PlotService = require(script.Parent.PlotService)
 local SeasonService = require(script.Parent.SeasonService)
@@ -31,6 +33,9 @@ local StormSpawner = require(script.Parent.StormSpawner)
 local WeatherService = require(script.Parent.WeatherService)
 
 local RaidService = {}
+
+-- (player) for everyone who dealt damage when a raid ends.
+RaidService.Fought = Signal.new()
 
 local LAUNCHER_NAME = "Storm Launcher"
 local SPAWN_HEIGHT = 230
@@ -426,7 +431,7 @@ local function reward(player: Player, isMVP: boolean)
 	if slot then
 		record.slot = slot
 		table.insert(data.storms, record)
-		data.discovered[def.id] = true
+		IndexService.discover(player, def.id)
 		PlotService.refreshSlot(player, slot)
 		Notify.player(player, "🎁 Raid reward: " .. name .. " is on your island!", "rare")
 	else
@@ -545,6 +550,7 @@ local function finish(won: boolean)
 	local top = if #lines > 0 then "  Top damage: " .. table.concat(lines, "  ") else ""
 	for _, player in ranked do
 		SeasonService.addXp(player, Config.Season.RaidFightXp + (if won then Config.Season.RaidWinXp else 0))
+		RaidService.Fought:Fire(player)
 	end
 
 	if won then

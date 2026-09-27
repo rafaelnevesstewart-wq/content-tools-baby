@@ -48,6 +48,25 @@ export type WildStorm = {
 	dizzyAt: number,
 	alive: boolean,
 	tween: Tween?,
+	-- Special storms (golden hunt, races):
+	tag: string?, -- "golden" | "race"
+	mutation: string?, -- a mutation it always has when caught
+	speedMultiplier: number,
+	path: { Vector3 }?, -- follows these points in a loop instead of roaming
+	pathIndex: number,
+	hitsNeeded: number?, -- overrides the rarity's hit count
+	noDodge: boolean?,
+}
+
+export type SpecialOptions = {
+	tag: string?,
+	mutation: string?,
+	speedMultiplier: number?,
+	lifetime: number?,
+	path: { Vector3 }?,
+	speed: number?, -- studs per second along the path
+	hitsNeeded: number?,
+	noDodge: boolean?,
 }
 
 local storms: { [string]: WildStorm } = {}
@@ -162,15 +181,27 @@ local function roam(storm: WildStorm)
 			continue
 		end
 		local from = storm.root.Position
-		local target = pickTarget(storm)
-		local flat = Vector3.new(target.X - from.X, 0, target.Z - from.Z)
+		local path = storm.path
+		local target
+		if path then
+			-- Race storms zoom from ring to ring around the track.
+			storm.pathIndex = storm.pathIndex % #path + 1
+			target = path[storm.pathIndex]
+		else
+			target = pickTarget(storm)
+		end
+		local flat = Vector3.new(target.X - from.X, target.Y - from.Y, target.Z - from.Z)
+		if not path then
+			flat = Vector3.new(flat.X, 0, flat.Z)
+		end
 		if flat.Magnitude > 1 then
-			local speed = rarity.speed * (if os.clock() < storm.burstUntil then 2 else 1)
+			local speed = rarity.speed * storm.speedMultiplier * (if os.clock() < storm.burstUntil then 2 else 1)
 			local facing = CFrame.lookAt(from, from + flat)
 			storm.root.CFrame = facing
+			local style = if path then Enum.EasingStyle.Linear else Enum.EasingStyle.Sine
 			local tween = TweenService:Create(
 				storm.root,
-				TweenInfo.new(flat.Magnitude / speed, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				TweenInfo.new(flat.Magnitude / speed, style, Enum.EasingDirection.InOut),
 				{ CFrame = facing.Rotation + target }
 			)
 			storm.tween = tween
@@ -178,24 +209,29 @@ local function roam(storm: WildStorm)
 			tween.Completed:Wait()
 			storm.tween = nil
 		end
-		if storm.alive and not storm.catcher and os.clock() >= storm.stunnedUntil then
+		if storm.alive and not storm.catcher and os.clock() >= storm.stunnedUntil and not path then
 			local pause = if os.clock() < storm.burstUntil then 0.1 else rng:NextNumber(0.8, 2.4)
 			task.wait(pause)
 		end
 	end
 end
 
-local function spawnStorm(zone: Zone, def: StormData.StormDef?)
+local function spawnStorm(zone: Zone, def: StormData.StormDef?, special: SpecialOptions?): string
 	local chosen = def or (if zone.storms then rollBiome(zone.storms) else rollStorm())
+	local opts: SpecialOptions = special or {}
 	local uid = HttpService:GenerateGUID(false)
-	local model = StormModel.build(chosen)
+	local model = StormModel.build(chosen, { mutation = opts.mutation })
 	model.Name = "Wild_" .. chosen.id
 	model:SetAttribute("StormUid", uid)
 	local root = model.PrimaryPart :: BasePart
-	local position = randomPointIn(zone)
+	local position = if opts.path then opts.path[1] else randomPointIn(zone)
 	model:PivotTo(CFrame.new(position) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
 
-	StormModel.nameTag(chosen).Parent = root
+	local subtitle = if opts.tag == "golden"
+		then "✨ GOLDEN HUNT ✨"
+		elseif opts.tag == "race" then "🏁 RACE STORM"
+		else nil
+	StormModel.nameTag(chosen, opts.mutation, subtitle).Parent = root
 
 	local storm: WildStorm = {
 		uid = uid,
@@ -204,7 +240,7 @@ local function spawnStorm(zone: Zone, def: StormData.StormDef?)
 		model = model,
 		root = root,
 		catcher = nil,
-		expiresAt = os.clock() + (Config.Wild.Lifetime[chosen.rarity] or 120),
+		expiresAt = os.clock() + (opts.lifetime or Config.Wild.Lifetime[chosen.rarity] or 120),
 		burstUntil = 0,
 		stunnedUntil = 0,
 		fleeFrom = nil,
@@ -212,6 +248,15 @@ local function spawnStorm(zone: Zone, def: StormData.StormDef?)
 		dizzyAt = 0,
 		alive = true,
 		tween = nil,
+		tag = opts.tag,
+		mutation = opts.mutation,
+		speedMultiplier = if opts.path and opts.speed
+			then opts.speed / StormData.rarityOf(chosen).speed
+			else opts.speedMultiplier or 1,
+		path = opts.path,
+		pathIndex = 1,
+		hitsNeeded = opts.hitsNeeded,
+		noDodge = opts.noDodge,
 	}
 	storms[uid] = storm
 	zone.count += 1
@@ -219,7 +264,9 @@ local function spawnStorm(zone: Zone, def: StormData.StormDef?)
 	task.spawn(roam, storm)
 
 	local rarityName = StormData.rarityOf(chosen).name
-	if chosen.rarity >= 5 then
+	if opts.tag then
+		return uid -- special storms are announced by EventService
+	elseif chosen.rarity >= 5 then
 		Notify.all(
 			"✨ A " .. string.upper(rarityName) .. " " .. chosen.name .. " appeared in " .. zone.label .. "!",
 			"rare"
@@ -227,6 +274,7 @@ local function spawnStorm(zone: Zone, def: StormData.StormDef?)
 	elseif chosen.rarity == 4 and not zone.storms then
 		Notify.all("💜 An Epic " .. chosen.name .. " is roaming " .. zone.label .. "!", "info")
 	end
+	return uid
 end
 
 function StormSpawner.get(uid: string): WildStorm?
@@ -387,6 +435,11 @@ function StormSpawner.burst(amount: number)
 	for _ = 1, amount do
 		spawnStorm(wildZone, nil)
 	end
+end
+
+-- A golden-hunt or race storm on the Wild Skies. Returns its uid.
+function StormSpawner.spawnSpecial(def: StormData.StormDef, options: SpecialOptions): string
+	return spawnStorm(wildZone, def, options)
 end
 
 -- Spawns this storm where it lives (its biome island, or the Wild Skies).

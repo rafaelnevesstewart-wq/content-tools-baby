@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
+local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
 local StormData = require(Shared.StormData)
 
@@ -25,6 +26,8 @@ PlotService.StealRequested = Signal.new()
 PlotService.SellRequested = Signal.new()
 -- (owner)
 PlotService.CollectTouched = Signal.new()
+-- (owner, slot) when the owner picks a storm to guard their island
+PlotService.GuardRequested = Signal.new()
 -- (owner, slot) when the owner picks a storm to ride
 PlotService.RideRequested = Signal.new()
 -- (owner, slot) when the owner pets one of their storms
@@ -314,18 +317,9 @@ local function buildPedestal(plot: Plot, slot: number): Model
 			PlotService.StealRequested:Fire(player, plot.owner, slot)
 		end
 	end)
-	local ride = prompt(base, "RidePrompt", "Ride this storm", 0.3, Enum.KeyCode.R)
-	ride.Triggered:Connect(function(player)
-		if player == plot.owner then
-			PlotService.RideRequested:Fire(player, slot)
-		end
-	end)
-	local sell = prompt(base, "SellPrompt", "Sell", 1, Enum.KeyCode.F)
-	sell.Triggered:Connect(function(player)
-		if player == plot.owner then
-			PlotService.SellRequested:Fire(player, slot)
-		end
-	end)
+	-- Opens the Ride / Guard / Sell menu on the owner's screen (PedestalMenu).
+	-- The choice comes back through the PedestalAction remote.
+	prompt(base, "OptionsPrompt", "Options", 0, Enum.KeyCode.F)
 
 	CollectionService:AddTag(base, "Pedestal")
 	model.Parent = plot.pedestalFolder
@@ -359,9 +353,13 @@ local function refreshSlot(plot: Plot, slot: number)
 	local beingStolen = plot.stolenSlots[slot] == true
 	base:SetAttribute("OwnerUserId", if plot.owner then plot.owner.UserId else 0)
 	base:SetAttribute("HasStorm", record ~= nil)
+	-- For the owner's Options menu: which storm is here.
+	base:SetAttribute("StormId", if record then record.id else nil)
+	base:SetAttribute("StormMut", if record then record.mut else nil)
+	base:SetAttribute("StormUid", if record then record.uid else nil)
 	base:SetAttribute("BeingStolen", beingStolen)
 
-	local sell = base:FindFirstChild("SellPrompt") :: ProximityPrompt?
+	local options = base:FindFirstChild("OptionsPrompt") :: ProximityPrompt?
 	local steal = base:FindFirstChild("StealPrompt") :: ProximityPrompt?
 
 	if beingStolen then
@@ -405,16 +403,11 @@ local function refreshSlot(plot: Plot, slot: number)
 	display.Parent = pedestal
 
 	local objectText = StormData.displayName(record) .. " (" .. rarity.name .. ")"
-	if sell then
-		sell.ObjectText = objectText
-		sell.ActionText = "Sell for ⚡" .. Format.number(StormData.incomeOf(record) * Config.Income.SellSeconds)
+	if options then
+		options.ObjectText = objectText
 	end
 	if steal then
 		steal.ObjectText = objectText
-	end
-	local ride = base:FindFirstChild("RidePrompt") :: ProximityPrompt?
-	if ride then
-		ride.ObjectText = objectText
 	end
 end
 
@@ -733,6 +726,26 @@ function PlotService.init()
 end
 
 function PlotService.start()
+	-- Choices from the owner's pedestal Options menu.
+	Remotes.event("PedestalAction").OnServerEvent:Connect(function(player, slot, action)
+		local plot = plotByPlayer[player]
+		if not plot or type(slot) ~= "number" or not plot.pedestals[slot] then
+			return
+		end
+		local pedestal = plot.pedestals[slot].PrimaryPart
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if not pedestal or not root or (root.Position - pedestal.Position).Magnitude > 25 then
+			return
+		end
+		if action == "ride" then
+			PlotService.RideRequested:Fire(player, slot)
+		elseif action == "guard" then
+			PlotService.GuardRequested:Fire(player, slot)
+		elseif action == "sell" then
+			PlotService.SellRequested:Fire(player, slot)
+		end
+	end)
 	DataService.ProfileLoaded:Connect(assignPlot)
 	DataService.onRelease(function(player)
 		clearPlot(player)

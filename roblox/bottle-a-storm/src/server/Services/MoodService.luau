@@ -11,6 +11,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Products = require(Shared.Products)
 local StormData = require(Shared.StormData)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
@@ -22,6 +23,9 @@ local RideService = require(script.Parent.RideService)
 local StormSpawner = require(script.Parent.StormSpawner)
 
 local MoodService = {}
+
+-- (owner) every time a storm is petted.
+MoodService.Petted = Signal.new()
 
 local TICK_SECONDS = 10
 
@@ -145,6 +149,7 @@ local function pet(owner: Player, slot: number)
 	end
 	lastPet[record.uid] = os.clock()
 	setMood(owner, record, StormData.moodValue(record) + Config.Mood.PetAmount)
+	MoodService.Petted:Fire(owner)
 	local tier = StormData.moodOf(record)
 	Notify.player(owner, "🥰 " .. name .. " loves that! Mood: " .. tier.emoji .. " " .. tier.name, "success")
 end

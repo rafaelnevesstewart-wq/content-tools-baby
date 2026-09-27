@@ -14,6 +14,7 @@ local ClimateData = require(Shared.ClimateData)
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
+local Signal = require(Shared.Signal)
 local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
@@ -23,6 +24,7 @@ local Notify = require(Modules.Notify)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
+local IndexService = require(script.Parent.IndexService)
 local MovementService = require(script.Parent.MovementService)
 local PlotService = require(script.Parent.PlotService)
 local SeasonService = require(script.Parent.SeasonService)
@@ -31,11 +33,15 @@ local WeatherService = require(script.Parent.WeatherService)
 
 local CaptureService = {}
 
+-- (player, record, storm) after every successful catch.
+CaptureService.Caught = Signal.new()
+
 local JAR_NAME = "Storm Jar"
 
 local lastThrow: { [Player]: number } = {}
 local lastHint: { [Player]: number } = {}
 local tipShown: { [Player]: boolean } = {}
+local combos: { [Player]: { count: number, at: number } } = {}
 local rng = Random.new()
 local jarTemplate: Tool
 
@@ -52,9 +58,10 @@ local function hint(player: Player, text: string, kind: string)
 	end
 end
 
-local function rollMutation(): string?
+local function rollMutation(extraChance: number?): string?
 	local event = WeatherService.current()
 	local chance = Config.Throw.MutationChance * (if event then event.mutationChanceMultiplier else 1)
+		+ (extraChance or 0)
 	if rng:NextNumber() >= chance then
 		return nil
 	end
@@ -121,7 +128,20 @@ local function bottle(player: Player, storm: StormSpawner.WildStorm)
 		return
 	end
 	local def = storm.def
-	local mutation = rollMutation()
+
+	-- Combo: catching again within a few seconds builds a streak.
+	local now = os.clock()
+	local combo = combos[player]
+	if combo and now - combo.at <= Config.Combo.WindowSeconds then
+		combo.count = math.min(combo.count + 1, Config.Combo.Max)
+		combo.at = now
+	else
+		combo = { count = 1, at = now }
+		combos[player] = combo
+	end
+	local step = (combo :: { count: number, at: number }).count - 1
+
+	local mutation = storm.mutation or rollMutation(step * Config.Combo.MutationBonusPerStep)
 	local record: StormData.StormRecord = {
 		uid = HttpService:GenerateGUID(false),
 		id = def.id,
@@ -133,16 +153,23 @@ local function bottle(player: Player, storm: StormSpawner.WildStorm)
 	table.insert(data.storms, record)
 	data.stats.captured += 1
 	SeasonService.addXp(player, Config.Season.CatchXpPerRarity * def.rarity)
-	local firstTime = not data.discovered[def.id]
-	data.discovered[def.id] = true
 	PlotService.refreshSlot(player, slot)
+	IndexService.discover(player, def.id)
+
+	if step > 0 then
+		local bonus = math.floor(math.max(Config.Combo.SparksPerStep, IncomeService.rateOf(player) * 3) * step)
+		data.sparks += bonus
+		Juice.float(
+			player,
+			"COMBO x" .. step + 1 .. "! +⚡" .. Format.number(bonus),
+			storm.root.Position + Vector3.new(0, 4, 0),
+			Color3.fromRGB(255, 120, 200)
+		)
+	end
 	IncomeService.sync(player)
 
 	local name = StormData.displayName(record)
 	local message = "🫙 You bottled " .. name .. "! +" .. Format.number(StormData.incomeOf(record)) .. " ⚡/s"
-	if firstTime then
-		message ..= "  (NEW!)"
-	end
 	Notify.player(player, message, if mutation or def.rarity >= 4 then "rare" else "success")
 	Juice.float(
 		player,
@@ -154,9 +181,10 @@ local function bottle(player: Player, storm: StormSpawner.WildStorm)
 	if pedestal then
 		Effects.confetti(pedestal + Vector3.new(0, 4, 0), 40)
 	end
-	if def.rarity >= 5 or (mutation and def.rarity >= 3) then
+	if not storm.tag and (def.rarity >= 5 or (mutation and def.rarity >= 3)) then
 		Notify.allExcept(player, "🎉 " .. player.DisplayName .. " bottled " .. name .. "!", "rare")
 	end
+	CaptureService.Caught:Fire(player, record, storm)
 end
 
 -- The jar reached the storm: bounce, dodge, dizzy or caught.
@@ -181,7 +209,8 @@ local function resolveHit(player: Player, uid: string, thrownFrom: Vector3)
 		return
 	end
 
-	if def.rarity > jar.maxRarity then
+	-- Golden-hunt and race storms can be caught with any jar, so everyone has a chance.
+	if def.rarity > jar.maxRarity and not storm.tag then
 		StormSpawner.dodge(uid, thrownFrom)
 		hint(
 			player,
@@ -195,7 +224,9 @@ local function resolveHit(player: Player, uid: string, thrownFrom: Vector3)
 		return
 	end
 
-	local dodgeChance = (Config.Throw.DodgeChance[def.rarity] or 0) * (1 - Config.Throw.JarDodgeReduction * jar.power)
+	local dodgeChance = if storm.noDodge
+		then 0
+		else (Config.Throw.DodgeChance[def.rarity] or 0) * (1 - Config.Throw.JarDodgeReduction * jar.power)
 	if rng:NextNumber() < dodgeChance then
 		StormSpawner.dodge(uid, thrownFrom)
 		hint(player, "💨 " .. def.name .. " dodged your jar!", "info")
@@ -207,7 +238,7 @@ local function resolveHit(player: Player, uid: string, thrownFrom: Vector3)
 	if jar.maxRarity > def.rarity then
 		needed -= 1
 	end
-	needed = math.max(1, needed)
+	needed = math.max(1, storm.hitsNeeded or needed)
 
 	local hits = StormSpawner.addHit(uid, player, needed)
 	if hits >= needed then
@@ -322,6 +353,7 @@ function CaptureService.start()
 		onPlayer(player)
 	end
 	Players.PlayerRemoving:Connect(function(player)
+		combos[player] = nil
 		lastThrow[player] = nil
 		lastHint[player] = nil
 		tipShown[player] = nil

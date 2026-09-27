@@ -52,6 +52,11 @@ local function defaultData()
 		-- string keys ("5" = true) so the DataStore never sees an array with holes.
 		season = { id = -1, xp = 0, premium = false, claimedFree = {}, claimedPremium = {} },
 		thiefStyles = {}, -- unlocked style key -> true; data.thiefStyle is the equipped one
+		starterGiven = false,
+		indexRows = 0, -- completed Storm Index rarity rows (each is +5% income)
+		daily = { lastDay = -1, streak = 0 }, -- login reward streak
+		quests = { day = -1, list = {} }, -- today's quests
+		-- Also saved when set: guardUid, mountUid, lastSeen (for offline earnings).
 		storms = {}, -- { StormRecord }
 		discovered = {}, -- storm id -> true
 		recipes = {}, -- hybrid id -> true, the Storm Mixer recipes this player found
