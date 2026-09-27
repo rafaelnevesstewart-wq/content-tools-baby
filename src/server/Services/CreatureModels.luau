@@ -7,6 +7,8 @@
 -- The game scales each one to the right size, stands it on the ground under
 -- the titan's deck (or in place of the monster), and hides the built-in body.
 -- Deck, ladders, saddle and everything you stand on stay the same.
+-- Names don't care about capitals, spaces or dashes, and a model left in the
+-- Workspace or loose in ServerStorage is picked up too.
 -- If a model faces the wrong way, give it a number attribute "YawDegrees"
 -- (e.g. 90 or 180). Scripts inside models are removed for safety.
 
@@ -14,9 +16,92 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local CreatureModels = {}
 
+local SLOTS = {
+	"Titan",
+	"Titan_Shellback",
+	"Titan_Mossback",
+	"Titan_Tuskhorn",
+	"Titan_Driftfin",
+	"Monster_Gloomling",
+	"Monster_Gloomhound",
+	"Monster_Thornback",
+	"Monster_Golem",
+	"Monster_StormKing",
+}
+
+-- "monster gloomling", "Monster_Gloomling " and "MONSTER-GLOOMLING" all match.
+local function key(name: string): string
+	return (string.lower(name):gsub("[%s_%-]", ""))
+end
+
+local slotByKey = {}
+for _, slot in SLOTS do
+	slotByKey[key(slot)] = slot
+end
+
+local folder: Folder
+
+-- Imports can arrive as a single MeshPart rather than a Model; wrap those.
+local function asModel(instance: Instance): Model?
+	if instance:IsA("Model") then
+		return instance
+	elseif instance:IsA("BasePart") or instance:IsA("Folder") then
+		local model = Instance.new("Model")
+		model.Name = instance.Name
+		for name, value in instance:GetAttributes() do
+			model:SetAttribute(name, value)
+		end
+		instance.Parent = model
+		if instance:IsA("Folder") then
+			for _, child in instance:GetChildren() do
+				child.Parent = model
+			end
+			instance:Destroy()
+		end
+		return model
+	end
+	return nil
+end
+
+-- Gathers every model named after a slot, wherever it was left (ServerStorage,
+-- its CreatureModels folder, or the Workspace), into ServerStorage.CreatureModels
+-- under its exact slot name. Runs once when the server starts.
+local function collect()
+	folder = ServerStorage:FindFirstChild("CreatureModels") :: Folder
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "CreatureModels"
+		folder.Parent = ServerStorage
+	end
+	local found = {}
+	for _, place in { folder, ServerStorage, workspace } do
+		for _, child in place:GetChildren() do
+			local slot = slotByKey[key(child.Name)]
+			if slot and not found[slot] then
+				local model = asModel(child)
+				if model then
+					model.Name = slot
+					model.Parent = folder
+					found[slot] = true
+				end
+			end
+		end
+	end
+	local names = {}
+	for slot in found do
+		table.insert(names, slot)
+	end
+	table.sort(names)
+	if #names > 0 then
+		print("[CreatureModels] Using 3D models: " .. table.concat(names, ", "))
+	else
+		print("[CreatureModels] No 3D models found. Name them like Monster_Gloomling and put them in ServerStorage > CreatureModels.")
+	end
+end
+collect()
+
 local function template(name: string): Model?
-	local folder = ServerStorage:FindFirstChild("CreatureModels")
-	local found = folder and folder:FindFirstChild(name)
+	local found = folder:FindFirstChild(name)
 	if found and found:IsA("Model") then
 		return found
 	end
