@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local CreatureModels = require(script.Parent.CreatureModels)
 local Organic = require(script.Parent.Organic)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
@@ -219,6 +220,14 @@ end
 function MonsterService:Spawn(kind: string, position: Vector3, isNight: boolean)
 	local def = Config.Monsters[kind]
 	local model, root, hipY, legs = buildModel(kind, def)
+	-- A real 3D model from ServerStorage > CreatureModels replaces the
+	-- built-in body when one is set up for this kind.
+	local custom = CreatureModels.place({ "Monster_" .. kind }, hipY * 1.9, CFrame.new(0, hipY * 0.95, 0))
+	if custom then
+		CreatureModels.hideBuiltIn(model, { Root = true })
+		CreatureModels.attach(custom, root, false)
+		custom.Parent = model
+	end
 	local nightScale = isNight and (1 + S.CycleService:NightNumber() * 0.08) or 1
 	local health = def.Health * nightScale
 	if def.Boss then

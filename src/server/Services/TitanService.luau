@@ -16,7 +16,28 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local CreatureModels = require(script.Parent.CreatureModels)
 local Organic = require(script.Parent.Organic)
+
+-- Parts that stay visible when a custom 3D model replaces the titan's body.
+local TITAN_KEEP = {
+	Root = true,
+	Hull = true,
+	Deck = true,
+	Rail = true,
+	LadderClimb = true,
+	LadderRail = true,
+	LadderRung = true,
+	LadderPlank = true,
+	LadderBase = true,
+	Lantern = true,
+	LanternPost = true,
+	Mast = true,
+	Banner = true,
+	Saddle = true,
+	SaddleBack = true,
+	LeapPost = true,
+}
 local Util = require(ReplicatedStorage.Shared.Util)
 
 local TitanService = {}
@@ -826,6 +847,18 @@ local function build(record, player: Player)
 	alignOrientation.Parent = root
 	record.AlignPosition = alignPosition
 	record.AlignOrientation = alignOrientation
+
+	-- A real 3D model from ServerStorage > CreatureModels, if one is set up,
+	-- replaces the built-in body. It stands on the ground with its back
+	-- under the deck; everything players stand on stays as it is.
+	local groundToDeck = 12 * s + deckY
+	local custom = CreatureModels.place({ "Titan_" .. profile.Species, "Titan" }, groundToDeck, root.CFrame * CFrame.new(0, deckY - groundToDeck / 2, 0))
+	if custom then
+		CreatureModels.hideBuiltIn(model, TITAN_KEEP, items)
+		CreatureModels.attach(custom, root, true)
+		custom.Name = "CustomBody"
+		custom.Parent = model
+	end
 
 	record.Model = model
 	record.Root = root

@@ -52,6 +52,21 @@ When you test in Studio:
 - To test saving, turn on **Game Settings → Security → Enable Studio Access to API Services**.
 - To test stealing, start a local server with 2+ players from **Test → Clients and Servers**.
 
+## Controls (computer)
+
+The mouse turns the camera and your character, over the shoulder with a crosshair. Left click attacks with your weapon (hold to keep attacking), right click aims, Z X C V B cast spells, 1-9 pick a weapon. Left Alt frees the cursor to click buttons. I opens items, P the shop, T travel. Phones and tablets keep the normal Roblox controls.
+
+## Using real 3D creature models
+
+Titans and monsters are built from parts by default. To make them look like ARK-style creatures, put 3D models (from the Creator Store, or made in Blender and imported with the 3D Importer) into **ServerStorage > CreatureModels** with these names:
+
+| Name | Replaces |
+|---|---|
+| `Titan_Shellback`, `Titan_Mossback`, `Titan_Tuskhorn`, `Titan_Driftfin` (or `Titan` for all) | the titan's body |
+| `Monster_Gloomling`, `Monster_Gloomhound`, `Monster_Thornback`, `Monster_Golem`, `Monster_StormKing` | that monster's body |
+
+The game scales each model to fit, keeps the deck, ladders and saddle, and removes any scripts inside the model. If a model faces the wrong way, add a number attribute `YawDegrees` (for example 90 or 180) to it.
+
 ## Before publishing
 
 1. Create each game pass and developer product on the Creator Hub, then paste its id into `Id` in `Config.luau`. Robux skins are developer products too.

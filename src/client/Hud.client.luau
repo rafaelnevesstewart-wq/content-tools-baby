@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
@@ -610,6 +611,12 @@ Remotes.State.OnClientEvent:Connect(function(newState)
 end)
 
 Remotes.Notify.OnClientEvent:Connect(toast)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if not processed and input.KeyCode == Enum.KeyCode.P then
+		shopFrame.Visible = not shopFrame.Visible
+	end
+end)
 
 -- Walking into a base building opens its shop tab.
 Remotes.Ui.OnClientEvent:Connect(function(message)

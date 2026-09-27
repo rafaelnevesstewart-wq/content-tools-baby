@@ -117,31 +117,8 @@ local function hookTool(tool: Instance)
 		return
 	end
 	tool:SetAttribute("FxHooked", true)
-	local swinging = false
 	tool.Equipped:Connect(function()
 		playSound(SOUNDS.Equip, 0.4)
-	end)
-	tool.Activated:Connect(function()
-		playSound(SOUNDS.Swing, 0.5, rng:NextNumber(0.9, 1.15))
-		if swinging then
-			return
-		end
-		swinging = true
-		-- A quick overhead chop by tilting the grip, then back.
-		local rest = tool.Grip
-		local value = Instance.new("CFrameValue")
-		value.Value = rest
-		value.Changed:Connect(function(grip)
-			tool.Grip = grip
-		end)
-		local down = TweenService:Create(value, TweenInfo.new(0.1, Enum.EasingStyle.Quad), { Value = rest * CFrame.Angles(math.rad(-95), 0, 0) })
-		down:Play()
-		down.Completed:Wait()
-		local back = TweenService:Create(value, TweenInfo.new(0.18, Enum.EasingStyle.Quad), { Value = rest })
-		back:Play()
-		back.Completed:Wait()
-		value:Destroy()
-		swinging = false
 	end)
 end
 

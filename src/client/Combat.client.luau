@@ -53,6 +53,9 @@ local function hookTool(tool: Instance)
 	end
 	tool:SetAttribute("Hooked", true)
 	tool.Activated:Connect(function()
+		if UserInputService.MouseEnabled then
+			return -- computers attack through Controls (click with the crosshair)
+		end
 		Remotes.Action:FireServer("Attack", { Key = tool:GetAttribute("WeaponKey"), Dir = aimDirection() })
 	end)
 end
@@ -177,6 +180,7 @@ local PLACES = {
 }
 
 local travelFrame = Instance.new("Frame")
+travelFrame.Name = "TravelMenu"
 travelFrame.Size = UDim2.fromOffset(260, #PLACES * 46 + 50)
 travelFrame.Position = UDim2.new(0.5, -130, 0.5, -(#PLACES * 46 + 50) / 2)
 travelFrame.BackgroundColor3 = PANEL
@@ -224,6 +228,12 @@ travelButton.Activated:Connect(function()
 	travelFrame.Visible = not travelFrame.Visible
 end)
 travelButton.Parent = gui
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if not processed and input.KeyCode == Enum.KeyCode.T then
+		travelFrame.Visible = not travelFrame.Visible
+	end
+end)
 
 -- Driving -------------------------------------------------------------------------
 

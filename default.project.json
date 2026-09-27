@@ -37,6 +37,11 @@
         "EnvironmentDiffuseScale": 1,
         "EnvironmentSpecularScale": 1
       }
+    },
+    "ServerStorage": {
+      "CreatureModels": {
+        "$className": "Folder"
+      }
     }
   }
 }

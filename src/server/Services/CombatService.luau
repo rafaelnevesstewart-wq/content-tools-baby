@@ -400,6 +400,46 @@ function CombatService:_onDied(victim: Player, character: Model)
 	S.PlayerService:Notify(victim, string.format("%s defeated you.", killer.DisplayName))
 end
 
+-- Swings the sword arm (or raises it to shoot) by turning the shoulder joint.
+-- Done on the server so every player sees it.
+local swinging = {} -- [Motor6D] = true while mid-swing
+local function swingArm(character: Model, ranged: boolean, duration: number)
+	local motor = character:FindFirstChild("RightShoulder", true) or character:FindFirstChild("Right Shoulder", true)
+	if not motor or not motor:IsA("Motor6D") or swinging[motor] then
+		return
+	end
+	swinging[motor] = true
+	local rest = motor.C0
+	local steps
+	if ranged then
+		-- Arm up to aim, a small kick back as it fires, then down.
+		steps = {
+			{ rest * CFrame.Angles(math.rad(90), 0, 0), 0.25 },
+			{ rest * CFrame.Angles(math.rad(100), 0, 0), 0.15 },
+			{ rest, 0.6 },
+		}
+	else
+		-- Wind up over the shoulder, chop down across the body, recover.
+		steps = {
+			{ rest * CFrame.Angles(math.rad(150), 0, math.rad(-25)), 0.3 },
+			{ rest * CFrame.Angles(math.rad(-15), 0, math.rad(35)), 0.25 },
+			{ rest, 0.45 },
+		}
+	end
+	task.spawn(function()
+		for _, step in steps do
+			local tween = TweenService:Create(motor, TweenInfo.new(duration * step[2], Enum.EasingStyle.Quad), { C0 = step[1] })
+			tween:Play()
+			tween.Completed:Wait()
+			if not motor.Parent then
+				break
+			end
+		end
+		motor.C0 = rest
+		swinging[motor] = nil
+	end)
+end
+
 function CombatService:Attack(player: Player, arg)
 	if type(arg) ~= "table" or type(arg.Key) ~= "string" then
 		return
@@ -418,6 +458,7 @@ function CombatService:Attack(player: Player, arg)
 	if not ready(player, "Weapon", def.Cooldown) then
 		return
 	end
+	swingArm(character, def.Kind == "Ranged", math.min(def.Cooldown, 0.6))
 	local damage = def.Damage * damageMult(player)
 	local handle = tool:FindFirstChild("Handle")
 	local origin = handle and handle.Position or hrp.Position
