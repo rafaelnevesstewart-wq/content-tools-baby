@@ -6,7 +6,7 @@
 
 export type Item = {
 	id: string,
-	category: string, -- hat, trail, back, aura, pedestal, decor, flag, pet
+	category: string, -- hat, trail, back, aura, cloud, pedestal, decor, flag, pet
 	name: string,
 	emoji: string,
 	cost: number, -- Sparks; 0 = free
@@ -30,6 +30,7 @@ CosmeticsData.Categories = {
 	{ key = "trail", name = "Trails", emoji = "✨" },
 	{ key = "back", name = "Backs", emoji = "🪽" },
 	{ key = "aura", name = "Auras", emoji = "💫" },
+	{ key = "cloud", name = "Flight Clouds", emoji = "☁️" },
 	{ key = "pedestal", name = "Pedestals", emoji = "🏛️", island = true },
 	{ key = "decor", name = "Decor", emoji = "⛲", multi = true, island = true },
 	{ key = "flag", name = "Sign & Flag", emoji = "🚩", island = true },
@@ -137,6 +138,149 @@ CosmeticsData.Items = {
 		cost = 0,
 		robux = true,
 		description = "A starry purple galaxy streak.",
+	},
+
+	{
+		id = "FireTrail",
+		category = "trail",
+		name = "Fire Trail",
+		emoji = "🔥",
+		cost = 35000,
+		description = "Real flames lick the ground behind you.",
+	},
+	{
+		id = "SakuraTrail",
+		category = "trail",
+		name = "Cherry Blossom Trail",
+		emoji = "🌸",
+		cost = 45000,
+		description = "Pink petals drift down as you run.",
+	},
+	{
+		id = "TornadoTrail",
+		category = "trail",
+		name = "Tornado Trail",
+		emoji = "🌪️",
+		cost = 90000,
+		description = "A swirling gray whirlwind follows you.",
+	},
+	{
+		id = "AuroraTrail",
+		category = "trail",
+		name = "Aurora Trail",
+		emoji = "🟢",
+		cost = 150000,
+		description = "Wide glowing ribbons like the northern lights.",
+	},
+	{
+		id = "ShadowTrail",
+		category = "trail",
+		name = "Shadow Trail",
+		emoji = "🖤",
+		cost = 200000,
+		description = "Dark smoke with a purple edge.",
+	},
+	{
+		id = "PlasmaTrail",
+		category = "trail",
+		name = "Plasma Trail",
+		emoji = "🔷",
+		cost = 350000,
+		description = "A blazing cyan energy beam.",
+	},
+	{
+		id = "StarfallTrail",
+		category = "trail",
+		name = "Starfall Trail",
+		emoji = "🌠",
+		cost = 1000000,
+		description = "Golden stars rain down behind you.",
+	},
+	{
+		id = "ThunderstormTrail",
+		category = "trail",
+		name = "Thunderstorm Trail",
+		emoji = "⛈️",
+		cost = 0,
+		robux = true,
+		description = "Storm clouds and crackling lightning.",
+	},
+	{
+		id = "PhoenixTrail",
+		category = "trail",
+		name = "Phoenix Trail",
+		emoji = "🐦‍🔥",
+		cost = 0,
+		robux = true,
+		description = "Huge golden fire wings of flame.",
+	},
+
+	-- Flight clouds (the cloud you ride with Cloud Flight)
+	{
+		id = "Cumulus",
+		category = "cloud",
+		name = "Cumulus",
+		emoji = "☁️",
+		cost = 0,
+		description = "A classic fluffy white cloud.",
+	},
+	{
+		id = "StormCloudSkin",
+		category = "cloud",
+		name = "Storm Cloud",
+		emoji = "🌧️",
+		cost = 5000,
+		description = "A dark rain cloud that drizzles as you fly.",
+	},
+	{
+		id = "SunsetCloud",
+		category = "cloud",
+		name = "Sunset Cloud",
+		emoji = "🌅",
+		cost = 15000,
+		description = "Glowing orange and pink, like evening sky.",
+	},
+	{
+		id = "SnowCloud",
+		category = "cloud",
+		name = "Snow Cloud",
+		emoji = "🌨️",
+		cost = 40000,
+		description = "A cold blue-white cloud dropping snowflakes.",
+	},
+	{
+		id = "RainbowCloud",
+		category = "cloud",
+		name = "Rainbow Cloud",
+		emoji = "🌈",
+		cost = 120000,
+		description = "Soft rainbow layers with sparkles.",
+	},
+	{
+		id = "GoldenCloud",
+		category = "cloud",
+		name = "Golden Cloud",
+		emoji = "✨",
+		cost = 400000,
+		description = "A shining gold cloud for true storm legends.",
+	},
+	{
+		id = "ThunderCloudSkin",
+		category = "cloud",
+		name = "Thunder Cloud",
+		emoji = "⚡",
+		cost = 0,
+		robux = true,
+		description = "A black thundercloud that flashes with lightning.",
+	},
+	{
+		id = "AuroraCloud",
+		category = "cloud",
+		name = "Aurora Cloud",
+		emoji = "🌌",
+		cost = 0,
+		robux = true,
+		description = "A glowing green and purple aurora cloud.",
 	},
 
 	-- Backs
@@ -388,6 +532,12 @@ CosmeticsData.Items = {
 		description = "A baby dragon that flies around your island.",
 	},
 } :: { Item }
+
+-- What you have when nothing else is picked (free, always owned).
+CosmeticsData.Defaults = {
+	pedestal = "Marble",
+	cloud = "Cumulus",
+} :: { [string]: string }
 
 -- The island sign's colors and emoji (free).
 CosmeticsData.SignColors = {

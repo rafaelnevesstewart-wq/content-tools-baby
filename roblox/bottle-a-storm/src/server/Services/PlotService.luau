@@ -94,7 +94,7 @@ local function billboard(parent: Instance, offset: Vector3, size: UDim2): TextLa
 	local text = Instance.new("TextLabel")
 	text.BackgroundTransparency = 1
 	text.Size = UDim2.fromScale(1, 1)
-	text.Font = Enum.Font.FredokaOne
+	text.Font = Enum.Font.GothamBold
 	text.TextScaled = true
 	text.TextColor3 = Color3.new(1, 1, 1)
 	text.TextStrokeTransparency = 0.2

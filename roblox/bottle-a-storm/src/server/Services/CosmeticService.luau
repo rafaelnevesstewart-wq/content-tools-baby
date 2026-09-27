@@ -310,44 +310,275 @@ local BACKS: { [string]: (Model, CFrame) -> () } = {
 	end,
 }
 
+-- Trails have a bright core, an optional wide soft glow behind it, and
+-- optional particles (flames, petals, stars...) that fall off as you move.
+type ParticleStyle = {
+	texture: string,
+	colors: { Color3 },
+	size: number,
+	rate: number,
+	lifetime: number,
+	speed: number,
+	accel: Vector3?,
+	spin: number?,
+	emission: number?,
+	transparency: number?,
+}
+
 type TrailStyle = {
 	colors: { Color3 },
 	width: number,
 	lifetime: number,
 	texture: string?,
 	emission: number,
+	glow: { colors: { Color3 }?, width: number, lifetime: number }?,
+	particles: ParticleStyle?,
+	light: Color3?,
 }
 
+local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local FIRE = "rbxasset://textures/particles/fire_main.dds"
+local SOFT = "rbxasset://textures/particles/forcefield_glow_main.dds"
+
 local TRAILS: { [string]: TrailStyle } = {
-	RainbowTrail = { colors = RAINBOW, width = 1, lifetime = 0.6, emission = 0.4 },
-	SparkleTrail = {
-		colors = { rgb(255, 230, 120), rgb(255, 255, 255) },
-		width = 1,
+	RainbowTrail = {
+		colors = RAINBOW,
+		width = 1.1,
 		lifetime = 0.7,
+		emission = 0.5,
+		glow = { width = 2.4, lifetime = 0.45 },
+	},
+	SparkleTrail = {
+		colors = { rgb(255, 225, 120), rgb(255, 255, 255) },
+		width = 0.9,
+		lifetime = 0.6,
 		texture = SPARKLES,
 		emission = 1,
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 225, 120) },
+			size = 0.35,
+			rate = 18,
+			lifetime = 0.8,
+			speed = 1,
+			accel = Vector3.new(0, -6, 0),
+			emission = 1,
+		},
 	},
 	SnowTrail = {
-		colors = { rgb(220, 240, 255), rgb(170, 210, 255) },
+		colors = { rgb(225, 240, 255), rgb(160, 200, 255) },
 		width = 1.2,
 		lifetime = 0.8,
 		texture = SPARKLES,
 		emission = 0.6,
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 255, 255) },
+			size = 0.3,
+			rate = 14,
+			lifetime = 1.4,
+			speed = 0.5,
+			accel = Vector3.new(0, -3, 0),
+			spin = 60,
+		},
 	},
-	LightningTrail = { colors = { rgb(255, 250, 180), rgb(255, 210, 60) }, width = 0.4, lifetime = 0.3, emission = 1 },
+	LightningTrail = {
+		colors = { rgb(255, 255, 220), rgb(255, 220, 80) },
+		width = 0.35,
+		lifetime = 0.3,
+		emission = 1,
+		glow = { colors = { rgb(120, 170, 255) }, width = 1.6, lifetime = 0.2 },
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 250, 170), rgb(150, 200, 255) },
+			size = 0.4,
+			rate = 20,
+			lifetime = 0.2,
+			speed = 6,
+			emission = 1,
+		},
+		light = rgb(255, 240, 160),
+	},
 	BubbleTrail = {
 		colors = { rgb(200, 240, 255), rgb(255, 210, 250) },
-		width = 1.3,
-		lifetime = 1,
-		texture = SPARKLES,
+		width = 1,
+		lifetime = 0.9,
 		emission = 0.3,
+		particles = {
+			texture = SOFT,
+			colors = { rgb(210, 240, 255), rgb(255, 215, 245) },
+			size = 0.6,
+			rate = 8,
+			lifetime = 2,
+			speed = 1,
+			accel = Vector3.new(0, 1.5, 0),
+			transparency = 0.4,
+		},
 	},
 	GalaxyTrail = {
-		colors = { rgb(90, 60, 200), rgb(200, 90, 230), rgb(90, 180, 255) },
-		width = 1.2,
+		colors = { rgb(70, 40, 170), rgb(190, 80, 220), rgb(80, 170, 255) },
+		width = 1.3,
 		lifetime = 0.9,
 		texture = SPARKLES,
 		emission = 0.8,
+		glow = { width = 2.6, lifetime = 0.5 },
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 255, 255), rgb(180, 200, 255) },
+			size = 0.3,
+			rate = 16,
+			lifetime = 1.2,
+			speed = 0.5,
+			emission = 1,
+		},
+	},
+	FireTrail = {
+		colors = { rgb(255, 220, 120), rgb(255, 120, 40), rgb(200, 40, 20) },
+		width = 1.2,
+		lifetime = 0.5,
+		emission = 1,
+		particles = {
+			texture = FIRE,
+			colors = { rgb(255, 190, 80), rgb(255, 80, 30) },
+			size = 1.1,
+			rate = 30,
+			lifetime = 0.6,
+			speed = 2,
+			accel = Vector3.new(0, 6, 0),
+			spin = 90,
+			emission = 1,
+		},
+		light = rgb(255, 150, 60),
+	},
+	SakuraTrail = {
+		colors = { rgb(255, 200, 220), rgb(255, 150, 190) },
+		width = 0.7,
+		lifetime = 0.6,
+		emission = 0.3,
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 180, 210), rgb(255, 230, 240) },
+			size = 0.4,
+			rate = 12,
+			lifetime = 2,
+			speed = 1,
+			accel = Vector3.new(0, -1.5, 0),
+			spin = 180,
+		},
+	},
+	TornadoTrail = {
+		colors = { rgb(200, 205, 215), rgb(140, 145, 160) },
+		width = 1.4,
+		lifetime = 0.6,
+		texture = SMOKE,
+		emission = 0,
+		particles = {
+			texture = SMOKE,
+			colors = { rgb(210, 215, 225) },
+			size = 1.6,
+			rate = 14,
+			lifetime = 1,
+			speed = 2,
+			spin = 300,
+			transparency = 0.5,
+		},
+	},
+	AuroraTrail = {
+		colors = { rgb(80, 255, 160), rgb(60, 200, 220), rgb(170, 90, 255) },
+		width = 2.2,
+		lifetime = 1.1,
+		emission = 1,
+		glow = { width = 4, lifetime = 0.8 },
+	},
+	ShadowTrail = {
+		colors = { rgb(30, 20, 45), rgb(110, 50, 170) },
+		width = 1.3,
+		lifetime = 0.7,
+		texture = SMOKE,
+		emission = 0,
+		particles = {
+			texture = SMOKE,
+			colors = { rgb(25, 18, 35), rgb(90, 40, 140) },
+			size = 1.3,
+			rate = 16,
+			lifetime = 0.9,
+			speed = 1,
+			spin = 120,
+			transparency = 0.3,
+		},
+	},
+	PlasmaTrail = {
+		colors = { rgb(220, 255, 255), rgb(60, 220, 255) },
+		width = 0.6,
+		lifetime = 0.45,
+		emission = 1,
+		glow = { colors = { rgb(40, 160, 255) }, width = 2.2, lifetime = 0.35 },
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(120, 240, 255) },
+			size = 0.35,
+			rate = 18,
+			lifetime = 0.4,
+			speed = 4,
+			emission = 1,
+		},
+		light = rgb(80, 220, 255),
+	},
+	StarfallTrail = {
+		colors = { rgb(255, 245, 200), rgb(255, 200, 80) },
+		width = 1,
+		lifetime = 0.8,
+		texture = SPARKLES,
+		emission = 1,
+		glow = { width = 2.4, lifetime = 0.5 },
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 235, 150), rgb(255, 255, 255) },
+			size = 0.7,
+			rate = 14,
+			lifetime = 1.6,
+			speed = 2,
+			accel = Vector3.new(0, -8, 0),
+			spin = 120,
+			emission = 1,
+		},
+		light = rgb(255, 225, 140),
+	},
+	ThunderstormTrail = {
+		colors = { rgb(90, 95, 110), rgb(40, 42, 55) },
+		width = 1.6,
+		lifetime = 0.8,
+		texture = SMOKE,
+		emission = 0,
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 250, 170), rgb(170, 210, 255) },
+			size = 0.6,
+			rate = 14,
+			lifetime = 0.25,
+			speed = 8,
+			emission = 1,
+		},
+		light = rgb(200, 220, 255),
+	},
+	PhoenixTrail = {
+		colors = { rgb(255, 240, 150), rgb(255, 150, 40), rgb(220, 50, 20) },
+		width = 2.2,
+		lifetime = 0.8,
+		emission = 1,
+		glow = { colors = { rgb(255, 180, 60) }, width = 4, lifetime = 0.5 },
+		particles = {
+			texture = FIRE,
+			colors = { rgb(255, 210, 90), rgb(255, 90, 30) },
+			size = 1.6,
+			rate = 36,
+			lifetime = 0.7,
+			speed = 3,
+			accel = Vector3.new(0, 8, 0),
+			spin = 120,
+			emission = 1,
+		},
+		light = rgb(255, 170, 70),
 	},
 }
 
@@ -471,30 +702,70 @@ local function applyCharacter(player: Player)
 
 	local trail = cosmetics.trail and TRAILS[cosmetics.trail]
 	if trail and root then
-		local top = Instance.new("Attachment")
-		top.Name = "CosmeticTrailTop"
-		top.Position = Vector3.new(0, 0.9, 0.3)
-		top.Parent = root
-		local bottom = Instance.new("Attachment")
-		bottom.Name = "CosmeticTrailBottom"
-		bottom.Position = Vector3.new(0, -0.9, 0.3)
-		bottom.Parent = root
-		local effect = Instance.new("Trail")
-		effect.Name = "CosmeticTrail"
-		effect.Attachment0 = top
-		effect.Attachment1 = bottom
-		effect.Color = colorSequence(trail.colors)
-		effect.Lifetime = trail.lifetime
-		effect.WidthScale = NumberSequence.new(trail.width, 0)
-		effect.Transparency = NumberSequence.new(0.1, 1)
-		effect.LightEmission = trail.emission
-		effect.FaceCamera = true
-		if trail.texture then
-			effect.Texture = trail.texture
-			effect.TextureMode = Enum.TextureMode.Wrap
-			effect.TextureLength = 2
+		local function ribbon(name: string, colors: { Color3 }, width: number, lifetime: number, strength: number)
+			local top = Instance.new("Attachment")
+			top.Name = name .. "Top"
+			top.Position = Vector3.new(0, width * 0.8, 0.3)
+			top.Parent = root
+			local bottom = Instance.new("Attachment")
+			bottom.Name = name .. "Bottom"
+			bottom.Position = Vector3.new(0, -width * 0.8, 0.3)
+			bottom.Parent = root
+			local effect = Instance.new("Trail")
+			effect.Name = name
+			effect.Attachment0 = top
+			effect.Attachment1 = bottom
+			effect.Color = colorSequence(colors)
+			effect.Lifetime = lifetime
+			effect.MinLength = 0.05
+			effect.WidthScale = NumberSequence.new(1, 0.1)
+			effect.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1 - strength),
+				NumberSequenceKeypoint.new(1, 1),
+			})
+			effect.LightEmission = trail.emission
+			effect.FaceCamera = true
+			if trail.texture then
+				effect.Texture = trail.texture
+				effect.TextureMode = Enum.TextureMode.Wrap
+				effect.TextureLength = 2
+			end
+			effect.Parent = root
 		end
-		effect.Parent = root
+		ribbon("CosmeticTrail", trail.colors, trail.width, trail.lifetime, 0.95)
+		local glow = trail.glow
+		if glow then
+			ribbon("CosmeticTrailGlow", glow.colors or trail.colors, glow.width, glow.lifetime, 0.35)
+		end
+		local fx = trail.particles
+		if fx then
+			local spot = Instance.new("Attachment")
+			spot.Name = "CosmeticTrailFx"
+			spot.Position = Vector3.new(0, -1.2, 0.6)
+			spot.Parent = root
+			emitter(spot, {
+				Texture = fx.texture,
+				Color = colorSequence(fx.colors),
+				Size = NumberSequence.new(fx.size, fx.size * 0.3),
+				Transparency = NumberSequence.new(fx.transparency or 0, 1),
+				Rate = fx.rate,
+				Lifetime = NumberRange.new(fx.lifetime * 0.8, fx.lifetime * 1.2),
+				Speed = NumberRange.new(fx.speed * 0.5, fx.speed),
+				SpreadAngle = Vector2.new(180, 180),
+				Acceleration = fx.accel or Vector3.zero,
+				RotSpeed = NumberRange.new(-(fx.spin or 0), fx.spin or 0),
+				Rotation = NumberRange.new(0, 360),
+				LightEmission = fx.emission or 0,
+			})
+		end
+		if trail.light then
+			local light = Instance.new("PointLight")
+			light.Name = "CosmeticTrailLight"
+			light.Color = trail.light
+			light.Range = 10
+			light.Brightness = 1.2
+			light.Parent = root
+		end
 	end
 
 	local aura = cosmetics.aura and AURAS[cosmetics.aura]
@@ -715,116 +986,193 @@ local function buildFlag(parent: Instance, frame: CFrame, style: FlagStyle)
 	end
 end
 
--- Island pets: little critters built from balls that wander around.
-type PetStyle = { build: (Model, Part) -> (), speed: number, height: number, hop: boolean? }
+-- Island pets: small animals with legs, natural colors and textured
+-- materials (feathers, fur, wool, scales) that wander around your island.
+-- Each builder gets the model and an invisible root at the body's center;
+-- `height` is how high that center sits above the ground.
+type PetStyle = { build: (Model, BasePart) -> (), speed: number, height: number, hop: boolean? }
 
-local function eyes(model: Model, root: Part, forward: number, up: number, spread: number)
+-- An egg-shaped body part with a textured material.
+local function oval(model: Model, size: Vector3, color: Color3, cframe: CFrame, material: Enum.Material): Part
+	return ball(model, size, color, cframe, material)
+end
+
+local function leg(model: Model, length: number, width: number, color: Color3, cframe: CFrame, material: Enum.Material)
+	local p = part(model, {
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(length, width, width),
+		Color = color,
+		Material = material,
+		CFrame = cframe * CFrame.Angles(0, 0, math.rad(90)),
+	})
+	return p
+end
+
+local function eyePair(model: Model, at: CFrame, spread: number, size: number)
 	for _, side in { -1, 1 } do
-		ball(model, Vector3.one * 0.22, rgb(40, 30, 60), root.CFrame * CFrame.new(side * spread, up, -forward))
+		ball(model, Vector3.one * size, rgb(18, 14, 12), at * CFrame.new(side * spread, 0, 0), Enum.Material.Glass)
 	end
 end
 
 local PETS: { [string]: PetStyle } = {
+	-- A mallard: brown speckled body, green head, white collar, orange feet.
 	Ducks = {
-		speed = 4,
-		height = 0.8,
+		speed = 3.5,
+		height = 1.15,
 		build = function(model, root)
-			root.Size = Vector3.one * 1.6
-			root.Color = rgb(255, 225, 90)
-			ball(model, Vector3.one * 1.1, rgb(255, 225, 90), root.CFrame * CFrame.new(0, 0.9, -0.6))
-			part(model, {
-				Size = Vector3.new(0.5, 0.2, 0.5),
-				Color = rgb(255, 150, 60),
-				CFrame = root.CFrame * CFrame.new(0, 0.85, -1.25),
-			})
-			eyes(model, root, 1.05, 1.05, 0.28)
+			local c = root.CFrame
+			local feathers = Enum.Material.Fabric
+			oval(model, Vector3.new(1.3, 1, 2), rgb(128, 108, 84), c, feathers)
+			oval(model, Vector3.new(1.1, 0.9, 0.9), rgb(110, 62, 44), c * CFrame.new(0, 0.1, -0.75), feathers)
+			for _, side in { -1, 1 } do
+				oval(
+					model,
+					Vector3.new(0.3, 0.7, 1.4),
+					rgb(96, 88, 76),
+					c * CFrame.new(side * 0.6, 0.15, 0.15),
+					feathers
+				)
+			end
+			oval(model, Vector3.new(0.5, 0.35, 0.6), rgb(40, 36, 32), c * CFrame.new(0, 0.3, 1), feathers)
+			leg(model, 0.5, 0.24, rgb(236, 236, 230), c * CFrame.new(0, 0.55, -0.95), feathers)
+			local head = c * CFrame.new(0, 0.95, -1.1)
+			oval(model, Vector3.new(0.6, 0.62, 0.72), rgb(34, 92, 58), head, Enum.Material.Glass)
+			oval(
+				model,
+				Vector3.new(0.28, 0.14, 0.5),
+				rgb(226, 184, 60),
+				head * CFrame.new(0, -0.08, -0.5),
+				Enum.Material.SmoothPlastic
+			)
+			eyePair(model, head * CFrame.new(0, 0.1, -0.24), 0.26, 0.11)
+			for _, side in { -1, 1 } do
+				leg(
+					model,
+					0.6,
+					0.12,
+					rgb(236, 130, 50),
+					c * CFrame.new(side * 0.3, -0.75, 0),
+					Enum.Material.SmoothPlastic
+				)
+				oval(
+					model,
+					Vector3.new(0.4, 0.08, 0.5),
+					rgb(236, 130, 50),
+					c * CFrame.new(side * 0.3, -1.08, -0.15),
+					Enum.Material.SmoothPlastic
+				)
+			end
 		end,
 	},
+	-- A wild rabbit: soft brown fur, long ears, cotton tail, big hind legs.
 	Bunnies = {
 		speed = 5,
-		height = 0.8,
+		height = 0.85,
 		hop = true,
 		build = function(model, root)
-			root.Size = Vector3.one * 1.6
-			root.Color = rgb(250, 250, 255)
-			ball(model, Vector3.one * 1.2, rgb(250, 250, 255), root.CFrame * CFrame.new(0, 0.9, -0.5))
+			local c = root.CFrame
+			local fur = Enum.Material.Fabric
+			local brown = rgb(142, 112, 82)
+			oval(model, Vector3.new(1.2, 1.1, 1.7), brown, c, fur)
+			local head = c * CFrame.new(0, 0.6, -0.85)
+			oval(model, Vector3.new(0.8, 0.75, 0.9), brown, head, fur)
+			oval(model, Vector3.new(0.4, 0.3, 0.3), rgb(214, 196, 176), head * CFrame.new(0, -0.18, -0.38), fur)
+			ball(model, Vector3.one * 0.12, rgb(180, 110, 110), head * CFrame.new(0, -0.05, -0.46), fur)
+			eyePair(model, head * CFrame.new(0, 0.12, -0.3), 0.3, 0.14)
 			for _, side in { -1, 1 } do
-				ball(
-					model,
-					Vector3.new(0.35, 1.2, 0.25),
-					rgb(255, 200, 220),
-					root.CFrame * CFrame.new(side * 0.3, 1.9, -0.4)
-				)
+				local ear = head * CFrame.new(side * 0.18, 0.75, 0.1) * CFrame.Angles(0.15, 0, side * 0.12)
+				oval(model, Vector3.new(0.26, 1, 0.14), brown, ear, fur)
+				oval(model, Vector3.new(0.16, 0.8, 0.06), rgb(214, 160, 160), ear * CFrame.new(0, 0, -0.05), fur)
+				oval(model, Vector3.new(0.45, 0.6, 0.9), brown, c * CFrame.new(side * 0.45, -0.3, 0.45), fur)
+				oval(model, Vector3.new(0.2, 0.5, 0.2), brown, c * CFrame.new(side * 0.25, -0.55, -0.6), fur)
 			end
-			ball(model, Vector3.one * 0.5, rgb(255, 255, 255), root.CFrame * CFrame.new(0, 0.1, 0.8))
-			eyes(model, root, 1.05, 1.05, 0.28)
+			ball(model, Vector3.one * 0.45, rgb(240, 238, 232), c * CFrame.new(0, 0.2, 0.9), Enum.Material.Salt)
 		end,
 	},
+	-- A sheep: thick grainy wool, dark face and legs.
 	CloudSheep = {
-		speed = 3,
-		height = 1.4,
+		speed = 2.5,
+		height = 1.6,
 		build = function(model, root)
-			root.Size = Vector3.one * 2
-			root.Color = rgb(250, 250, 255)
-			for _, offset in
-				{
-					Vector3.new(0.8, 0.3, 0),
-					Vector3.new(-0.8, 0.3, 0),
-					Vector3.new(0, 0.5, 0.7),
-					Vector3.new(0, 0.5, -0.6),
-				}
-			do
-				ball(model, Vector3.one * 1.4, rgb(245, 245, 255), root.CFrame + offset)
+			local c = root.CFrame
+			local wool = Enum.Material.Salt
+			local woolColor = rgb(232, 226, 212)
+			oval(model, Vector3.new(1.9, 1.5, 2.6), woolColor, c, wool)
+			for _, offset in { Vector3.new(0.5, 0.55, 0.6), Vector3.new(-0.5, 0.55, -0.4), Vector3.new(0, 0.6, 0) } do
+				oval(model, Vector3.new(1.1, 0.8, 1.2), woolColor, c + offset, wool)
 			end
-			ball(model, Vector3.one * 0.9, rgb(90, 80, 110), root.CFrame * CFrame.new(0, 0.5, -1.4))
-			for _, x in { -0.6, 0.6 } do
-				for _, z in { -0.6, 0.6 } do
-					part(model, {
-						Size = Vector3.new(0.3, 0.9, 0.3),
-						Color = rgb(90, 80, 110),
-						CFrame = root.CFrame * CFrame.new(x, -1, z),
-					})
+			local head = c * CFrame.new(0, 0.45, -1.45)
+			local face = rgb(52, 44, 40)
+			oval(model, Vector3.new(0.7, 0.8, 0.95), face, head, Enum.Material.Fabric)
+			oval(model, Vector3.new(0.8, 0.45, 0.6), woolColor, head * CFrame.new(0, 0.4, 0.15), wool)
+			eyePair(model, head * CFrame.new(0, 0.12, -0.3), 0.28, 0.12)
+			for _, side in { -1, 1 } do
+				oval(
+					model,
+					Vector3.new(0.5, 0.18, 0.28),
+					face,
+					head * CFrame.new(side * 0.45, 0.15, 0.1) * CFrame.Angles(0, 0, side * -0.3),
+					Enum.Material.Fabric
+				)
+			end
+			for _, x in { -0.55, 0.55 } do
+				for _, z in { -0.85, 0.85 } do
+					leg(model, 1.3, 0.28, face, c * CFrame.new(x, -1, z), Enum.Material.Fabric)
 				end
 			end
-			for _, side in { -1, 1 } do
-				ball(model, Vector3.one * 0.18, rgb(255, 255, 255), root.CFrame * CFrame.new(side * 0.2, 0.6, -1.8))
-			end
 		end,
 	},
+	-- A baby dragon: scaly purple body, leathery wings, horns and a long tail.
 	StormDragon = {
-		speed = 8,
+		speed = 7,
 		height = 10,
 		build = function(model, root)
-			local purple = rgb(150, 110, 230)
-			root.Size = Vector3.new(1.8, 1.8, 1.8)
-			root.Color = purple
-			ball(model, Vector3.new(1.4, 1.4, 1.6), purple, root.CFrame * CFrame.new(0, 0.8, -1.4))
-			ball(model, Vector3.new(0.8, 0.8, 1.8), purple, root.CFrame * CFrame.new(0, -0.1, 1.5))
+			local c = root.CFrame
+			local scales = Enum.Material.Slate
+			local purple = rgb(92, 64, 150)
+			oval(model, Vector3.new(1.5, 1.4, 2.6), purple, c, scales)
+			oval(model, Vector3.new(1.1, 0.9, 2), rgb(170, 140, 110), c * CFrame.new(0, -0.35, 0), scales)
+			local neck = c * CFrame.new(0, 0.7, -1.4) * CFrame.Angles(-0.6, 0, 0)
+			oval(model, Vector3.new(0.7, 0.7, 1.3), purple, neck, scales)
+			local head = c * CFrame.new(0, 1.25, -2.1)
+			oval(model, Vector3.new(0.9, 0.8, 1.3), purple, head, scales)
+			oval(model, Vector3.new(0.6, 0.4, 0.7), purple, head * CFrame.new(0, -0.15, -0.65), scales)
+			eyePair(model, head * CFrame.new(0, 0.15, -0.4), 0.32, 0.16)
 			for _, side in { -1, 1 } do
-				local wing = ball(
+				oval(
 					model,
-					Vector3.new(2.6, 0.2, 1.4),
-					rgb(200, 170, 255),
-					root.CFrame * CFrame.new(side * 1.8, 0.6, 0) * CFrame.Angles(0, 0, side * 0.35)
+					Vector3.new(0.14, 0.6, 0.14),
+					rgb(222, 206, 170),
+					head * CFrame.new(side * 0.25, 0.55, 0.3) * CFrame.Angles(-0.5, 0, side * 0.2),
+					Enum.Material.Marble
 				)
-				wing.Transparency = 0.1
-				ball(
+				-- Wing: a bony front edge and a thin leathery sail.
+				local wing = c * CFrame.new(side * 0.8, 0.6, -0.2) * CFrame.Angles(0, 0, side * 0.35)
+				part(model, {
+					Size = Vector3.new(3, 0.18, 0.18),
+					Color = purple,
+					Material = scales,
+					CFrame = wing * CFrame.new(side * 1.5, 0, 0),
+				})
+				local sail = part(model, {
+					Size = Vector3.new(3, 0.06, 1.6),
+					Color = rgb(150, 110, 190),
+					Material = Enum.Material.Fabric,
+					Transparency = 0.1,
+					CFrame = wing * CFrame.new(side * 1.5, 0, 0.8),
+				})
+				sail.Name = "Wing"
+				leg(model, 0.7, 0.28, purple, c * CFrame.new(side * 0.5, -0.8, 0.5), scales)
+			end
+			for i = 1, 4 do
+				oval(
 					model,
-					Vector3.new(0.25, 0.6, 0.25),
-					rgb(255, 225, 120),
-					root.CFrame * CFrame.new(side * 0.35, 1.7, -1.3)
+					Vector3.new(0.7 - i * 0.12, 0.6 - i * 0.1, 0.9),
+					purple,
+					c * CFrame.new(0, 0.1 - i * 0.12, 1.1 + i * 0.7),
+					scales
 				)
 			end
-			eyes(model, root, 2.1, 1, 0.35)
-			emitter(root, {
-				Color = ColorSequence.new(rgb(255, 240, 150)),
-				Size = NumberSequence.new(0.3, 0),
-				Speed = NumberRange.new(0.5, 1),
-				SpreadAngle = Vector2.new(180, 180),
-				Lifetime = NumberRange.new(0.6, 1),
-				Rate = 6,
-				LightEmission = 1,
-			})
 		end,
 	},
 }
@@ -832,7 +1180,12 @@ local PETS: { [string]: PetStyle } = {
 local function spawnPet(parent: Instance, frame: CFrame, style: PetStyle)
 	local model = Instance.new("Model")
 	model.Name = "IslandPet"
-	local root = part(model, { Name = "Root", Shape = Enum.PartType.Ball, Anchored = true })
+	local root = part(model, {
+		Name = "Root",
+		Size = Vector3.one * 0.5,
+		Transparency = 1,
+		Anchored = true,
+	})
 	local function spot(): Vector3
 		local angle = rng:NextNumber(0, math.pi * 2)
 		local radius = rng:NextNumber(8, 40)
@@ -842,6 +1195,7 @@ local function spawnPet(parent: Instance, frame: CFrame, style: PetStyle)
 	style.build(model, root)
 	for _, item in model:GetDescendants() do
 		if item:IsA("BasePart") and item ~= root then
+			item.CastShadow = true
 			local weld = Instance.new("WeldConstraint")
 			weld.Part0 = root
 			weld.Part1 = item
@@ -853,7 +1207,7 @@ local function spawnPet(parent: Instance, frame: CFrame, style: PetStyle)
 
 	task.spawn(function()
 		while model.Parent do
-			task.wait(rng:NextNumber(1.5, 4))
+			task.wait(rng:NextNumber(2, 5))
 			if not model.Parent then
 				break
 			end
@@ -864,28 +1218,32 @@ local function spawnPet(parent: Instance, frame: CFrame, style: PetStyle)
 				continue
 			end
 			local facing = CFrame.lookAt(from, from + flat)
-			root.CFrame = facing
+			-- Turn to face the way it's going first.
+			local turn = TweenService:Create(root, TweenInfo.new(0.3), { CFrame = facing })
+			turn:Play()
+			turn.Completed:Wait()
 			if style.hop then
-				-- Bunnies hop in short bounces.
-				local hops = math.ceil(flat.Magnitude / 3)
+				-- Rabbits hop in short bounces.
+				local hops = math.ceil(flat.Magnitude / 2.5)
 				for i = 1, hops do
 					if not model.Parent then
 						break
 					end
 					local stepTo = from:Lerp(goal, i / hops)
-					local mid = from:Lerp(goal, (i - 0.5) / hops) + Vector3.new(0, 1.5, 0)
-					local up = TweenService:Create(root, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+					local mid = from:Lerp(goal, (i - 0.5) / hops) + Vector3.new(0, 1.2, 0)
+					local up = TweenService:Create(root, TweenInfo.new(0.16, Enum.EasingStyle.Quad), {
 						CFrame = facing.Rotation + mid,
 					})
 					up:Play()
 					up.Completed:Wait()
 					local down = TweenService:Create(
 						root,
-						TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+						TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
 						{ CFrame = facing.Rotation + stepTo }
 					)
 					down:Play()
 					down.Completed:Wait()
+					task.wait(0.1)
 				end
 			else
 				local tween = TweenService:Create(
@@ -898,6 +1256,179 @@ local function spawnPet(parent: Instance, frame: CFrame, style: PetStyle)
 			end
 		end
 	end)
+end
+
+-- The cloud under your feet with Cloud Flight. Skins are cosmetics too.
+type CloudSkin = {
+	colors: { Color3 },
+	material: Enum.Material?,
+	transparency: number?,
+	wisp: Color3,
+	fx: ParticleStyle?,
+	light: Color3?,
+	flashes: boolean?,
+}
+
+local RAIN_FX: ParticleStyle = {
+	texture = SPARKLES,
+	colors = { rgb(150, 190, 240) },
+	size = 0.15,
+	rate = 30,
+	lifetime = 0.6,
+	speed = 12,
+	accel = Vector3.new(0, -20, 0),
+}
+
+local CLOUDS: { [string]: CloudSkin } = {
+	Cumulus = { colors = { rgb(250, 251, 255), rgb(230, 234, 242) }, wisp = rgb(244, 246, 252) },
+	StormCloudSkin = { colors = { rgb(118, 122, 136), rgb(86, 90, 102) }, wisp = rgb(126, 130, 144), fx = RAIN_FX },
+	SunsetCloud = {
+		colors = { rgb(255, 196, 150), rgb(246, 146, 150), rgb(255, 218, 176) },
+		wisp = rgb(255, 196, 168),
+		light = rgb(255, 160, 110),
+	},
+	SnowCloud = {
+		colors = { rgb(238, 246, 255), rgb(204, 222, 246) },
+		wisp = rgb(236, 244, 255),
+		fx = {
+			texture = SPARKLES,
+			colors = { rgb(255, 255, 255) },
+			size = 0.3,
+			rate = 16,
+			lifetime = 1.4,
+			speed = 2,
+			accel = Vector3.new(0, -4, 0),
+			spin = 60,
+		},
+	},
+	RainbowCloud = {
+		colors = { rgb(255, 196, 200), rgb(255, 230, 180), rgb(200, 240, 200), rgb(190, 215, 255), rgb(222, 200, 255) },
+		wisp = rgb(250, 245, 255),
+		fx = {
+			texture = SPARKLES,
+			colors = RAINBOW,
+			size = 0.35,
+			rate = 12,
+			lifetime = 1,
+			speed = 1,
+			emission = 1,
+		},
+	},
+	GoldenCloud = {
+		colors = { rgb(255, 214, 110), rgb(236, 176, 58) },
+		material = Enum.Material.Foil,
+		wisp = rgb(255, 228, 160),
+		fx = {
+			texture = SPARKLES,
+			colors = { rgb(255, 230, 140) },
+			size = 0.4,
+			rate = 14,
+			lifetime = 1,
+			speed = 1,
+			emission = 1,
+		},
+		light = rgb(255, 210, 110),
+	},
+	ThunderCloudSkin = {
+		colors = { rgb(58, 60, 72), rgb(36, 38, 48) },
+		wisp = rgb(70, 72, 86),
+		fx = RAIN_FX,
+		flashes = true,
+	},
+	AuroraCloud = {
+		colors = { rgb(120, 255, 190), rgb(110, 200, 255), rgb(190, 130, 255) },
+		material = Enum.Material.Neon,
+		transparency = 0.45,
+		wisp = rgb(160, 255, 220),
+		light = rgb(120, 255, 200),
+	},
+}
+
+function CosmeticService.buildFlightCloud(player: Player, root: BasePart): Model
+	local data = DataService.get(player)
+	local skin = CLOUDS[data and data.cosmetics.cloud or "Cumulus"] or CLOUDS.Cumulus
+	local cloud = Instance.new("Model")
+	cloud.Name = "FlightCloud"
+	local base = root.CFrame * CFrame.new(0, -3.4, 0)
+	local puffs = {
+		{ Vector3.new(0, 0, 0), 3.4 },
+		{ Vector3.new(1.8, 0.1, 0.4), 2.6 },
+		{ Vector3.new(-1.8, 0, -0.3), 2.7 },
+		{ Vector3.new(0.4, 0.3, 1.6), 2.3 },
+		{ Vector3.new(-0.3, 0.2, -1.7), 2.4 },
+		{ Vector3.new(1, -0.4, -1), 2 },
+		{ Vector3.new(-1.1, -0.3, 1.1), 2 },
+	}
+	local center: Part? = nil
+	for index, puff in puffs do
+		local p = ball(
+			cloud,
+			Vector3.one * puff[2],
+			skin.colors[(index - 1) % #skin.colors + 1],
+			base + puff[1],
+			skin.material
+		)
+		p.Transparency = skin.transparency or 0
+		center = center or p
+	end
+	local middle = center :: Part
+	emitter(middle, {
+		Name = "Wisps",
+		Texture = SMOKE,
+		Color = ColorSequence.new(skin.wisp),
+		Size = NumberSequence.new(2.4, 3.6),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.3, 0.5),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Lifetime = NumberRange.new(1, 1.6),
+		Rate = 10,
+		Speed = NumberRange.new(0.5, 1.5),
+		SpreadAngle = Vector2.new(180, 30),
+		LightEmission = 0,
+	})
+	local fx = skin.fx
+	if fx then
+		emitter(middle, {
+			Texture = fx.texture,
+			Color = colorSequence(fx.colors),
+			Size = NumberSequence.new(fx.size),
+			Rate = fx.rate,
+			Lifetime = NumberRange.new(fx.lifetime * 0.8, fx.lifetime * 1.2),
+			Speed = NumberRange.new(fx.speed * 0.5, fx.speed),
+			EmissionDirection = Enum.NormalId.Bottom,
+			SpreadAngle = Vector2.new(40, 40),
+			Acceleration = fx.accel or Vector3.zero,
+			RotSpeed = NumberRange.new(-(fx.spin or 0), fx.spin or 0),
+			LightEmission = fx.emission or 0.2,
+		})
+	end
+	if skin.light or skin.flashes then
+		local light = Instance.new("PointLight")
+		light.Color = skin.light or rgb(210, 225, 255)
+		light.Range = 14
+		light.Brightness = if skin.flashes then 0 else 1.5
+		light.Parent = middle
+		if skin.flashes then
+			-- Lightning flickers inside the thundercloud.
+			task.defer(function()
+				while cloud.Parent do
+					task.wait(rng:NextNumber(0.8, 2.5))
+					light.Brightness = 5
+					task.wait(0.07)
+					light.Brightness = 0
+					task.wait(0.06)
+					light.Brightness = 3
+					task.wait(0.08)
+					light.Brightness = 0
+				end
+			end)
+		end
+	end
+	weldAll(cloud, root)
+	cloud.Parent = root.Parent
+	return cloud
 end
 
 local function applySign(player: Player, data: any)

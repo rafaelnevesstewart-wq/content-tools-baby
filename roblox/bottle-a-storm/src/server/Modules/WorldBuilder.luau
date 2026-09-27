@@ -11,21 +11,28 @@ local Config = require(Shared.Config)
 
 local WorldBuilder = {}
 
-local GRASS = Color3.fromRGB(120, 200, 110)
-local WILD_GRASS = Color3.fromRGB(150, 215, 140)
-local DIRT = Color3.fromRGB(140, 105, 80)
-local ROCK = Color3.fromRGB(120, 115, 125)
-local WOOD = Color3.fromRGB(170, 125, 80)
-local CLOUD = Color3.fromRGB(250, 252, 255)
+local GRASS = Color3.fromRGB(88, 124, 62)
+local WILD_GRASS = Color3.fromRGB(96, 132, 66)
+local DIRT = Color3.fromRGB(104, 82, 62)
+local ROCK = Color3.fromRGB(102, 98, 94)
+local WOOD = Color3.fromRGB(120, 88, 60)
+local CLOUD = Color3.fromRGB(244, 246, 250)
 
--- Candy colors for trees, flowers and mushrooms.
+-- Natural colors for leaves, flowers and mushrooms.
+local LEAVES = {
+	Color3.fromRGB(66, 104, 48),
+	Color3.fromRGB(80, 118, 54),
+	Color3.fromRGB(58, 92, 44),
+	Color3.fromRGB(96, 126, 58),
+	Color3.fromRGB(122, 132, 60), -- a touch of autumn
+}
 local PASTELS = {
-	Color3.fromRGB(255, 170, 200), -- pink
-	Color3.fromRGB(160, 230, 190), -- mint
-	Color3.fromRGB(200, 170, 255), -- lilac
-	Color3.fromRGB(255, 200, 150), -- peach
-	Color3.fromRGB(255, 235, 140), -- lemon
-	Color3.fromRGB(150, 210, 255), -- sky
+	Color3.fromRGB(214, 62, 72), -- poppy red
+	Color3.fromRGB(238, 196, 66), -- buttercup yellow
+	Color3.fromRGB(244, 244, 238), -- daisy white
+	Color3.fromRGB(150, 104, 196), -- lavender
+	Color3.fromRGB(232, 128, 58), -- marigold
+	Color3.fromRGB(226, 120, 160), -- wild rose
 }
 
 local function part(props: { [string]: any }): Part
@@ -76,6 +83,8 @@ local function floatingIsland(
 	local model = Instance.new("Model")
 	model.Name = name
 	local top = disc(model, "Ground", center, radius, 4, grass, groundMaterial or Enum.Material.Grass)
+	-- A rim of darker earth just under the grass edge.
+	disc(model, "Rim", center - Vector3.new(0, 1.2, 0), radius + 0.6, 1.6, rock or DIRT, Enum.Material.Ground)
 	model.PrimaryPart = top
 	local layers = {
 		{ scale = 0.92, depth = 4, thickness = 7, color = rock or DIRT },
@@ -91,7 +100,7 @@ local function floatingIsland(
 			radius * layer.scale,
 			layer.thickness,
 			layer.color,
-			Enum.Material.Slate
+			if index == 1 then Enum.Material.Ground else Enum.Material.Rock
 		)
 	end
 	model.Parent = parent
@@ -110,6 +119,7 @@ local function bridge(parent: Instance, from: Vector3, to: Vector3)
 		CFrame = frame * CFrame.new(0, -0.75, 0),
 		Color = WOOD,
 		Material = Enum.Material.WoodPlanks,
+		Reflectance = 0,
 		Parent = model,
 	})
 	for _, side in { -1, 1 } do
@@ -117,7 +127,7 @@ local function bridge(parent: Instance, from: Vector3, to: Vector3)
 			Name = "Rail",
 			Size = Vector3.new(0.6, 2.5, length),
 			CFrame = frame * CFrame.new(6 * side, 1.25, 0),
-			Color = Color3.fromRGB(235, 225, 200),
+			Color = Color3.fromRGB(96, 70, 48),
 			Material = Enum.Material.Wood,
 			Parent = model,
 		})
@@ -125,31 +135,44 @@ local function bridge(parent: Instance, from: Vector3, to: Vector3)
 	model.Parent = parent
 end
 
+-- A soft, wispy cloud made of slow smoke puffs (no solid parts).
 local function cloudCluster(parent: Instance, center: Vector3, size: number, rng: Random)
-	for _ = 1, rng:NextInteger(3, 5) do
-		local s = size * rng:NextNumber(0.6, 1.1)
-		part({
-			Name = "Cloud",
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.new(s, s * 0.7, s),
-			CFrame = CFrame.new(
-				center
-					+ Vector3.new(
-						rng:NextNumber(-size, size),
-						rng:NextNumber(-size * 0.15, size * 0.15),
-						rng:NextNumber(-size, size) * 0.6
-					)
-			),
-			Color = CLOUD,
-			Material = Enum.Material.SmoothPlastic,
-			Transparency = 0.15,
-			CanCollide = false,
-			CanTouch = false,
-			CanQuery = false,
-			CastShadow = false,
-			Parent = parent,
-		})
-	end
+	local holder = part({
+		Name = "Cloud",
+		Size = Vector3.new(size * 2, size * 0.5, size * 1.2),
+		CFrame = CFrame.new(center) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanTouch = false,
+		CanQuery = false,
+		CastShadow = false,
+		Parent = parent,
+	})
+	local puffs = Instance.new("ParticleEmitter")
+	puffs.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	puffs.Color = ColorSequence.new(CLOUD, Color3.fromRGB(214, 220, 230))
+	puffs.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, size * 0.5),
+		NumberSequenceKeypoint.new(0.5, size * 0.9),
+		NumberSequenceKeypoint.new(1, size * 1),
+	})
+	puffs.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.2, 0.35),
+		NumberSequenceKeypoint.new(0.8, 0.4),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	puffs.Lifetime = NumberRange.new(10, 14)
+	puffs.Rate = 1
+	puffs.Speed = NumberRange.new(0.2, 0.6)
+	puffs.SpreadAngle = Vector2.new(180, 180)
+	puffs.Rotation = NumberRange.new(0, 360)
+	puffs.RotSpeed = NumberRange.new(-4, 4)
+	puffs.LockedToPart = true
+	puffs.LightInfluence = 1
+	puffs.Parent = holder
+	-- Start with a full cloud instead of waiting for it to fill in.
+	puffs:Emit(10)
 end
 
 local function label(
@@ -166,7 +189,7 @@ local function label(
 	l.BackgroundTransparency = 1
 	l.Size = size
 	l.Position = position
-	l.Font = Enum.Font.FredokaOne
+	l.Font = Enum.Font.GothamBold
 	l.TextScaled = true
 	l.TextColor3 = color
 	l.Text = text
@@ -250,22 +273,44 @@ local function forecastTV(parent: Instance, position: Vector3, facing: Vector3)
 	model.Parent = parent
 end
 
+-- Realistic sky: soft sunlight and shadows, haze, bloom, sun rays, gentle
+-- color grading and real 3D clouds. (Lighting.Technology is set to Future in
+-- default.project.json, since scripts can't change it.)
 local function setupLighting()
 	Lighting.ClockTime = 14
-	Lighting.Brightness = 2.2
-	Lighting.Ambient = Color3.fromRGB(140, 150, 170)
-	Lighting.OutdoorAmbient = Color3.fromRGB(170, 185, 210)
+	Lighting.Brightness = 3
+	Lighting.Ambient = Color3.fromRGB(80, 86, 98)
+	Lighting.OutdoorAmbient = Color3.fromRGB(128, 134, 146)
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 1
+	Lighting.ShadowSoftness = 0.25
 	Lighting.GlobalShadows = true
-	if not Lighting:FindFirstChildOfClass("Atmosphere") then
-		local atmosphere = Instance.new("Atmosphere")
-		atmosphere.Density = 0.3
-		atmosphere.Offset = 0.2
-		atmosphere.Color = Color3.fromRGB(200, 225, 255)
-		atmosphere.Decay = Color3.fromRGB(120, 160, 220)
-		atmosphere.Glare = 0.2
-		atmosphere.Haze = 1.2
-		atmosphere.Parent = Lighting
+	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
+	atmosphere.Density = 0.32
+	atmosphere.Offset = 0.25
+	atmosphere.Color = Color3.fromRGB(199, 206, 216)
+	atmosphere.Decay = Color3.fromRGB(106, 118, 138)
+	atmosphere.Glare = 0.35
+	atmosphere.Haze = 1.6
+	atmosphere.Parent = Lighting
+
+	local function effect(className: string, props: { [string]: any })
+		local existing = Lighting:FindFirstChildOfClass(className)
+		local instance = existing or Instance.new(className)
+		for key, value in props do
+			(instance :: any)[key] = value
+		end
+		instance.Parent = Lighting
 	end
+	effect("BloomEffect", { Intensity = 0.5, Size = 24, Threshold = 1.4 })
+	effect("SunRaysEffect", { Intensity = 0.07, Spread = 0.7 })
+	effect("ColorCorrectionEffect", { Saturation = -0.06, Contrast = 0.08, Brightness = 0.01 })
+
+	local clouds = workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+	clouds.Cover = 0.55
+	clouds.Density = 0.6
+	clouds.Color = Color3.fromRGB(245, 247, 250)
+	clouds.Parent = workspace.Terrain
 end
 
 -- A glowing pad that teleports you (handled by ClimateService).
@@ -408,7 +453,7 @@ local function squashedBall(parent: Instance, name: string, size: Vector3, cfram
 		Size = size,
 		CFrame = cframe,
 		Color = color,
-		Material = Enum.Material.SmoothPlastic,
+		Material = if name == "Bush" then Enum.Material.LeafyGrass else Enum.Material.SmoothPlastic,
 		CanCollide = false,
 		CanQuery = false,
 		Parent = parent,
@@ -426,11 +471,11 @@ local function tree(parent: Instance, ground: Vector3, rng: Random)
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(height, 1.8, 1.8),
 		CFrame = CFrame.new(ground + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = Color3.fromRGB(195, 145, 110),
-		Material = Enum.Material.SmoothPlastic,
+		Color = WOOD:Lerp(Color3.fromRGB(80, 60, 44), rng:NextNumber(0, 0.6)),
+		Material = Enum.Material.Wood,
 		Parent = parent,
 	})
-	local color = pastel(rng)
+	local color = LEAVES[rng:NextInteger(1, #LEAVES)]
 	for i = 1, rng:NextInteger(2, 3) do
 		local size = rng:NextNumber(6, 9)
 		local offset = Vector3.new(rng:NextNumber(-2, 2), height + (i - 1) * 2.2, rng:NextNumber(-2, 2))
@@ -439,8 +484,8 @@ local function tree(parent: Instance, ground: Vector3, rng: Random)
 			Shape = Enum.PartType.Ball,
 			Size = Vector3.new(size, size, size),
 			CFrame = CFrame.new(ground + offset),
-			Color = color:Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.2)),
-			Material = Enum.Material.SmoothPlastic,
+			Color = color:Lerp(Color3.fromRGB(40, 60, 30), rng:NextNumber(0, 0.25)),
+			Material = Enum.Material.LeafyGrass,
 			CanCollide = false,
 			CanQuery = false,
 			Parent = parent,
@@ -457,7 +502,7 @@ local function flowerPatch(parent: Instance, ground: Vector3, rng: Random)
 			Name = "Stem",
 			Size = Vector3.new(0.2, height, 0.2),
 			CFrame = CFrame.new(spot + Vector3.new(0, height / 2, 0)),
-			Color = Color3.fromRGB(110, 190, 110),
+			Color = Color3.fromRGB(70, 110, 50),
 			CanCollide = false,
 			CanQuery = false,
 			CastShadow = false,
@@ -466,10 +511,10 @@ local function flowerPatch(parent: Instance, ground: Vector3, rng: Random)
 		part({
 			Name = "Petals",
 			Shape = Enum.PartType.Ball,
-			Size = Vector3.new(0.9, 0.9, 0.9),
+			Size = Vector3.new(0.7, 0.7, 0.7),
 			CFrame = CFrame.new(spot + Vector3.new(0, height + 0.3, 0)),
 			Color = color,
-			Material = Enum.Material.SmoothPlastic,
+			Material = Enum.Material.Fabric,
 			CanCollide = false,
 			CanQuery = false,
 			CastShadow = false,
@@ -480,8 +525,8 @@ local function flowerPatch(parent: Instance, ground: Vector3, rng: Random)
 			Shape = Enum.PartType.Ball,
 			Size = Vector3.new(0.4, 0.4, 0.4),
 			CFrame = CFrame.new(spot + Vector3.new(0, height + 0.35, -0.35)),
-			Color = Color3.fromRGB(255, 225, 90),
-			Material = Enum.Material.Neon,
+			Color = Color3.fromRGB(224, 176, 52),
+			Material = Enum.Material.Sand,
 			CanCollide = false,
 			CanQuery = false,
 			CastShadow = false,
@@ -497,12 +542,13 @@ local function mushroom(parent: Instance, ground: Vector3, rng: Random)
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(2 * size, 1.2 * size, 1.2 * size),
 		CFrame = CFrame.new(ground + Vector3.new(0, size, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = Color3.fromRGB(255, 245, 230),
+		Color = Color3.fromRGB(226, 216, 196),
+		Material = Enum.Material.Sand,
 		CanCollide = false,
 		CanQuery = false,
 		Parent = parent,
 	})
-	local capColor = if rng:NextNumber() < 0.5 then Color3.fromRGB(255, 120, 140) else pastel(rng)
+	local capColor = if rng:NextNumber() < 0.4 then Color3.fromRGB(176, 48, 40) else Color3.fromRGB(150, 110, 78)
 	squashedBall(
 		parent,
 		"MushroomCap",
@@ -520,7 +566,7 @@ local function bush(parent: Instance, ground: Vector3, rng: Random)
 			"Bush",
 			Vector3.new(size, size * 0.8, size),
 			CFrame.new(ground + Vector3.new(rng:NextNumber(-1.5, 1.5), size * 0.3, rng:NextNumber(-1.5, 1.5))),
-			Color3.fromRGB(130, 215, 140):Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.15))
+			LEAVES[rng:NextInteger(1, #LEAVES)]:Lerp(Color3.fromRGB(40, 60, 30), rng:NextNumber(0, 0.2))
 		)
 	end
 end

@@ -118,7 +118,7 @@ local function healthBar(root: BasePart, big: boolean): Frame
 	local name = Instance.new("TextLabel")
 	name.BackgroundTransparency = 1
 	name.Size = UDim2.new(1, 0, 0, 20)
-	name.Font = Enum.Font.FredokaOne
+	name.Font = Enum.Font.GothamBold
 	name.TextSize = 17
 	name.TextColor3 = Color3.new(1, 1, 1)
 	name.TextStrokeTransparency = 0.3

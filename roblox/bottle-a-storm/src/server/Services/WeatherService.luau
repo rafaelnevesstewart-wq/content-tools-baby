@@ -33,8 +33,8 @@ local baseline: LightingState
 local override: LightingState? = nil
 local tweeningUntil = 0 -- the day cycle waits while a lighting tween plays
 
-local NIGHT_AMBIENT = Color3.fromRGB(95, 95, 150)
-local NIGHT_OUTDOOR = Color3.fromRGB(105, 105, 165)
+local NIGHT_AMBIENT = Color3.fromRGB(38, 44, 70)
+local NIGHT_OUTDOOR = Color3.fromRGB(58, 64, 96)
 
 local function now(): number
 	return workspace:GetServerTimeNow()

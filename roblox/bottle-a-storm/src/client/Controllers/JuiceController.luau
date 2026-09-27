@@ -56,7 +56,7 @@ local function float(text: string, position: Vector3, color: Color3?)
 	label.TextScaled = true
 	label.Text = text
 	label.TextColor3 = color or Color3.fromRGB(255, 210, 60)
-	label.TextStrokeColor3 = Color3.new(1, 1, 1)
+	label.TextStrokeColor3 = Color3.fromRGB(15, 18, 26)
 	label.TextStrokeTransparency = 0
 	label.Parent = gui
 

@@ -97,7 +97,7 @@ local function buildBossBar(parent: Instance)
 		Name = "BossBar",
 		LayoutOrder = 3,
 		Size = UDim2.fromOffset(360, 72),
-		BackgroundColor3 = Color3.fromRGB(255, 232, 238),
+		BackgroundColor3 = UI.Colors.Panel,
 		Visible = false,
 		Parent = parent,
 	}, { UI.corner(16), UI.stroke(UI.Colors.Bad, 3), UI.padding(8) })
@@ -283,11 +283,11 @@ function HUD.start()
 		Size = UDim2.new(0, 0, 1, 0),
 		AutomaticSize = Enum.AutomaticSize.X,
 		TextSize = 18,
-		TextColor3 = Color3.fromRGB(50, 160, 95),
+		TextColor3 = Color3.fromRGB(110, 220, 150),
 		Parent = sparksBar,
 	})
 	unclaimedChip = chip(sparksBar, 3, 30, 16)
-	unclaimedChip.BackgroundColor3 = Color3.fromRGB(255, 236, 200)
+	unclaimedChip.BackgroundColor3 = Color3.fromRGB(70, 56, 26)
 	unclaimedChip.AnchorPoint = Vector2.new(0, 0.5)
 
 	local chips = UI.new("Frame", {
@@ -301,7 +301,7 @@ function HUD.start()
 	raidChip = chip(chips, 2, 28, 15)
 	lockChip = chip(chips, 3, 28, 15)
 	boostChip = chip(chips, 4, 28, 15)
-	boostChip.BackgroundColor3 = Color3.fromRGB(255, 236, 200)
+	boostChip.BackgroundColor3 = Color3.fromRGB(70, 56, 26)
 	boostChip.Visible = false
 	buildBossBar(top)
 

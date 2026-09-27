@@ -36,22 +36,27 @@ titles and a round of balance changes.
 
 Everything in the design doc is now built.
 
-## Look and feel (cute and colorful)
+## Look and feel (realistic)
 
-- **Storms come alive:**
-  - They bob, sway and blink (`StormAnimator`, on each player's screen).
-  - Rarer storms glow: a pastel halo from Uncommon up, sparkles from Rare, and a soft light
-    from Epic.
-  - Catching one makes it spin into the jar with a burst of confetti, and a floating
-    "+⚡/s" number pops up.
-- **Islands:** candy-colored trees, flower patches, mushrooms and bushes (`WorldBuilder`). They
-  stay clear of pedestals, pads, bridges and portals.
+- **Sky and light:**
+  - Future lighting with soft shadows (set in `default.project.json`), haze, bloom, sun rays
+    and gentle color grading.
+  - Real 3D clouds in the sky (Terrain Clouds), and wispy smoke clouds under the islands
+    (`WorldBuilder.setupLighting`).
+- **Storms:** living little weather clouds.
+  - Many overlapping puffs, lit on top and shadowed underneath, with soft wisps drifting off.
+    They bob and drift slowly (`StormAnimator`).
+  - Epic and rarer storms have a glowing core of their rarity's color.
+  - Only Mega-Storm bosses and grumpy clouds have (glowing, angry) eyes.
+  - Catching one spins it into the jar with a burst of confetti and a floating "+⚡/s" number.
+- **Islands:** natural grass, earth and rock layers, wooden bridges, leafy trees in several
+  greens, wildflowers, real-looking mushrooms and bushes (`WorldBuilder`).
 - **Sky extras:** drifting mini islands, rainbows, flocks of birds and rising balloons. These
   are made on each player's screen only (`AmbientController`), so they cost the server nothing.
-- **Menus:** a pastel candy theme (cream panels, mint, pink and lilac buttons with chunky
-  outlines). There's a tidy HUD with one Sparks bar, small timer chips (weather, Mega-Storm,
-  lock), and an icon bar on the left with a badge for unclaimed season rewards. The icon bar
-  shrinks on short phone screens. Colors are in `UI.Colors` in `src/client/Controllers/UI.luau`.
+- **Menus:** a sleek dark theme with a clean font (Gotham) and bright accents.
+  - There's one Sparks bar, small timer chips and an icon bar on the left that shrinks on
+    phones.
+  - Colors are in `UI.Colors` in `src/client/Controllers/UI.luau`.
 - **Sounds and juice:**
   - Sounds: button clicks, jar throws, pops, coins, zaps and chimes (they also play with
     pop-up messages).
@@ -175,13 +180,14 @@ to swap. Everything is built from parts on the server, so everyone sees it
 | For | What | Sparks | Robux |
 |---|---|---|---|
 | You | 🎩 **Hats**: Rain Cloud Hat (drizzles), Lightning Crown, Rainbow Cap, Snowflake Beanie, Tornado Top Hat | ⚡2K–400K | 👑 Golden Storm Crown 49 R$ |
-| You | ✨ **Trails**: Rainbow, Sparkle, Snowflake, Lightning, Bubble | ⚡5K–600K | 🌌 Galaxy Trail 49 R$ |
+| You | ✨ **Trails** (a bright core, a soft glow and particles like flames, petals or stars): Rainbow, Sparkle, Snowflake, Fire, Cherry Blossom, Tornado, Aurora, Shadow, Lightning, Plasma, Bubble, Starfall | ⚡5K–1M | 🌌 Galaxy 49 R$, ⛈️ Thunderstorm 49 R$, 🐦‍🔥 Phoenix 79 R$ |
+| You | ☁️ **Flight clouds** (skins for Cloud Flight): Cumulus (free), Storm (drizzles), Sunset, Snow, Rainbow, Golden | ⚡5K–400K | ⚡ Thunder Cloud 49 R$ (flashes with lightning), 🌌 Aurora Cloud 79 R$ |
 | You | 🪽 **Backs**: Storm Jar Backpack, Cloud Wings, Butterfly Wings, Mini Tornado | ⚡3K–500K | 🌈 Rainbow Wings 79 R$ |
 | You | 💫 **Auras**: Sparkle, Rain Halo, Lightning Orbit | ⚡8K–300K | 💕 Love Aura 39 R$ |
 | Island | 🏛️ **Pedestal styles**: Marble (free), Candy, Gold, Cloud, Crystal | ⚡10K–150K | 🌈 Rainbow Pedestals 49 R$ |
 | Island | ⛲ **Decorations** (use as many as you like): Lamp Posts, Fountain, Rainbow Arch, Golden Storm Statue (of your best storm), Fireworks (at night) | ⚡5K–500K | |
 | Island | 🚩 **Sign and flag**: sign color and emoji (free); flags: Storm, Lightning, Rainbow, Sky Pirate | ⚡2K–80K | ✨ Golden Flag 29 R$ |
-| Island | 🐤 **Island pets** (up to 3 kinds, 2 of each): Ducks, Bunnies (they hop), Cloud Sheep | ⚡10K–90K | 🐉 Baby Storm Dragon 79 R$ (flies) |
+| Island | 🐤 **Island pets** (up to 3 kinds, 2 of each; real animals with legs and feather, fur, wool or scale textures): Mallard Ducks, Rabbits (they hop), Sheep | ⚡10K–90K | 🐉 Baby Storm Dragon 79 R$ (flies) |
 
 ## Cloud Flight (game pass, 199 R$)
 
@@ -387,6 +393,8 @@ expires after 20 s.
   attack a gust that blows everyone outward. Stand near the edge and you might fly off.
   Below 30% HP it attacks faster.
 - **During the raid:** stealing is off, carried storms fly home, and wild storms hide.
+- **Flying doesn't keep you safe:** the boss targets players flying over the Wild Skies too. Their
+  red circle appears in the air at their height, and a hit knocks them off their cloud.
 - **Win:** everyone who dealt damage gets an Epic storm (15% Legendary; the top damage dealer
   gets 30%), placed on their island. If the island is full, it's paid out as 10 minutes of that
   storm's income instead.

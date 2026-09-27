@@ -157,13 +157,15 @@ local function card(grid: Frame, order: number, item: CosmeticsData.Item)
 			local list = if item.category == "decor" then current.decor else current.pets
 			using = table.find(list or {}, item.id) ~= nil
 		else
+			local default = CosmeticsData.Defaults[item.category]
 			using = (current :: any)[item.category] == item.id
-				or (item.category == "pedestal" and item.id == "Marble" and not current.pedestal)
+				or (item.id == default and (current :: any)[item.category] == nil)
 		end
 		stroke.Thickness = if using then 3.5 else 1.5
 		stroke.Color = if using then UI.Colors.Good else UI.Colors.Stroke
 		if using then
-			mode = if item.id == "Marble" then "none" else (if multi then "equip" else "unequip")
+			local isDefault = CosmeticsData.Defaults[item.category] == item.id
+			mode = if isDefault then "none" else (if multi then "equip" else "unequip")
 			button.Text = if multi then "✓ Placed" else "✓ Using"
 			button.BackgroundColor3 = UI.Colors.Good
 		elseif owned then
@@ -339,8 +341,10 @@ function Style.start()
 		CanvasSize = UDim2.new(),
 		Parent = window,
 	}, { UI.list(6) })
+	local shownIsland = false
 	for index, category in CosmeticsData.Categories do
-		if index == 5 then
+		if category.island and not shownIsland then
+			shownIsland = true
 			UI.label({
 				LayoutOrder = index * 2 - 1,
 				Size = UDim2.new(1, -6, 0, 18),

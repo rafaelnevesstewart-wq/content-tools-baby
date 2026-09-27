@@ -345,7 +345,7 @@ local function setDizzyText(storm: WildStorm, text: string?)
 		label.Name = "Stars"
 		label.BackgroundTransparency = 1
 		label.Size = UDim2.fromScale(1, 1)
-		label.Font = Enum.Font.FredokaOne
+		label.Font = Enum.Font.GothamBold
 		label.TextSize = 26
 		label.TextColor3 = Color3.fromRGB(255, 230, 90)
 		label.TextStrokeTransparency = 0.2

@@ -14,6 +14,7 @@ local Remotes = require(Shared.Remotes)
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 
+local CosmeticService = require(script.Parent.CosmeticService)
 local MovementService = require(script.Parent.MovementService)
 local RideService = require(script.Parent.RideService)
 local StealService = require(script.Parent.StealService)
@@ -30,39 +31,6 @@ end
 local function rootOf(player: Player): BasePart?
 	local character = player.Character
 	return if character then character:FindFirstChild("HumanoidRootPart") :: BasePart? else nil
-end
-
--- A small puffy cloud welded under the player's feet.
-local function makeCloud(root: BasePart): Model
-	local cloud = Instance.new("Model")
-	cloud.Name = "FlightCloud"
-	local puffs = {
-		{ Vector3.new(0, 0, 0), 3.4 },
-		{ Vector3.new(1.8, 0.2, 0.4), 2.6 },
-		{ Vector3.new(-1.8, 0.1, -0.3), 2.7 },
-		{ Vector3.new(0.4, 0.3, 1.6), 2.3 },
-		{ Vector3.new(-0.3, 0.2, -1.7), 2.4 },
-	}
-	for _, puff in puffs do
-		local part = Instance.new("Part")
-		part.Shape = Enum.PartType.Ball
-		part.Size = Vector3.one * puff[2]
-		part.Color = Color3.fromRGB(252, 252, 255)
-		part.Material = Enum.Material.SmoothPlastic
-		part.CanCollide = false
-		part.CanTouch = false
-		part.CanQuery = false
-		part.Massless = true
-		part.CastShadow = false
-		part.CFrame = root.CFrame * CFrame.new(0, -3.4, 0) + puff[1]
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = root
-		weld.Part1 = part
-		weld.Parent = part
-		part.Parent = cloud
-	end
-	cloud.Parent = root.Parent
-	return cloud
 end
 
 local function land(player: Player, message: string?)
@@ -109,7 +77,8 @@ local function takeOff(player: Player)
 		return
 	end
 	RideService.dismount(player)
-	flying[player] = { endsAt = os.clock() + Config.Flight.Duration, cloud = makeCloud(root) }
+	flying[player] =
+		{ endsAt = os.clock() + Config.Flight.Duration, cloud = CosmeticService.buildFlightCloud(player, root) }
 	player:SetAttribute("FlyEndsAt", now() + Config.Flight.Duration)
 	player:SetAttribute("Flying", true)
 end

@@ -256,7 +256,7 @@ local function buildThemes()
 		card.title.Text = theme.emoji .. " " .. theme.name
 		card.body.Text = theme.description
 		if theme.ground then
-			card.frame.BackgroundColor3 = UI.Colors.PanelLight:Lerp(theme.ground, 0.35)
+			card.frame.BackgroundColor3 = UI.Colors.PanelLight:Lerp(theme.ground, 0.2)
 		end
 		card.button.Activated:Connect(function()
 			if card.button.Active then

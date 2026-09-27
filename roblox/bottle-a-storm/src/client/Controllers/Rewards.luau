@@ -87,7 +87,7 @@ local function buildDaily(page: Frame, data: Info)
 			Size = UDim2.new(1 / #RewardsData.Daily, -6, 1, 0),
 			BackgroundColor3 = if ready
 				then UI.Colors.Good
-				elseif claimed then Color3.fromRGB(210, 240, 222)
+				elseif claimed then Color3.fromRGB(34, 70, 54)
 				else UI.Colors.PanelLight,
 			Parent = row,
 		}, {
@@ -385,7 +385,7 @@ local function buildTitles(page: Frame)
 			Text = "",
 			AutoButtonColor = entry.unlocked,
 			BackgroundColor3 = if showing
-				then Color3.fromRGB(255, 240, 190)
+				then Color3.fromRGB(78, 64, 30)
 				elseif entry.unlocked then UI.Colors.Panel
 				else UI.Colors.Disabled,
 			Parent = scroll,

@@ -159,7 +159,7 @@ local function floatText(card: Card, text: string, color: Color3)
 		Text = text,
 		TextSize = 26,
 		TextColor3 = color,
-		TextStrokeColor3 = Color3.new(1, 1, 1),
+		TextStrokeColor3 = UI.Colors.Outline,
 		TextStrokeTransparency = 0,
 		ZIndex = 5,
 		Parent = card.body,

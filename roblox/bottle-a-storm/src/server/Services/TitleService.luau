@@ -46,7 +46,7 @@ local function showTag(player: Player)
 		label.Name = "Text"
 		label.BackgroundTransparency = 1
 		label.Size = UDim2.fromScale(1, 1)
-		label.Font = Enum.Font.FredokaOne
+		label.Font = Enum.Font.GothamBold
 		label.TextScaled = true
 		label.TextStrokeTransparency = 0
 		label.TextStrokeColor3 = Color3.fromRGB(60, 40, 90)

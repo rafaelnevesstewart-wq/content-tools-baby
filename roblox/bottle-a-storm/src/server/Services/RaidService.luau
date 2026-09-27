@@ -92,12 +92,14 @@ local function isAlive(player: Player): boolean
 	return humanoid ~= nil and humanoid.Health > 0
 end
 
+-- Over the Wild Skies island: standing on it, or flying above it (flying
+-- doesn't make you safe from the Mega-Storm).
 local function onWildSkies(position: Vector3): boolean
 	local flat = Vector3.new(position.X, 0, position.Z).Magnitude
-	return flat <= Config.World.CenterRadius + 5 and position.Y > -15 and position.Y < 120
+	return flat <= Config.World.CenterRadius + 5 and position.Y > -15 and position.Y < Config.Flight.MaxHeight + 30
 end
 
--- Living players standing on the Wild Skies island.
+-- Living players on (or flying over) the Wild Skies island.
 local function fighters(): { Player }
 	local list = {}
 	for _, player in Players:GetPlayers() do
@@ -194,7 +196,7 @@ local function spawnBoss(chosen: RaidData.Boss)
 		label.BackgroundTransparency = 1
 		label.Position = UDim2.fromScale(0, if index == 1 then 0 else 0.55)
 		label.Size = UDim2.fromScale(1, if index == 1 then 0.55 else 0.45)
-		label.Font = Enum.Font.FredokaOne
+		label.Font = Enum.Font.GothamBold
 		label.TextSize = line.size
 		label.Text = line.text
 		label.TextColor3 = line.color
@@ -251,7 +253,10 @@ local function lightning(enraged: boolean)
 		local root = rootOf(targets[i])
 		if root then
 			local radius = Config.Raid.StrikeRadius
-			local ground = Vector3.new(root.Position.X, 0.2, root.Position.Z)
+			-- Flying players get struck in the air: the red circle appears
+			-- right under them, at their height.
+			local height = if root.Position.Y > 10 then root.Position.Y - 3 else 0.2
+			local ground = Vector3.new(root.Position.X, height, root.Position.Z)
 			local warning = makePart({
 				Name = "StrikeWarning",
 				Shape = Enum.PartType.Cylinder,
@@ -272,7 +277,8 @@ local function lightning(enraged: boolean)
 					local target = rootOf(player)
 					if target then
 						local offset = target.Position - ground
-						if Vector3.new(offset.X, 0, offset.Z).Magnitude <= radius and offset.Y < 25 then
+						local flat = Vector3.new(offset.X, 0, offset.Z).Magnitude
+						if flat <= radius and offset.Y > -6 and offset.Y < 25 then
 							MovementService.stun(player, Config.Raid.StrikeStun)
 							Notify.player(player, "⚡ Struck by lightning! Dodge the red circles!", "warn")
 						end

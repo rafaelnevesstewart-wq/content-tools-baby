@@ -1,6 +1,6 @@
--- Small helpers for building UI in code, plus the game's colors: a cute
--- pastel "candy" theme with light panels, dark purple text and chunky
--- outlines. Buttons use white text with an outline so they read on any color.
+-- Small helpers for building UI in code, plus the game's colors: a sleek,
+-- dark "glass" theme with bright accents and a clean font. Buttons use white
+-- text so they read on any accent color.
 
 local Players = game:GetService("Players")
 
@@ -8,30 +8,30 @@ local Sfx = require(script.Parent.Sfx)
 
 local UI = {}
 
-UI.Font = Enum.Font.FredokaOne
+UI.Font = Enum.Font.GothamBold
 
 UI.Colors = {
-	Panel = Color3.fromRGB(255, 248, 252), -- window background (cream pink)
-	PanelLight = Color3.fromRGB(232, 222, 255), -- cards and plain buttons (lilac)
-	Stroke = Color3.fromRGB(165, 130, 240), -- window borders and selected things
-	Outline = Color3.fromRGB(95, 65, 160), -- chunky button outline and text outline
-	Text = Color3.fromRGB(75, 50, 115), -- dark purple, for text on light panels
-	Muted = Color3.fromRGB(145, 125, 175),
-	Spark = Color3.fromRGB(240, 165, 25), -- warm gold, readable on light panels
-	Good = Color3.fromRGB(95, 205, 135), -- mint
-	Bad = Color3.fromRGB(245, 110, 135), -- strawberry
-	Warn = Color3.fromRGB(250, 160, 80), -- peach
-	Rare = Color3.fromRGB(180, 115, 250), -- grape
-	Robux = Color3.fromRGB(70, 195, 125),
-	Disabled = Color3.fromRGB(222, 216, 234), -- greyed-out buttons
-	Track = Color3.fromRGB(236, 228, 248), -- empty part of bars, text boxes
+	Panel = Color3.fromRGB(22, 26, 36), -- window background (deep slate)
+	PanelLight = Color3.fromRGB(40, 46, 62), -- cards and plain buttons
+	Stroke = Color3.fromRGB(96, 122, 172), -- window borders and selected things
+	Outline = Color3.fromRGB(10, 12, 18), -- thin button outline and text outline
+	Text = Color3.fromRGB(236, 240, 248), -- light text for dark panels
+	Muted = Color3.fromRGB(150, 160, 182),
+	Spark = Color3.fromRGB(255, 196, 64), -- warm gold
+	Good = Color3.fromRGB(52, 168, 108), -- green
+	Bad = Color3.fromRGB(206, 64, 78), -- red
+	Warn = Color3.fromRGB(222, 136, 46), -- orange
+	Rare = Color3.fromRGB(132, 92, 226), -- purple
+	Robux = Color3.fromRGB(36, 156, 92),
+	Disabled = Color3.fromRGB(58, 62, 76), -- greyed-out buttons
+	Track = Color3.fromRGB(32, 36, 48), -- empty part of bars, text boxes
 }
 
--- Makes a (possibly very light) color dark enough to read on a light panel.
+-- Makes a (possibly very dark) color bright enough to read on a dark panel.
 function UI.ink(color: Color3): Color3
 	local h, sat, v = color:ToHSV()
-	if v > 0.72 or sat < 0.25 then
-		return Color3.fromHSV(h, math.max(sat, 0.45), math.min(v, 0.62))
+	if v < 0.8 then
+		return Color3.fromHSV(h, math.min(sat, 0.7), 0.92)
 	end
 	return color
 end
@@ -97,7 +97,7 @@ function UI.label(props: { [string]: any }): TextLabel
 	return UI.new("TextLabel", defaults)
 end
 
--- A rounded candy button with a chunky outline. It plays a click sound.
+-- A rounded button with a thin outline. It plays a click sound.
 function UI.button(props: { [string]: any }): TextButton
 	local defaults = {
 		AutoButtonColor = true,
@@ -105,13 +105,13 @@ function UI.button(props: { [string]: any }): TextButton
 		Font = UI.Font,
 		TextColor3 = Color3.new(1, 1, 1),
 		TextStrokeColor3 = UI.Colors.Outline,
-		TextStrokeTransparency = 0.2,
+		TextStrokeTransparency = 0.6,
 		TextSize = 18,
 	}
 	for key, value in props do
 		defaults[key] = value
 	end
-	local button = UI.new("TextButton", defaults, { UI.corner(14), UI.stroke(UI.Colors.Outline, 2.5) })
+	local button = UI.new("TextButton", defaults, { UI.corner(10), UI.stroke(UI.Colors.Outline, 1.5) })
 	button.Activated:Connect(function()
 		Sfx.play("click")
 	end)

@@ -1,5 +1,6 @@
--- Builds the cute storm creatures out of plain parts, so the game runs with no
--- uploaded art. Swap in real meshes later by changing build() only.
+-- Builds the storm creatures (living little weather clouds) out of plain
+-- parts and particles, so the game runs with no uploaded art. Swap in real
+-- meshes later by changing build() only.
 
 local CollectionService = game:GetService("CollectionService")
 
@@ -291,109 +292,87 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 		return color
 	end
 
-	-- A fluffy cloud body: one big puff and five smaller ones around it.
+	-- A realistic cloud body: many overlapping puffs, lighter on top and
+	-- shadowed underneath, with soft wisps drifting off the edges.
 	local puffs = {
 		{ size = 4, offset = Vector3.new(0, 0, 0) },
-		{ size = 2.8, offset = Vector3.new(-1.9, -0.3, 0.2) },
-		{ size = 2.8, offset = Vector3.new(1.9, -0.3, 0.2) },
-		{ size = 2.6, offset = Vector3.new(-0.9, 1.4, 0.4) },
-		{ size = 2.4, offset = Vector3.new(1.0, 1.3, 0.5) },
-		{ size = 2.2, offset = Vector3.new(0, -0.6, 1.4) },
+		{ size = 3, offset = Vector3.new(-2, -0.4, 0.2) },
+		{ size = 3, offset = Vector3.new(2, -0.4, 0.1) },
+		{ size = 2.8, offset = Vector3.new(-0.9, 1.5, 0.3) },
+		{ size = 2.6, offset = Vector3.new(1.1, 1.4, 0.4) },
+		{ size = 2.4, offset = Vector3.new(0, -0.7, 1.5) },
+		{ size = 2.2, offset = Vector3.new(0.1, 0.4, -1.5) },
+		{ size = 2, offset = Vector3.new(-2.9, -0.7, -0.4) },
+		{ size = 2, offset = Vector3.new(2.9, -0.6, -0.3) },
+		{ size = 1.8, offset = Vector3.new(0.3, 2.4, -0.2) },
 	}
-	local material = if rarity.index >= 5 then Enum.Material.Neon else Enum.Material.SmoothPlastic
+	local glowing = rarity.index >= 4
+	local shadow = Color3.fromRGB(70, 74, 88)
 	for index, puff in puffs do
-		local part = ball(model, puff.size * scale, colorAt(index), CFrame.new(puff.offset * scale), material)
+		-- Top puffs catch the light; low ones are in shadow.
+		local lift = math.clamp((puff.offset.Y + 1) / 3.5, 0, 1)
+		local color = colorAt(index):Lerp(shadow, 0.28 * (1 - lift)):Lerp(Color3.new(1, 1, 1), 0.12 * lift)
+		local part = ball(model, puff.size * scale, color, CFrame.new(puff.offset * scale))
 		part.Name = "Puff"
-		if rarity.index >= 5 then
-			part.Transparency = 0.15
+		if glowing then
+			part.Transparency = 0.18 -- lets the glowing core shine through
 		end
 		weld(body, part)
 	end
 
-	-- Face on the -Z side.
-	for _, side in { -1, 1 } do
-		local eye = ball(
-			model,
-			0.75 * scale,
-			Color3.fromRGB(25, 25, 35),
-			CFrame.new(Vector3.new(0.75 * side, 0.35, -1.75) * scale)
-		)
-		eye.Name = "Eye"
-		weld(body, eye)
-		local shine = ball(
-			model,
-			0.25 * scale,
-			Color3.new(1, 1, 1),
-			CFrame.new(Vector3.new(0.75 * side + 0.15, 0.55, -2.05) * scale),
-			Enum.Material.Neon
-		)
-		shine.Name = "Shine"
-		weld(body, shine)
-		local cheek = ball(
-			model,
-			0.6 * scale,
-			Color3.fromRGB(255, 150, 170),
-			CFrame.new(Vector3.new(1.3 * side, -0.35, -1.55) * scale)
-		)
-		cheek.Name = "Cheek"
-		cheek.Transparency = 0.25
-		weld(body, cheek)
-		-- Eyelid: hidden until the client makes the storm blink.
-		local lid = Instance.new("Part")
-		lid.Name = "Lid"
-		lid.Size = Vector3.new(0.95, 0.95, 0.35) * scale
-		lid.Color = colorAt(1)
-		lid.Material = material
-		lid.Transparency = 1
-		lid.CFrame = CFrame.new(Vector3.new(0.75 * side, 0.35, -2.02) * scale)
-		lid.CanCollide = false
-		lid.CanTouch = false
-		lid.CanQuery = false
-		lid.Massless = true
-		lid.CastShadow = false
-		lid.Anchored = false
-		lid.Parent = model
-		weld(body, lid)
-		if opts.angry then
-			local brow = Instance.new("Part")
-			brow.Name = "Brow"
-			brow.Size = Vector3.new(1.1, 0.25, 0.3) * scale
-			brow.Color = Color3.fromRGB(25, 25, 35)
-			brow.CFrame = CFrame.new(Vector3.new(0.75 * side, 1.05, -1.8) * scale)
-				* CFrame.Angles(0, 0, math.rad(-25 * side))
-			brow.CanCollide = false
-			brow.CanTouch = false
-			brow.CanQuery = false
-			brow.Massless = true
-			brow.Anchored = false
-			brow.Parent = model
-			weld(body, brow)
+	-- Epic and rarer storms have a glowing heart of their rarity's color.
+	if glowing then
+		local core = ball(model, 2.4 * scale, rarity.color, CFrame.new(0, 0.2 * scale, 0), Enum.Material.Neon)
+		core.Name = "Core"
+		weld(body, core)
+	end
+
+	local wispAttachment = Instance.new("Attachment")
+	wispAttachment.Name = "WispAttachment"
+	wispAttachment.Parent = root
+	local wisps = Instance.new("ParticleEmitter")
+	wisps.Name = "Wisps"
+	wisps.Texture = SMOKE
+	wisps.Color = ColorSequence.new(colorAt(1):Lerp(Color3.new(1, 1, 1), 0.2))
+	wisps.Size = NumberSequence.new(2.4 * scale, 3.6 * scale)
+	wisps.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.3, 0.55),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	wisps.Lifetime = NumberRange.new(2, 3)
+	wisps.Rate = 3
+	wisps.Speed = NumberRange.new(0.4, 1)
+	wisps.SpreadAngle = Vector2.new(180, 180)
+	wisps.RotSpeed = NumberRange.new(-10, 10)
+	wisps.LockedToPart = true
+	wisps.Parent = wispAttachment
+
+	-- Mega-Storm bosses and grumpy clouds have glowing, narrowed eyes.
+	if opts.angry then
+		for _, side in { -1, 1 } do
+			local eye = Instance.new("Part")
+			eye.Name = "Eye"
+			eye.Size = Vector3.new(0.9, 0.28, 0.3) * scale
+			eye.Color = Color3.fromRGB(255, 90, 60)
+			eye.Material = Enum.Material.Neon
+			eye.CFrame = CFrame.new(Vector3.new(0.8 * side, 0.4, -1.95) * scale)
+				* CFrame.Angles(0, 0, math.rad(-18 * side))
+			eye.CanCollide = false
+			eye.CanTouch = false
+			eye.CanQuery = false
+			eye.Massless = true
+			eye.CastShadow = false
+			eye.Anchored = false
+			eye.Parent = model
+			weld(body, eye)
 		end
 	end
 
 	addParticles(root, def.fx, scale)
 
-	-- Rarity glow: a pastel halo under the storm, plus sparkles and light that
-	-- get fancier the rarer it is.
-	if rarity.index >= 2 then
-		local halo = Instance.new("Part")
-		halo.Name = "Halo"
-		halo.Shape = Enum.PartType.Cylinder
-		halo.Size = Vector3.new(0.2, 5.5, 5.5) * scale
-		halo.CFrame = CFrame.new(0, -2.3 * scale, 0) * CFrame.Angles(0, 0, math.rad(90))
-		halo.Color = rarity.color:Lerp(Color3.new(1, 1, 1), 0.25)
-		halo.Material = Enum.Material.Neon
-		halo.Transparency = 0.55
-		halo.CanCollide = false
-		halo.CanTouch = false
-		halo.CanQuery = false
-		halo.CastShadow = false
-		halo.Massless = true
-		halo.Anchored = false
-		halo.Parent = model
-		weld(body, halo)
-	end
-	local sparkleRate = ({ 0, 0, 3, 6, 10, 14, 20 })[rarity.index] or 0
+	-- Rarity glow: sparkles and light that get fancier the rarer it is.
+	local sparkleRate = ({ 0, 0, 2, 4, 6, 9, 12 })[rarity.index] or 0
 	if sparkleRate > 0 then
 		local attachment = Instance.new("Attachment")
 		attachment.Name = "GlowAttachment"
@@ -511,7 +490,7 @@ function StormModel.nameTag(def: StormData.StormDef, mutation: string?, subtitle
 		label.LayoutOrder = order
 		label.BackgroundTransparency = 1
 		label.Size = UDim2.new(1, 0, 0, size + 4)
-		label.Font = Enum.Font.FredokaOne
+		label.Font = Enum.Font.GothamBold
 		label.TextSize = size
 		label.TextColor3 = color
 		label.TextStrokeTransparency = 0.3

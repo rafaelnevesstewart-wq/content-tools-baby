@@ -80,7 +80,7 @@ local function cell(
 		AutoButtonColor = state == "ready",
 		BackgroundColor3 = if state == "ready"
 			then UI.Colors.Good
-			elseif state == "claimed" then Color3.fromRGB(210, 240, 222)
+			elseif state == "claimed" then Color3.fromRGB(34, 70, 54)
 			else UI.Colors.PanelLight,
 		Parent = parent,
 	})
