@@ -16,6 +16,7 @@ local order = {
 	"BiomeController",
 	"ThrowController",
 	"RideController",
+	"FlightController",
 	"Mixer",
 	"PromptController",
 	"ForecastController",

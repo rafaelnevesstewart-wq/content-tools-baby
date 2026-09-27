@@ -14,6 +14,7 @@ local EVENTS = {
 	"DevPurchase", -- client -> server, Studio only: (itemKey)
 	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake, pop-ups
 	"PedestalAction", -- client -> server: (slot, "ride" | "guard" | "buddy" | "sell")
+	"Fly", -- client -> server: (wantsToFly: boolean)
 	"BattleAction", -- client -> server: ("request", userId) | ("respond", fromUserId, accept)
 	"BattleInvite", -- server -> client: (fromUserId, fromName)
 	"BattlePlay", -- server -> client: (battle) the whole fight, for the battle window

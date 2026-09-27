@@ -42,6 +42,13 @@ Products.Passes = {
 		name = "Storm Tamer",
 		description = "Your storms never escape, and they get bored half as fast.",
 	},
+	{
+		key = "Flight",
+		id = 0,
+		price = 199,
+		name = "Cloud Flight",
+		description = "Fly anywhere on a fluffy cloud for 30 seconds at a time (G on PC).",
+	},
 } :: { Item }
 
 Products.DevProducts = {

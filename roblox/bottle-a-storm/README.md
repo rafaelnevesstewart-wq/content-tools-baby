@@ -30,7 +30,7 @@ titles and a round of balance changes.
 | Stealing: grab a jar, carry it home (70% speed); Zapper tool, Lightning Rod traps, 90 s base lock, storm insurance | `StealService`, `PlotService` |
 | Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod, Storm Snacks, thief styles | `ShopService`, `Shop` |
 | Saving with a session lock (no duplicate storms across servers), autosave, safe shutdown | `DataService` |
-| 4 game passes (VIP, Double Pedestals, Auto-Collect, Storm Tamer) and 7 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Season Premium, Skip a Season Tier, Summon Rainbow Hour) | `MonetizationService`, `Products` |
+| 5 game passes (VIP, Double Pedestals, Auto-Collect, Storm Tamer, Cloud Flight) and 7 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Season Premium, Skip a Season Tier, Summon Rainbow Hour) | `MonetizationService`, `Products` |
 | Weather events every 5 min (Rainbow Hour, Thunder Frenzy, Meteor Night, Double Sparks Hour, Mutation Storm, Fog Night) + forecast TV | `WeatherService`, `ForecastController` |
 | Mega-Storm raid every 25 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
@@ -145,6 +145,16 @@ Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Go
   - Dodge chances are lower: Uncommon 5%, Rare 15%, Epic 22%, Legendary 30%.
   - Rare, Epic and Legendary storms spawn about 40–80% more often.
 
+## Cloud Flight (game pass, 199 R$)
+
+Press `G` (☁️ Fly on phones) to hop on a fluffy cloud and fly anywhere for 30 seconds. Move as
+normal; `Space` goes up and `Ctrl` or `C` goes down. After landing, the cloud rests for
+20 seconds. Everyone sees your cloud.
+- **Grabbing a stolen storm lands you right away**, so thieves still have to run and can be
+  zapped. Getting zapped or stunned also knocks you off the cloud.
+- **Players without the pass** who press `G` are offered the pass.
+- Numbers are in `Config.Flight`. Like riding powers, flying runs on the player's own screen.
+
 ## Controls
 
 | Action | PC | Phone |
@@ -160,6 +170,7 @@ Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Go
 | Trade | 🤝 Trade button | 🤝 Trade button |
 | Daily reward, quests, Storm Index, titles | 🎁 Rewards button | 🎁 Rewards button |
 | Storm battle | ⚔️ Battle button | ⚔️ Battle button |
+| Fly on a cloud (Cloud Flight pass) | `G`, then `Space` up / `Ctrl` or `C` down | ☁️ Fly, then ⬆️ / ⬇️ |
 | Island themes | 🛒 Shop → 🏝️ Themes | 🛒 Shop → 🏝️ Themes |
 
 ## Catching: throw the jar
@@ -383,6 +394,8 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
       With 2 players, press ⚔️ Battle to fight. Open 🎁 Rewards → 🏷️ Titles after your first
       catch. To see the rare-catch moment quickly, set `Config.Jars[1].maxRarity = 5` and
       catch an Epic.
+- [ ] Cloud Flight: press **G**. In Studio it grants the pass for free. Press **G** again to
+      fly, try Space and Ctrl, then steal a storm while flying (you should land).
 - [ ] Offline earnings: play, leave, and join again after 2+ minutes. (In Studio, turn on
       Game Settings → Security → Enable Studio Access to API Services so data saves.)
 - [ ] Press **E** on the purple cauldron. Mix Fog Bun + Mist Mouse to discover Ghost Fog.
@@ -435,7 +448,7 @@ src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (p
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, SeasonService, MixService,
-              TradeService, StealService, GuardService, BuddyService, RaidService,
+              TradeService, StealService, GuardService, BuddyService, FlightService, RaidService,
               IndexService, RewardService, DailyService, EventService, BattleService,
               TitleService, AuraService, ClimateService, ThemeService, ShopService,
               MonetizationService
@@ -443,7 +456,7 @@ src/server/   Main.server.luau starts the services in order
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, Rewards, PedestalMenu, Battle,
-               BuddyController,
+               BuddyController, FlightController,
                BiomeController, ThrowController, RideController, Toasts, TutorialController,
                StormAnimator, AmbientController, JuiceController, Sfx,
                PromptController, ForecastController, UI

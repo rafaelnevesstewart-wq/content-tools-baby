@@ -309,6 +309,15 @@ Config.Battle = {
 	PlaybackTurnSeconds = 0.8, -- how long each hit takes to show in the battle window
 }
 
+-- Cloud Flight (Robux game pass): fly on a cloud for a while, then rest.
+Config.Flight = {
+	Duration = 30, -- seconds per flight
+	Cooldown = 20, -- seconds before you can fly again
+	Speed = 40, -- studs per second
+	VerticalSpeed = 28, -- up/down speed
+	MaxHeight = 220, -- can't fly higher than this
+}
+
 -- Day and night: one full day in the sky takes this long.
 Config.DayNight = {
 	CycleSeconds = 720, -- 12 minutes

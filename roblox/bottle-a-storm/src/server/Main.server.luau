@@ -20,6 +20,7 @@ local order = {
 	"StealService",
 	"GuardService",
 	"BuddyService",
+	"FlightService",
 	"RaidService",
 	"DailyService",
 	"EventService",
