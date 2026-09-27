@@ -48,6 +48,15 @@ Config.Mixing = {
 	Range = 25, -- you must stand this close to your mixer
 }
 
+-- Trading storms and Sparks with other players in the server.
+Config.Trading = {
+	MaxStorms = 4, -- per side
+	ConfirmSeconds = 5, -- countdown after both players press Ready
+	RequestSeconds = 20, -- a trade request expires after this
+	RequestCooldown = 5, -- seconds between requests you send
+	UnevenRatio = 3, -- warn when one side earns this many times more than the other
+}
+
 -- Riding your storms.
 Config.Ride = {
 	SpeedByRarity = { 2, 3, 4, 6, 8, 10 }, -- extra walk speed while riding

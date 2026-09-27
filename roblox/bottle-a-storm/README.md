@@ -7,7 +7,7 @@ with no uploaded art.
 ## What's in this build
 
 These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1) and
-storm mixing and riding (v1.2).
+storm mixing and riding (v1.2) and trading (v1.3). That completes the design doc's build plan.
 
 | Feature | Where |
 |---|---|
@@ -15,6 +15,7 @@ storm mixing and riding (v1.2).
 | Catching by throwing your Storm Jar: rarer storms dodge and need 2–3 hits; 6 mutations | `CaptureService`, `ThrowController` |
 | Storm Mixer: combine two storms; 11 secret hybrid recipes, including a new Mythic tier | `MixService`, `Recipes`, `Mixer` |
 | Riding: pick a storm as your mount; speed boost plus a power based on its weather type | `RideService`, `RideController` |
+| Trading storms and Sparks with other players, with anti-scam checks | `TradeService`, `Trade` |
 | 8 player Sky Islands with pedestals, jar displays and a Collect pad for passive Sparks ⚡ | `PlotService`, `IncomeService` |
 | Stealing: grab a jar, carry it home (70% speed); Zapper tool, Lightning Rod traps, 60 s base lock | `StealService`, `PlotService` |
 | Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod | `ShopService`, `Shop` |
@@ -23,8 +24,7 @@ storm mixing and riding (v1.2).
 | Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night) + forecast TV | `WeatherService`, `ForecastController` |
 | Mega-Storm raid every 45 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
-Not in this build yet: trading (v1.3),
-storm moods, island sky aura, thief styles, Climate Shift rebirth and the season pass.
+Not in this build yet: storm moods, island sky aura, thief styles, Climate Shift rebirth and the season pass.
 
 ## Controls
 
@@ -37,6 +37,7 @@ storm moods, island sky aura, thief styles, Climate Shift rebirth and the season
 | Hop on / off | `Q` | Ride button |
 | Use your ride's power | `Shift` | power button |
 | Mix storms | `E` on your cauldron | tap "Mix Storms" |
+| Trade | 🤝 Trade button | 🤝 Trade button |
 
 ## Catching: throw the jar
 
@@ -74,6 +75,21 @@ rarity, plus a power (`Shift`) based on its weather:
 | Rain, fog and rainbow (Drizzle Dot, Fog Bun, Rainbow Squall…) | ☁️ **Cloud Jump**: jump again in mid-air, plus you glide |
 
 You hop off automatically if you grab a stolen storm, or if your ride is sold, stolen or mixed.
+
+## Trading
+
+Press **🤝 Trade**, pick a player and send a request. They get an Accept/Decline pop-up, which
+expires after 20 s.
+- **Offers:** each side offers up to 4 storms and any amount of Sparks. Both players see both
+  offers live.
+- **Uneven warning:** the window shows how much income per second each side is worth, and warns
+  you if you'd give more than 3x what you get.
+- **Anti-scam:** any change un-readies **both** players. When both press Ready, a 5-second
+  countdown runs, and any change stops it.
+- **Final check:** before swapping, the server checks both players still own everything, have
+  the Sparks, and have enough free pedestals. Storms that are being stolen can't be traded.
+- **Swap:** everything moves at once, lands on free pedestals, and both players are saved
+  right away. Leaving cancels the trade.
 
 ## The Mega-Storm raid
 
@@ -124,6 +140,9 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 - [ ] Press **R** on a pedestal, then **Q** to ride. Try **Shift** for the power.
 - [ ] Press **E** on the purple cauldron. Mix Fog Bun + Mist Mouse to discover Ghost Fog.
       Mix two random commons to see an unknown mix.
+- [ ] Trade (2 players): player 1 presses 🤝 Trade and picks player 2, and player 2 accepts.
+      Add storms, press Ready on both and watch the countdown. Change something during the
+      countdown and check it stops. Try trading with a full island.
 - [ ] With player 2, hold **E** on player 1's pedestal. Player 1 gets a warning. Player 1
       equips the Zapper and clicks near player 2, and the storm flies back.
 - [ ] Press the blue Lock button. Player 2 is pushed out and can't steal until it ends.
@@ -149,12 +168,12 @@ src/shared/   Config, StormData (rarities, 15 storms, mutations), Economy (price
               Products (Robux IDs), WeatherEvents, RaidData (bosses), Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
-              IncomeService, CaptureService, RideService, MixService, StealService,
-              RaidService, ShopService, MonetizationService
+              IncomeService, CaptureService, RideService, MixService, TradeService,
+              StealService, RaidService, ShopService, MonetizationService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars),
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
-  Controllers/ HUD, Shop, Mixer, ThrowController, RideController, Toasts,
+  Controllers/ HUD, Shop, Mixer, Trade, ThrowController, RideController, Toasts,
                PromptController, ForecastController, UI
 ```
 

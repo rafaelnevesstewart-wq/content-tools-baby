@@ -8,6 +8,9 @@ local EVENTS = {
 	"Notify", -- server -> client: (text, kind)
 	"ThrowJar", -- client -> server: (targetPosition)
 	"ToggleRide", -- client -> server: ()
+	"TradeAction", -- client -> server: (action, ...)
+	"TradeRequest", -- server -> client: (fromUserId, fromName)
+	"TradeUpdate", -- server -> client: (state or nil when the trade closes)
 	"DevPurchase", -- client -> server, Studio only: (itemKey)
 }
 

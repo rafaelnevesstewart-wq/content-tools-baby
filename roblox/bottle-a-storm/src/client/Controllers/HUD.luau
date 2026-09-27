@@ -13,6 +13,7 @@ local RaidData = require(Shared.RaidData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local Shop = require(script.Parent.Shop)
+local Trade = require(script.Parent.Trade)
 local Toasts = require(script.Parent.Toasts)
 local UI = require(script.Parent.UI)
 
@@ -239,6 +240,9 @@ function HUD.start()
 	end)
 	sideButton(side, 2, "💎 Robux", UI.Colors.Robux).Activated:Connect(function()
 		Shop.toggle("Robux")
+	end)
+	sideButton(side, 4, "🤝 Trade", Color3.fromRGB(60, 150, 110)).Activated:Connect(function()
+		Trade.openMenu()
 	end)
 	local lockItem = Products.get("EmergencyLock")
 	if lockItem then

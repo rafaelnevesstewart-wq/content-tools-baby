@@ -56,6 +56,7 @@ local function defaultData()
 			stolen = 0,
 			sparksEarned = 0,
 			mixed = 0,
+			trades = 0,
 		},
 	}
 end
