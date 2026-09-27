@@ -192,6 +192,20 @@ Products.Cosmetics = {
 		description = "A glowing green and purple aurora cloud.",
 	},
 	{
+		key = "Cosmetic_PrismCloud",
+		id = 0,
+		price = 99,
+		name = "Prism Cloud",
+		description = "A glowing cloud that shifts through every color.",
+	},
+	{
+		key = "Cosmetic_VoidCloud",
+		id = 0,
+		price = 79,
+		name = "Void Cloud",
+		description = "A black cloud with a throbbing purple heart.",
+	},
+	{
 		key = "Cosmetic_StormDragon",
 		id = 0,
 		price = 79,

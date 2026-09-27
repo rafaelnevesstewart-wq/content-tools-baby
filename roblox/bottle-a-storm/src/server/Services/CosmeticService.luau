@@ -912,13 +912,14 @@ local DECOR: { [string]: (Instance, CFrame, any) -> () } = {
 		end
 		local statue = StormModel.build(def, { scale = 2.2 })
 		CollectionService:RemoveTag(statue, "StormCreature") -- statues don't wiggle
+		CollectionService:RemoveTag(statue, "FlashyFx")
 		for _, item in statue:GetDescendants() do
 			if item:IsA("BasePart") then
 				if item.Transparency < 1 then
 					item.Color = rgb(255, 205, 80)
 					item.Material = Enum.Material.Metal
 				end
-			elseif item:IsA("ParticleEmitter") or item:IsA("Light") then
+			elseif item:IsA("ParticleEmitter") or item:IsA("Light") or item:IsA("Fire") then
 				item:Destroy()
 			end
 		end
@@ -1267,6 +1268,10 @@ type CloudSkin = {
 	fx: ParticleStyle?,
 	light: Color3?,
 	flashes: boolean?,
+	fire: boolean?, -- real flames
+	bolts: Color3?, -- lightning bolts crackle around it
+	rainbow: boolean?, -- colors flow through it
+	pulse: Color3?, -- a throbbing glow
 }
 
 local RAIN_FX: ParticleStyle = {
@@ -1335,6 +1340,68 @@ local CLOUDS: { [string]: CloudSkin } = {
 		fx = RAIN_FX,
 		flashes = true,
 	},
+	InfernoCloud = {
+		colors = { rgb(255, 120, 40), rgb(200, 50, 20), rgb(255, 180, 70) },
+		material = Enum.Material.Neon,
+		transparency = 0.25,
+		wisp = rgb(90, 60, 50),
+		fire = true,
+		fx = {
+			texture = SPARKLES,
+			colors = { rgb(255, 200, 90), rgb(255, 80, 30) },
+			size = 0.35,
+			rate = 20,
+			lifetime = 1,
+			speed = 3,
+			accel = Vector3.new(0, 6, 0),
+			emission = 1,
+		},
+		light = rgb(255, 130, 50),
+	},
+	ThunderboltCloud = {
+		colors = { rgb(70, 72, 90), rgb(46, 48, 62) },
+		wisp = rgb(90, 92, 110),
+		bolts = rgb(170, 220, 255),
+		fx = RAIN_FX,
+		light = rgb(160, 200, 255),
+	},
+	PrismCloud = {
+		colors = { rgb(255, 255, 255) },
+		material = Enum.Material.Neon,
+		transparency = 0.35,
+		wisp = rgb(255, 240, 255),
+		rainbow = true,
+		fx = {
+			texture = SPARKLES,
+			colors = RAINBOW,
+			size = 0.4,
+			rate = 18,
+			lifetime = 1.2,
+			speed = 1.5,
+			emission = 1,
+		},
+	},
+	GalaxyCloud = {
+		colors = { rgb(40, 30, 90), rgb(80, 40, 140), rgb(30, 60, 130) },
+		material = Enum.Material.Neon,
+		transparency = 0.3,
+		wisp = rgb(90, 70, 170),
+		fx = {
+			texture = SPARKLES,
+			colors = { rgb(255, 255, 255), rgb(190, 210, 255) },
+			size = 0.3,
+			rate = 25,
+			lifetime = 1.6,
+			speed = 0.6,
+			emission = 1,
+		},
+		light = rgb(140, 110, 255),
+	},
+	VoidCloud = {
+		colors = { rgb(25, 12, 40), rgb(60, 25, 100) },
+		wisp = rgb(60, 30, 100),
+		pulse = rgb(160, 80, 255),
+	},
 	AuroraCloud = {
 		colors = { rgb(120, 255, 190), rgb(110, 200, 255), rgb(190, 130, 255) },
 		material = Enum.Material.Neon,
@@ -1368,6 +1435,7 @@ function CosmeticService.buildFlightCloud(player: Player, root: BasePart): Model
 			base + puff[1],
 			skin.material
 		)
+		p.Name = "CloudPuff"
 		p.Transparency = skin.transparency or 0
 		center = center or p
 	end
@@ -1425,6 +1493,30 @@ function CosmeticService.buildFlightCloud(player: Player, root: BasePart): Model
 				end
 			end)
 		end
+	end
+	if skin.fire then
+		local fire = Instance.new("Fire")
+		fire.Size = 6
+		fire.Heat = 12
+		fire.Color = rgb(255, 150, 50)
+		fire.SecondaryColor = rgb(255, 60, 20)
+		fire.Parent = middle
+	end
+	if skin.pulse then
+		local light = Instance.new("PointLight")
+		light.Name = "PulseLight"
+		light.Color = skin.pulse
+		light.Range = 16
+		light.Parent = middle
+	end
+	if skin.bolts then
+		cloud:SetAttribute("Bolts", skin.bolts)
+	end
+	if skin.rainbow then
+		cloud:SetAttribute("Rainbow", true)
+	end
+	if skin.bolts or skin.rainbow or skin.pulse then
+		CollectionService:AddTag(cloud, "FlashyFx")
 	end
 	weldAll(cloud, root)
 	cloud.Parent = root.Parent

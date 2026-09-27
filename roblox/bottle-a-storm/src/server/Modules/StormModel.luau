@@ -233,6 +233,194 @@ local function addParticles(root: BasePart, fxName: string, scale: number)
 	end
 end
 
+-- A ring that the client spins around the storm (see FlashyFx on the client):
+-- `count` pieces made by `make`, at `radius` from the center.
+local function spinningRing(
+	model: Model,
+	body: BasePart,
+	name: string,
+	radius: number,
+	height: number,
+	count: number,
+	speed: number,
+	make: (index: number, cframe: CFrame) -> BasePart
+)
+	local ring = Instance.new("Part")
+	ring.Name = name
+	ring.Size = Vector3.one * 0.2
+	ring.Transparency = 1
+	ring.CanCollide = false
+	ring.CanTouch = false
+	ring.CanQuery = false
+	ring.Massless = true
+	ring.Anchored = false
+	ring.CFrame = CFrame.new(0, height, 0)
+	ring.Parent = model
+	local spin = Instance.new("Weld")
+	spin.Name = "SpinWeld"
+	spin.Part0 = body
+	spin.Part1 = ring
+	spin.C0 = CFrame.new(0, height, 0)
+	spin:SetAttribute("Speed", speed)
+	spin.Parent = ring
+	for i = 1, count do
+		local angle = (i - 1) / count * math.pi * 2
+		local piece = make(i, CFrame.new(math.cos(angle) * radius, height, math.sin(angle) * radius))
+		weld(ring, piece)
+	end
+end
+
+-- Flashy extras: flames, lightning, rainbow colors, swirling winds, ice
+-- shards, void pulses and golden shine (by weather type and mutation), plus
+-- orbiting orbs on Epic and rarer storms. Moving effects are animated on
+-- each player's screen by the FlashyFx controller (tag "FlashyFx").
+local function addSpecialLooks(
+	model: Model,
+	root: BasePart,
+	body: BasePart,
+	def: StormData.StormDef,
+	mutation: StormData.Mutation?,
+	rarity: StormData.Rarity,
+	scale: number
+)
+	local mut = if mutation then mutation.id else nil
+	local flashy = false
+	local puffs = {}
+	for _, child in model:GetChildren() do
+		if child.Name == "Puff" and child:IsA("BasePart") then
+			table.insert(puffs, child)
+		end
+	end
+
+	-- On fire: fire storms and Molten storms.
+	if def.fx == "fire" or mut == "Molten" then
+		local fire = Instance.new("Fire")
+		fire.Size = 5 * scale
+		fire.Heat = 9
+		fire.Color = Color3.fromRGB(255, 150, 50)
+		fire.SecondaryColor = Color3.fromRGB(255, 60, 20)
+		fire.Parent = puffs[1] or root
+		local embers = Instance.new("ParticleEmitter")
+		embers.Texture = SPARKLE
+		embers.Color = ColorSequence.new(Color3.fromRGB(255, 200, 90), Color3.fromRGB(255, 70, 30))
+		embers.Size = NumberSequence.new(0.3 * scale, 0)
+		embers.Speed = NumberRange.new(3, 6)
+		embers.Acceleration = Vector3.new(0, 6, 0)
+		embers.SpreadAngle = Vector2.new(60, 60)
+		embers.Lifetime = NumberRange.new(0.6, 1.2)
+		embers.Rate = 14
+		embers.LightEmission = 1
+		embers.Parent = root
+		local glow = Instance.new("PointLight")
+		glow.Color = Color3.fromRGB(255, 130, 50)
+		glow.Range = 14 * scale
+		glow.Brightness = 2
+		glow.Parent = root
+		for index, puff in puffs do
+			if index > 5 then
+				puff.Color = puff.Color:Lerp(Color3.fromRGB(120, 40, 20), 0.4)
+			end
+		end
+	end
+
+	-- Lightning: bolts crackle around it.
+	if def.fx == "lightning" or mut == "Charged" then
+		model:SetAttribute(
+			"Bolts",
+			if mut == "Charged" then Color3.fromRGB(170, 230, 255) else Color3.fromRGB(255, 240, 120)
+		)
+		flashy = true
+	end
+
+	-- Rainbow: colors flow through the puffs.
+	if def.fx == "rainbow" or mut == "Prismatic" then
+		model:SetAttribute("Rainbow", true)
+		flashy = true
+	end
+
+	-- Wind storms: a swirling ring of mist.
+	if def.fx == "wind" or def.fx == "hurricane" then
+		spinningRing(model, body, "WindRing", 3.6 * scale, -0.6 * scale, 10, 2.2, function(_, cframe)
+			local wisp = ball(model, 1.1 * scale, Color3.fromRGB(235, 245, 245), cframe)
+			wisp.Name = "Wisp"
+			wisp.Transparency = 0.5
+			return wisp
+		end)
+		flashy = true
+	end
+
+	-- Ice: shards of ice circle it, and Frozen storms turn icy.
+	if def.fx == "snow" or def.fx == "hail" or mut == "Frozen" then
+		spinningRing(model, body, "IceRing", 3.4 * scale, 0.4 * scale, 6, -1.2, function(index, cframe)
+			local shard = Instance.new("Part")
+			shard.Name = "Shard"
+			shard.Size = Vector3.new(0.35, 1.1, 0.35) * scale
+			shard.CFrame = cframe * CFrame.Angles(0, index, math.rad(25))
+			shard.Color = Color3.fromRGB(170, 225, 255)
+			shard.Material = Enum.Material.Neon
+			shard.Transparency = 0.2
+			shard.CanCollide = false
+			shard.CanTouch = false
+			shard.CanQuery = false
+			shard.Massless = true
+			shard.CastShadow = false
+			shard.Anchored = false
+			shard.Parent = model
+			return shard
+		end)
+		if mut == "Frozen" then
+			for _, puff in puffs do
+				puff.Material = Enum.Material.Ice
+			end
+		end
+		flashy = true
+	end
+
+	-- Void: dark puffs with a pulsing purple glow.
+	if mut == "Void" then
+		local pulse = Instance.new("PointLight")
+		pulse.Name = "PulseLight"
+		pulse.Color = Color3.fromRGB(150, 70, 255)
+		pulse.Range = 16 * scale
+		pulse.Brightness = 2
+		pulse.Parent = root
+		local swirl = Instance.new("ParticleEmitter")
+		swirl.Texture = SMOKE
+		swirl.Color = ColorSequence.new(Color3.fromRGB(40, 10, 70), Color3.fromRGB(120, 60, 220))
+		swirl.Size = NumberSequence.new(2 * scale, 0.5 * scale)
+		swirl.Speed = NumberRange.new(-2, -1) -- pulled inward
+		swirl.SpreadAngle = Vector2.new(180, 180)
+		swirl.RotSpeed = NumberRange.new(-180, 180)
+		swirl.Lifetime = NumberRange.new(1, 1.5)
+		swirl.Rate = 8
+		swirl.LightEmission = 0.3
+		swirl.Parent = root
+		flashy = true
+	end
+
+	-- Golden: shiny gold puffs.
+	if mut == "Golden" then
+		for _, puff in puffs do
+			puff.Material = Enum.Material.Foil
+		end
+	end
+
+	-- Epic and rarer: glowing orbs orbit the storm.
+	local orbs = ({ 0, 0, 0, 3, 4, 6, 8 })[rarity.index] or 0
+	if orbs > 0 then
+		spinningRing(model, body, "OrbRing", 4.2 * scale, 0.3 * scale, orbs, 1.4, function(_, cframe)
+			local orb = ball(model, 0.55 * scale, rarity.color, cframe, Enum.Material.Neon)
+			orb.Name = "Orb"
+			return orb
+		end)
+		flashy = true
+	end
+
+	if flashy then
+		CollectionService:AddTag(model, "FlashyFx")
+	end
+end
+
 export type BuildOptions = {
 	mutation: string?,
 	scale: number?, -- multiplies the rarity's size
@@ -347,6 +535,8 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 	wisps.RotSpeed = NumberRange.new(-10, 10)
 	wisps.LockedToPart = true
 	wisps.Parent = wispAttachment
+
+	addSpecialLooks(model, root, body, def, mutation, rarity, scale)
 
 	-- Mega-Storm bosses and grumpy clouds have glowing, narrowed eyes.
 	if opts.angry then

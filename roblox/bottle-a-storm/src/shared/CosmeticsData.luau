@@ -283,6 +283,49 @@ CosmeticsData.Items = {
 		description = "A glowing green and purple aurora cloud.",
 	},
 
+	{
+		id = "InfernoCloud",
+		category = "cloud",
+		name = "Inferno Cloud",
+		emoji = "🔥",
+		cost = 250000,
+		description = "A blazing cloud of real fire and embers.",
+	},
+	{
+		id = "ThunderboltCloud",
+		category = "cloud",
+		name = "Thunderbolt Cloud",
+		emoji = "🌩️",
+		cost = 600000,
+		description = "Lightning bolts crackle all around you.",
+	},
+	{
+		id = "PrismCloud",
+		category = "cloud",
+		name = "Prism Cloud",
+		emoji = "💎",
+		cost = 0,
+		robux = true,
+		description = "A glowing cloud that shifts through every color.",
+	},
+	{
+		id = "GalaxyCloud",
+		category = "cloud",
+		name = "Galaxy Cloud",
+		emoji = "🌌",
+		cost = 1500000,
+		description = "A starry nebula you can ride.",
+	},
+	{
+		id = "VoidCloud",
+		category = "cloud",
+		name = "Void Cloud",
+		emoji = "🕳️",
+		cost = 0,
+		robux = true,
+		description = "A black cloud with a throbbing purple heart.",
+	},
+
 	-- Backs
 	{
 		id = "JarPack",

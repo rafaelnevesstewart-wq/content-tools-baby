@@ -27,6 +27,7 @@ local order = {
 	"PromptController",
 	"ForecastController",
 	"StormAnimator",
+	"FlashyFx",
 	"AmbientController",
 	"JuiceController",
 	"TutorialController",
