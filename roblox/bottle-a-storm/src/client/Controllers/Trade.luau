@@ -140,7 +140,7 @@ local function rebuildInventory()
 			Size = UDim2.new(1, -8, 0.6, 0),
 			Text = stormLine(info),
 			TextScaled = true,
-			TextColor3 = if def then StormData.rarityOf(def).color else UI.Colors.Text,
+			TextColor3 = if def then UI.ink(StormData.rarityOf(def).color) else UI.Colors.Text,
 			Parent = card,
 		})
 		UI.label({
@@ -392,7 +392,7 @@ local function buildWindow(screen: Instance)
 	sparksBox = UI.new("TextBox", {
 		Position = UDim2.new(0.25, 0, 0, 240),
 		Size = UDim2.new(0.3, 0, 0, 30),
-		BackgroundColor3 = Color3.fromRGB(18, 24, 50),
+		BackgroundColor3 = UI.Colors.Track,
 		TextColor3 = UI.Colors.Spark,
 		PlaceholderText = "0",
 		Font = UI.Font,

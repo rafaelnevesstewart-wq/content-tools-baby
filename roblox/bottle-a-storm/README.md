@@ -32,6 +32,32 @@ the island sky aura, thief styles, the Climate Shift rebirth and the season pass
 
 Everything in the design doc is now built.
 
+## Look and feel (cute and colorful)
+
+- **Storms come alive:**
+  - They bob, sway and blink (`StormAnimator`, on each player's screen).
+  - Rarer storms glow: a pastel halo from Uncommon up, sparkles from Rare, and a soft light
+    from Epic.
+  - Catching one makes it spin into the jar with a burst of confetti, and a floating
+    "+⚡/s" number pops up.
+- **Islands:** candy-colored trees, flower patches, mushrooms and bushes (`WorldBuilder`). They
+  stay clear of pedestals, pads, bridges and portals.
+- **Sky extras:** drifting mini islands, rainbows, flocks of birds and rising balloons. These
+  are made on each player's screen only (`AmbientController`), so they cost the server nothing.
+- **Menus:** a pastel candy theme (cream panels, mint, pink and lilac buttons with chunky
+  outlines). There's a tidy HUD with one Sparks bar, small timer chips (weather, Mega-Storm,
+  lock), and an icon bar on the left with a badge for unclaimed season rewards. The icon bar
+  shrinks on short phone screens. Colors are in `UI.Colors` in `src/client/Controllers/UI.luau`.
+- **Sounds and juice:**
+  - Sounds: button clicks, jar throws, pops, coins, zaps and chimes (they also play with
+    pop-up messages).
+  - Collecting shows a floating "+⚡" number with sparkles.
+  - Getting zapped, struck or trapped shakes the screen.
+  - **Sound IDs** are in `src/shared/Sounds.luau`. They point at sounds built into the Roblox
+    app. If one stays silent in Studio (the Output window says it failed to load), replace it
+    with any Creator Store sound: Toolbox → Audio → right-click → Copy Asset ID, then paste
+    it as `rbxassetid://…`.
+
 ## Controls
 
 | Action | PC | Phone |
@@ -318,7 +344,8 @@ src/client/   Main.client.luau starts the controllers
   exploiter could fake them. That's normal for movement abilities; the server still checks
   every catch, steal and purchase.
 - No offline earnings yet: storms only earn while you're in the game.
-- All art is placeholder (plain parts, emoji in the UI).
+- All art is still made from plain parts and emoji (now much cuter). Real 3D models and
+  icons would be the next big visual step.
 
 ## Checks
 

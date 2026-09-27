@@ -41,7 +41,7 @@ end
 
 local function rarityColor(id: string): Color3
 	local def = StormData.get(id)
-	return if def then StormData.rarityOf(def).color else UI.Colors.Muted
+	return if def then UI.ink(StormData.rarityOf(def).color) else UI.Colors.Muted
 end
 
 local function nameOf(id: string): string
@@ -81,12 +81,12 @@ local function refreshSelection()
 		local cost = fee()
 		mixButton.Text = "🧪 Mix  ⚡" .. Format.number(cost)
 		local canPay = (player:GetAttribute("Sparks") or 0) >= cost
-		mixButton.BackgroundColor3 = if canPay and not busy then UI.Colors.Rare else Color3.fromRGB(80, 85, 105)
+		mixButton.BackgroundColor3 = if canPay and not busy then UI.Colors.Rare else UI.Colors.Disabled
 	else
 		resultLabel.Text = "?"
 		resultLabel.TextColor3 = UI.Colors.Muted
 		mixButton.Text = "🧪 Mix"
-		mixButton.BackgroundColor3 = Color3.fromRGB(80, 85, 105)
+		mixButton.BackgroundColor3 = UI.Colors.Disabled
 	end
 end
 
@@ -270,7 +270,7 @@ function Mixer.start()
 		Size = UDim2.new(1, 0, 0, 40),
 		Text = "🧪 Mix",
 		TextSize = 22,
-		BackgroundColor3 = Color3.fromRGB(80, 85, 105),
+		BackgroundColor3 = UI.Colors.Disabled,
 		Parent = window,
 	})
 	mixButton.Activated:Connect(function()
@@ -316,7 +316,7 @@ function Mixer.start()
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.fromScale(0, 1),
 		Size = UDim2.new(1, 0, 0, 104),
-		BackgroundColor3 = Color3.fromRGB(18, 24, 50),
+		BackgroundColor3 = UI.Colors.Track,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,

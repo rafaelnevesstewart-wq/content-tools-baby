@@ -15,6 +15,7 @@ local WeatherEvents = require(Shared.WeatherEvents)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
+local Effects = require(Modules.Effects)
 local StormModel = require(Modules.StormModel)
 local WorldBuilder = require(Modules.WorldBuilder)
 
@@ -338,18 +339,22 @@ function StormSpawner.capture(uid: string, player: Player): boolean
 	stopMoving(storm)
 	setDizzyText(storm, nil)
 	local model = storm.model
+	local start = model:GetPivot()
+	-- A happy spin while it shrinks into the jar, then a burst of confetti.
 	local scale = Instance.new("NumberValue")
 	scale.Value = 1
 	scale.Changed:Connect(function(value)
 		if model.Parent then
+			model:PivotTo(start * CFrame.Angles(0, (1 - value) * math.pi * 4, 0))
 			model:ScaleTo(math.max(value, 0.05))
 		end
 	end)
-	local tween = TweenService:Create(scale, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+	local tween = TweenService:Create(scale, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
 		Value = 0.05,
 	})
 	tween.Completed:Connect(function()
 		scale:Destroy()
+		Effects.confetti(start.Position, 60)
 		StormSpawner.remove(uid)
 	end)
 	tween:Play()

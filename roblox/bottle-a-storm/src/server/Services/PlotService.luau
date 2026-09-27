@@ -657,6 +657,13 @@ function PlotService.isOnPlot(owner: Player, position: Vector3): boolean
 	return flat <= Config.World.PlotRadius and offset.Y > -10 and offset.Y < 40
 end
 
+function PlotService.collectPadPosition(player: Player): Vector3?
+	local plot = plotByPlayer[player]
+	local gui = plot and plot.collectLabel.Parent
+	local pad = gui and gui.Parent
+	return if pad and pad:IsA("BasePart") then pad.Position else nil
+end
+
 function PlotService.setCollectText(player: Player, text: string)
 	local plot = plotByPlayer[player]
 	if plot then

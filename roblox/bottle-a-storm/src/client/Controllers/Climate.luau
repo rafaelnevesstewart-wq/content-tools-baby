@@ -62,7 +62,7 @@ local function refresh()
 	else
 		confirming = false
 		shiftButton.Text = if canShift then "🌍 Climate Shift!" else "🔒 Need more Sparks"
-		shiftButton.BackgroundColor3 = if canShift then UI.Colors.Good else Color3.fromRGB(80, 85, 105)
+		shiftButton.BackgroundColor3 = if canShift then UI.Colors.Good else UI.Colors.Disabled
 	end
 end
 
@@ -95,7 +95,7 @@ function Climate.start()
 		Text = "🌍 Climate Shift",
 		TextSize = 28,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = Color3.fromRGB(150, 200, 255),
+		TextColor3 = Color3.fromRGB(80, 130, 220),
 		Parent = window,
 	})
 	local close = UI.button({

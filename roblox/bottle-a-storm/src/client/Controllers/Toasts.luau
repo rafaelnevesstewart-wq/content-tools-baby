@@ -5,7 +5,10 @@ local TweenService = game:GetService("TweenService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Remotes = require(Shared.Remotes)
 
+local Sfx = require(script.Parent.Sfx)
 local UI = require(script.Parent.UI)
+
+local KIND_SOUNDS = { success = "pop", rare = "chime", warn = "oops" }
 
 local Toasts = {}
 
@@ -23,6 +26,10 @@ local container: Frame
 local order = 0
 
 function Toasts.show(text: string, kind: string?)
+	local sound = KIND_SOUNDS[kind or "info"]
+	if sound then
+		Sfx.play(sound)
+	end
 	local color = KIND_COLORS[kind or "info"] or UI.Colors.Stroke
 	order += 1
 	local toast = UI.new("Frame", {

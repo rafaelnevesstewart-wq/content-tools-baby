@@ -1,6 +1,8 @@
 -- Builds the cute storm creatures out of plain parts, so the game runs with no
 -- uploaded art. Swap in real meshes later by changing build() only.
 
+local CollectionService = game:GetService("CollectionService")
+
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local StormData = require(Shared.StormData)
 
@@ -261,6 +263,26 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 	root.Parent = model
 	model.PrimaryPart = root
 
+	-- Everything visible hangs off "Body", which is joined to Root by a Weld.
+	-- Each player's client animates that Weld (bobbing, swaying): see
+	-- StormAnimator. The server never touches it after this.
+	local body = Instance.new("Part")
+	body.Name = "Body"
+	body.Size = Vector3.new(1, 1, 1) * scale
+	body.Transparency = 1
+	body.Anchored = false
+	body.CanCollide = false
+	body.CanTouch = false
+	body.CanQuery = false
+	body.Massless = true
+	body.CFrame = CFrame.new()
+	body.Parent = model
+	local bodyWeld = Instance.new("Weld")
+	bodyWeld.Name = "BodyWeld"
+	bodyWeld.Part0 = root
+	bodyWeld.Part1 = body
+	bodyWeld.Parent = root
+
 	local function colorAt(index: number): Color3
 		local color = def.colors[(index - 1) % #def.colors + 1]
 		if mutation then
@@ -285,7 +307,7 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 		if rarity.index >= 5 then
 			part.Transparency = 0.15
 		end
-		weld(root, part)
+		weld(body, part)
 	end
 
 	-- Face on the -Z side.
@@ -297,7 +319,7 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 			CFrame.new(Vector3.new(0.75 * side, 0.35, -1.75) * scale)
 		)
 		eye.Name = "Eye"
-		weld(root, eye)
+		weld(body, eye)
 		local shine = ball(
 			model,
 			0.25 * scale,
@@ -306,7 +328,7 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 			Enum.Material.Neon
 		)
 		shine.Name = "Shine"
-		weld(root, shine)
+		weld(body, shine)
 		local cheek = ball(
 			model,
 			0.6 * scale,
@@ -315,7 +337,23 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 		)
 		cheek.Name = "Cheek"
 		cheek.Transparency = 0.25
-		weld(root, cheek)
+		weld(body, cheek)
+		-- Eyelid: hidden until the client makes the storm blink.
+		local lid = Instance.new("Part")
+		lid.Name = "Lid"
+		lid.Size = Vector3.new(0.95, 0.95, 0.35) * scale
+		lid.Color = colorAt(1)
+		lid.Material = material
+		lid.Transparency = 1
+		lid.CFrame = CFrame.new(Vector3.new(0.75 * side, 0.35, -2.02) * scale)
+		lid.CanCollide = false
+		lid.CanTouch = false
+		lid.CanQuery = false
+		lid.Massless = true
+		lid.CastShadow = false
+		lid.Anchored = false
+		lid.Parent = model
+		weld(body, lid)
 		if opts.angry then
 			local brow = Instance.new("Part")
 			brow.Name = "Brow"
@@ -329,11 +367,64 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 			brow.Massless = true
 			brow.Anchored = false
 			brow.Parent = model
-			weld(root, brow)
+			weld(body, brow)
 		end
 	end
 
 	addParticles(root, def.fx, scale)
+
+	-- Rarity glow: a pastel halo under the storm, plus sparkles and light that
+	-- get fancier the rarer it is.
+	if rarity.index >= 2 then
+		local halo = Instance.new("Part")
+		halo.Name = "Halo"
+		halo.Shape = Enum.PartType.Cylinder
+		halo.Size = Vector3.new(0.2, 5.5, 5.5) * scale
+		halo.CFrame = CFrame.new(0, -2.3 * scale, 0) * CFrame.Angles(0, 0, math.rad(90))
+		halo.Color = rarity.color:Lerp(Color3.new(1, 1, 1), 0.25)
+		halo.Material = Enum.Material.Neon
+		halo.Transparency = 0.55
+		halo.CanCollide = false
+		halo.CanTouch = false
+		halo.CanQuery = false
+		halo.CastShadow = false
+		halo.Massless = true
+		halo.Anchored = false
+		halo.Parent = model
+		weld(body, halo)
+	end
+	local sparkleRate = ({ 0, 0, 3, 6, 10, 14, 20 })[rarity.index] or 0
+	if sparkleRate > 0 then
+		local attachment = Instance.new("Attachment")
+		attachment.Name = "GlowAttachment"
+		attachment.Parent = root
+		local sparkles = Instance.new("ParticleEmitter")
+		sparkles.Name = "RarityGlow"
+		sparkles.Texture = SPARKLE
+		sparkles.Color = ColorSequence.new(rarity.color, Color3.new(1, 1, 1))
+		sparkles.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(0.3, 0.45 * scale),
+			NumberSequenceKeypoint.new(1, 0),
+		})
+		sparkles.Rate = sparkleRate
+		sparkles.Lifetime = NumberRange.new(1, 1.8)
+		sparkles.Speed = NumberRange.new(0.5, 1.5)
+		sparkles.SpreadAngle = Vector2.new(180, 180)
+		sparkles.LightEmission = 1
+		sparkles.Parent = attachment
+	end
+	if rarity.index >= 4 and not mutation then
+		local light = Instance.new("PointLight")
+		light.Name = "RarityLight"
+		light.Color = rarity.color
+		light.Range = 8 * scale
+		light.Brightness = 0.8
+		light.Parent = root
+	end
+
+	model:SetAttribute("Scale", scale)
+	CollectionService:AddTag(model, "StormCreature")
 
 	if mutation then
 		local glow = Instance.new("PointLight")

@@ -7,6 +7,8 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local ThiefStyles = require(Shared.ThiefStyles)
 
+local Juice = require(script.Parent.Parent.Modules.Juice)
+
 local DataService = require(script.Parent.DataService)
 
 local MovementService = {}
@@ -65,6 +67,8 @@ function MovementService.stun(player: Player, seconds: number)
 	local untilTime = os.clock() + seconds
 	stunnedUntil[player] = math.max(stunnedUntil[player] or 0, untilTime)
 	MovementService.refresh(player)
+	Juice.shake(player, 1)
+	Juice.sound(player, "zap")
 
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")

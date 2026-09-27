@@ -1,0 +1,27 @@
+-- Little feel-good effects that only one player needs to see or hear:
+-- floating numbers, sparkle bursts, sounds and screen shake. The client side
+-- is JuiceController.
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Remotes = require(Shared.Remotes)
+
+local juice = Remotes.event("Juice")
+
+local Juice = {}
+
+-- Floating text that rises and fades at a spot, with a sparkle burst.
+function Juice.float(player: Player, text: string, position: Vector3, color: Color3?)
+	juice:FireClient(player, "float", text, position, color)
+end
+
+-- A sound from src/shared/Sounds.luau, e.g. "pop", "coins", "zap", "chime".
+function Juice.sound(player: Player, name: string)
+	juice:FireClient(player, "sound", name)
+end
+
+-- Shakes the player's camera.
+function Juice.shake(player: Player, strength: number?)
+	juice:FireClient(player, "shake", strength or 1)
+end
+
+return Juice

@@ -75,8 +75,8 @@ local function setBuyable(card: Card, text: string, enabled: boolean, color: Col
 	card.button.Text = text
 	card.button.Active = enabled
 	card.button.AutoButtonColor = enabled
-	card.button.BackgroundColor3 = if enabled then color or UI.Colors.Spark else Color3.fromRGB(80, 85, 105)
-	card.button.TextColor3 = if enabled and color == nil then Color3.fromRGB(40, 30, 0) else UI.Colors.Text
+	card.button.BackgroundColor3 = if enabled then color or UI.Colors.Spark else UI.Colors.Disabled
+	card.button.TextColor3 = Color3.new(1, 1, 1)
 end
 
 local function buySparks(itemKey: string)

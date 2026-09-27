@@ -18,6 +18,16 @@ local ROCK = Color3.fromRGB(120, 115, 125)
 local WOOD = Color3.fromRGB(170, 125, 80)
 local CLOUD = Color3.fromRGB(250, 252, 255)
 
+-- Candy colors for trees, flowers and mushrooms.
+local PASTELS = {
+	Color3.fromRGB(255, 170, 200), -- pink
+	Color3.fromRGB(160, 230, 190), -- mint
+	Color3.fromRGB(200, 170, 255), -- lilac
+	Color3.fromRGB(255, 200, 150), -- peach
+	Color3.fromRGB(255, 235, 140), -- lemon
+	Color3.fromRGB(150, 210, 255), -- sky
+}
+
 local function part(props: { [string]: any }): Part
 	local p = Instance.new("Part")
 	p.Anchored = true
@@ -384,6 +394,212 @@ local function decorateBiome(parent: Instance, climate: ClimateData.Climate, cen
 	end
 end
 
+---------------------------------------------------------------------------
+-- Cute decorations: candy trees, flower patches, mushrooms and bushes
+---------------------------------------------------------------------------
+
+local function pastel(rng: Random): Color3
+	return PASTELS[rng:NextInteger(1, #PASTELS)]
+end
+
+local function squashedBall(parent: Instance, name: string, size: Vector3, cframe: CFrame, color: Color3)
+	local p = part({
+		Name = name,
+		Size = size,
+		CFrame = cframe,
+		Color = color,
+		Material = Enum.Material.SmoothPlastic,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = parent,
+	})
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = p
+	return p
+end
+
+local function tree(parent: Instance, ground: Vector3, rng: Random)
+	local height = rng:NextNumber(6, 9)
+	part({
+		Name = "TreeTrunk",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(height, 1.8, 1.8),
+		CFrame = CFrame.new(ground + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(195, 145, 110),
+		Material = Enum.Material.SmoothPlastic,
+		Parent = parent,
+	})
+	local color = pastel(rng)
+	for i = 1, rng:NextInteger(2, 3) do
+		local size = rng:NextNumber(6, 9)
+		local offset = Vector3.new(rng:NextNumber(-2, 2), height + (i - 1) * 2.2, rng:NextNumber(-2, 2))
+		part({
+			Name = "TreeTop",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(size, size, size),
+			CFrame = CFrame.new(ground + offset),
+			Color = color:Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.2)),
+			Material = Enum.Material.SmoothPlastic,
+			CanCollide = false,
+			CanQuery = false,
+			Parent = parent,
+		})
+	end
+end
+
+local function flowerPatch(parent: Instance, ground: Vector3, rng: Random)
+	local color = pastel(rng)
+	for _ = 1, rng:NextInteger(4, 7) do
+		local spot = ground + Vector3.new(rng:NextNumber(-2.5, 2.5), 0, rng:NextNumber(-2.5, 2.5))
+		local height = rng:NextNumber(0.8, 1.6)
+		part({
+			Name = "Stem",
+			Size = Vector3.new(0.2, height, 0.2),
+			CFrame = CFrame.new(spot + Vector3.new(0, height / 2, 0)),
+			Color = Color3.fromRGB(110, 190, 110),
+			CanCollide = false,
+			CanQuery = false,
+			CastShadow = false,
+			Parent = parent,
+		})
+		part({
+			Name = "Petals",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(0.9, 0.9, 0.9),
+			CFrame = CFrame.new(spot + Vector3.new(0, height + 0.3, 0)),
+			Color = color,
+			Material = Enum.Material.SmoothPlastic,
+			CanCollide = false,
+			CanQuery = false,
+			CastShadow = false,
+			Parent = parent,
+		})
+		part({
+			Name = "FlowerMiddle",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(0.4, 0.4, 0.4),
+			CFrame = CFrame.new(spot + Vector3.new(0, height + 0.35, -0.35)),
+			Color = Color3.fromRGB(255, 225, 90),
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			CanQuery = false,
+			CastShadow = false,
+			Parent = parent,
+		})
+	end
+end
+
+local function mushroom(parent: Instance, ground: Vector3, rng: Random)
+	local size = rng:NextNumber(0.8, 1.4)
+	part({
+		Name = "MushroomStem",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(2 * size, 1.2 * size, 1.2 * size),
+		CFrame = CFrame.new(ground + Vector3.new(0, size, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(255, 245, 230),
+		CanCollide = false,
+		CanQuery = false,
+		Parent = parent,
+	})
+	local capColor = if rng:NextNumber() < 0.5 then Color3.fromRGB(255, 120, 140) else pastel(rng)
+	squashedBall(
+		parent,
+		"MushroomCap",
+		Vector3.new(4, 2.2, 4) * size,
+		CFrame.new(ground + Vector3.new(0, 2.3 * size, 0)),
+		capColor
+	)
+end
+
+local function bush(parent: Instance, ground: Vector3, rng: Random)
+	for _ = 1, 3 do
+		local size = rng:NextNumber(2.2, 3.4)
+		squashedBall(
+			parent,
+			"Bush",
+			Vector3.new(size, size * 0.8, size),
+			CFrame.new(ground + Vector3.new(rng:NextNumber(-1.5, 1.5), size * 0.3, rng:NextNumber(-1.5, 1.5))),
+			Color3.fromRGB(130, 215, 140):Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.15))
+		)
+	end
+end
+
+-- Scatters decorations over an island, skipping spots `blocked` rejects.
+-- `frame` is the island's top center; points are in its local space.
+local function scatter(
+	parent: Instance,
+	frame: CFrame,
+	rng: Random,
+	counts: { trees: number, flowers: number, mushrooms: number, bushes: number },
+	ring: { treeMin: number, treeMax: number, max: number },
+	blocked: (Vector3) -> boolean
+)
+	local folder = Instance.new("Folder")
+	folder.Name = "Decor"
+	folder.Parent = parent
+	local function place(count: number, minR: number, maxR: number, make: (Instance, Vector3, Random) -> ())
+		local placed, tries = 0, 0
+		while placed < count and tries < count * 30 do
+			tries += 1
+			local angle = rng:NextNumber(0, math.pi * 2)
+			local r = math.sqrt(rng:NextNumber(minR * minR, maxR * maxR))
+			local localPoint = Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
+			if not blocked(localPoint) then
+				make(folder, frame:PointToWorldSpace(localPoint), rng)
+				placed += 1
+			end
+		end
+	end
+	place(counts.trees, ring.treeMin, ring.treeMax, tree)
+	place(counts.bushes, ring.treeMin - 6, ring.max, bush)
+	place(counts.mushrooms, 8, ring.max, mushroom)
+	place(counts.flowers, 6, ring.max, flowerPatch)
+end
+
+-- Keeps decorations off the pedestals, pads, spawn, arch and bridge.
+local function plotBlocked(p: Vector3): boolean
+	if p.X > -30 and p.X < 30 and p.Z > -4 and p.Z < 45 then
+		return true -- pedestal grid
+	end
+	for _, spot in { Vector3.new(-20, 0, -18), Vector3.new(20, 0, -18), Vector3.new(0, 0, -14), Vector3.new(0, 0, -30) } do
+		if (p - spot).Magnitude < 9 then
+			return true -- collect pad, lock button, mixer, spawn
+		end
+	end
+	return math.abs(p.X) < 12 and p.Z < -36 -- the arch and the bridge
+end
+
+local function decoratePlot(island: Model, frame: CFrame, rng: Random)
+	scatter(
+		island,
+		frame,
+		rng,
+		{ trees = 6, flowers = 8, mushrooms = 4, bushes = 4 },
+		{ treeMin = 45, treeMax = Config.World.PlotRadius - 5, max = Config.World.PlotRadius - 3 },
+		plotBlocked
+	)
+end
+
+-- Keeps decorations off the spawn, forecast TV, portals and bridge ends.
+local function wildBlocked(p: Vector3): boolean
+	if (p - Vector3.new(0, 0, -90)).Magnitude < 14 or (p - Vector3.new(0, 0, -30)).Magnitude < 16 then
+		return true
+	end
+	if p.X > -55 and p.X < 55 and p.Z > 58 and p.Z < 90 then
+		return true -- portal row
+	end
+	local angle = math.atan2(p.Z, p.X)
+	for index = 1, Config.MaxPlots do
+		local bridgeAngle = (index - 1) / Config.MaxPlots * math.pi * 2
+		local diff = math.abs((angle - bridgeAngle + math.pi) % (math.pi * 2) - math.pi)
+		if diff < math.rad(9) and p.Magnitude > 70 then
+			return true
+		end
+	end
+	return false
+end
+
 export type BiomeInfo = {
 	climate: ClimateData.Climate,
 	center: Vector3, -- island top center
@@ -475,7 +691,15 @@ function WorldBuilder.build(): { PlotInfo }
 
 	local rng = Random.new(42)
 	local center = Vector3.new(0, 0, 0)
-	floatingIsland(world, "WildSkies", center, Config.World.CenterRadius, WILD_GRASS)
+	local wild = floatingIsland(world, "WildSkies", center, Config.World.CenterRadius, WILD_GRASS)
+	scatter(
+		wild,
+		CFrame.new(center),
+		rng,
+		{ trees = 16, flowers = 26, mushrooms = 10, bushes = 10 },
+		{ treeMin = 82, treeMax = Config.World.CenterRadius - 6, max = Config.World.CenterRadius - 4 },
+		wildBlocked
+	)
 
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "WildSpawn"
@@ -506,6 +730,7 @@ function WorldBuilder.build(): { PlotInfo }
 		local island = floatingIsland(plotsFolder, "Plot" .. index, plotCenter, Config.World.PlotRadius, GRASS)
 		island:SetAttribute("PlotIndex", index)
 		table.insert(plots, { index = index, cframe = cframe, model = island })
+		decoratePlot(island, cframe, rng)
 
 		bridge(
 			world,

@@ -50,9 +50,9 @@ end
 
 local function rewardColor(reward: SeasonData.Reward, theme: SeasonData.Theme): Color3
 	if reward.kind == "exclusive" then
-		return theme.color
+		return UI.ink(theme.color)
 	elseif reward.kind == "storm" then
-		return StormData.Rarities[reward.rarity or 3].color
+		return UI.ink(StormData.Rarities[reward.rarity or 3].color)
 	end
 	return UI.Colors.Text
 end
@@ -80,7 +80,7 @@ local function cell(
 		AutoButtonColor = state == "ready",
 		BackgroundColor3 = if state == "ready"
 			then UI.Colors.Good
-			elseif state == "claimed" then Color3.fromRGB(40, 60, 50)
+			elseif state == "claimed" then Color3.fromRGB(210, 240, 222)
 			else UI.Colors.PanelLight,
 		Parent = parent,
 	})
@@ -172,7 +172,7 @@ local function refreshHeader()
 	local now = workspace:GetServerTimeNow()
 	local number, theme, endsAt = SeasonData.current(now)
 	titleLabel.Text = theme.emoji .. " " .. theme.name .. "  ·  Season " .. (number + 1)
-	titleLabel.TextColor3 = theme.color
+	titleLabel.TextColor3 = UI.ink(theme.color)
 	local left = math.max(0, endsAt - now)
 	timeLabel.Text = "Ends in " .. math.floor(left / 86400) .. "d " .. math.floor(left % 86400 / 3600) .. "h"
 	local xp = player:GetAttribute("SeasonXp") or 0
@@ -196,7 +196,7 @@ local function refreshHeader()
 	premiumButton.Text = if premium
 		then "🎟️ Premium ✓"
 		else "🎟️ Unlock Premium  R$" .. (Products.get("SeasonPremium") :: Products.Item).price
-	premiumButton.BackgroundColor3 = if premium then Color3.fromRGB(80, 85, 105) else UI.Colors.Robux
+	premiumButton.BackgroundColor3 = if premium then UI.Colors.Disabled else UI.Colors.Robux
 end
 
 function Season.refresh()
@@ -276,7 +276,7 @@ function Season.start()
 	local bar = UI.new("Frame", {
 		Position = UDim2.fromOffset(0, 60),
 		Size = UDim2.new(1, 0, 0, 26),
-		BackgroundColor3 = Color3.fromRGB(15, 20, 45),
+		BackgroundColor3 = UI.Colors.Track,
 		Parent = window,
 	}, { UI.corner(10) })
 	xpFill = UI.new("Frame", {

@@ -14,7 +14,7 @@ local Products = require(Shared.Products)
 local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
-local Notify = require(Modules.Notify)
+local Juice = require(Modules.Juice)
 
 local DataService = require(script.Parent.DataService)
 local PlotService = require(script.Parent.PlotService)
@@ -107,9 +107,13 @@ function IncomeService.collect(player: Player)
 	data.unclaimed -= amount
 	data.sparks += amount
 	IncomeService.sync(player)
-	if os.clock() - (lastCollectToast[player] or 0) > 3 then
+	local pad = PlotService.collectPadPosition(player)
+	if pad then
+		Juice.float(player, "+⚡" .. Format.number(amount), pad + Vector3.new(0, 3, 0), Color3.fromRGB(255, 200, 60))
+	end
+	if os.clock() - (lastCollectToast[player] or 0) > 1.2 then
 		lastCollectToast[player] = os.clock()
-		Notify.player(player, "💰 Collected ⚡" .. Format.number(amount) .. "!", "success")
+		Juice.sound(player, "coins")
 	end
 end
 

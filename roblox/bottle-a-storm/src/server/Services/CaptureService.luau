@@ -17,6 +17,8 @@ local Remotes = require(Shared.Remotes)
 local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
+local Effects = require(Modules.Effects)
+local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 
 local DataService = require(script.Parent.DataService)
@@ -142,6 +144,16 @@ local function bottle(player: Player, storm: StormSpawner.WildStorm)
 		message ..= "  (NEW!)"
 	end
 	Notify.player(player, message, if mutation or def.rarity >= 4 then "rare" else "success")
+	Juice.float(
+		player,
+		"+" .. Format.number(StormData.incomeOf(record)) .. " ⚡/s",
+		storm.root.Position,
+		StormData.rarityOf(def).color
+	)
+	local pedestal = PlotService.slotPosition(player, slot)
+	if pedestal then
+		Effects.confetti(pedestal + Vector3.new(0, 4, 0), 40)
+	end
 	if def.rarity >= 5 or (mutation and def.rarity >= 3) then
 		Notify.allExcept(player, "🎉 " .. player.DisplayName .. " bottled " .. name .. "!", "rare")
 	end

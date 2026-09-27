@@ -12,6 +12,7 @@ local EVENTS = {
 	"TradeRequest", -- server -> client: (fromUserId, fromName)
 	"TradeUpdate", -- server -> client: (state or nil when the trade closes)
 	"DevPurchase", -- client -> server, Studio only: (itemKey)
+	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake
 }
 
 local FUNCTIONS = {

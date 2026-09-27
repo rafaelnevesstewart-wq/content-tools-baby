@@ -3,6 +3,7 @@
 local Controllers = script.Parent:WaitForChild("Controllers")
 
 local order = {
+	"Sfx",
 	"Toasts",
 	"Shop",
 	"Trade",
@@ -15,6 +16,9 @@ local order = {
 	"Mixer",
 	"PromptController",
 	"ForecastController",
+	"StormAnimator",
+	"AmbientController",
+	"JuiceController",
 }
 
 for _, name in order do

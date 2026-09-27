@@ -8,6 +8,8 @@ local UserInputService = game:GetService("UserInputService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Remotes = require(Shared.Remotes)
 
+local Sfx = require(script.Parent.Sfx)
+
 local player = Players.LocalPlayer
 
 local ThrowController = {}
@@ -70,6 +72,7 @@ local function hook(tool: Instance)
 	end
 	hooked[tool] = true
 	tool.Activated:Connect(function()
+		Sfx.play("throw", 0.9 + math.random() * 0.2)
 		Remotes.event("ThrowJar"):FireServer(aimPoint())
 	end)
 end
