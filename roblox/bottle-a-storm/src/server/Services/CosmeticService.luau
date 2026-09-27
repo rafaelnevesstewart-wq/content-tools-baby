@@ -19,6 +19,7 @@ local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
+local PetModels = require(Modules.PetModels)
 local StormModel = require(Modules.StormModel)
 
 local DataService = require(script.Parent.DataService)
@@ -987,243 +988,40 @@ local function buildFlag(parent: Instance, frame: CFrame, style: FlagStyle)
 	end
 end
 
--- Island pets: small animals with legs, natural colors and textured
--- materials (feathers, fur, wool, scales) that wander around your island.
--- Each builder gets the model and an invisible root at the body's center;
--- `height` is how high that center sits above the ground.
-type PetStyle = { build: (Model, BasePart) -> (), speed: number, height: number, hop: boolean? }
-
--- An egg-shaped body part with a textured material.
-local function oval(model: Model, size: Vector3, color: Color3, cframe: CFrame, material: Enum.Material): Part
-	return ball(model, size, color, cframe, material)
-end
-
-local function leg(model: Model, length: number, width: number, color: Color3, cframe: CFrame, material: Enum.Material)
-	local p = part(model, {
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(length, width, width),
-		Color = color,
-		Material = material,
-		CFrame = cframe * CFrame.Angles(0, 0, math.rad(90)),
-	})
-	return p
-end
-
-local function eyePair(model: Model, at: CFrame, spread: number, size: number)
-	for _, side in { -1, 1 } do
-		ball(model, Vector3.one * size, rgb(18, 14, 12), at * CFrame.new(side * spread, 0, 0), Enum.Material.Glass)
-	end
-end
-
-local PETS: { [string]: PetStyle } = {
-	-- A mallard: brown speckled body, green head, white collar, orange feet.
-	Ducks = {
-		speed = 3.5,
-		height = 1.15,
-		build = function(model, root)
-			local c = root.CFrame
-			local feathers = Enum.Material.Fabric
-			oval(model, Vector3.new(1.3, 1, 2), rgb(128, 108, 84), c, feathers)
-			oval(model, Vector3.new(1.1, 0.9, 0.9), rgb(110, 62, 44), c * CFrame.new(0, 0.1, -0.75), feathers)
-			for _, side in { -1, 1 } do
-				oval(
-					model,
-					Vector3.new(0.3, 0.7, 1.4),
-					rgb(96, 88, 76),
-					c * CFrame.new(side * 0.6, 0.15, 0.15),
-					feathers
-				)
-			end
-			oval(model, Vector3.new(0.5, 0.35, 0.6), rgb(40, 36, 32), c * CFrame.new(0, 0.3, 1), feathers)
-			leg(model, 0.5, 0.24, rgb(236, 236, 230), c * CFrame.new(0, 0.55, -0.95), feathers)
-			local head = c * CFrame.new(0, 0.95, -1.1)
-			oval(model, Vector3.new(0.6, 0.62, 0.72), rgb(34, 92, 58), head, Enum.Material.Glass)
-			oval(
-				model,
-				Vector3.new(0.28, 0.14, 0.5),
-				rgb(226, 184, 60),
-				head * CFrame.new(0, -0.08, -0.5),
-				Enum.Material.SmoothPlastic
-			)
-			eyePair(model, head * CFrame.new(0, 0.1, -0.24), 0.26, 0.11)
-			for _, side in { -1, 1 } do
-				leg(
-					model,
-					0.6,
-					0.12,
-					rgb(236, 130, 50),
-					c * CFrame.new(side * 0.3, -0.75, 0),
-					Enum.Material.SmoothPlastic
-				)
-				oval(
-					model,
-					Vector3.new(0.4, 0.08, 0.5),
-					rgb(236, 130, 50),
-					c * CFrame.new(side * 0.3, -1.08, -0.15),
-					Enum.Material.SmoothPlastic
-				)
-			end
-		end,
-	},
-	-- A wild rabbit: soft brown fur, long ears, cotton tail, big hind legs.
-	Bunnies = {
-		speed = 5,
-		height = 0.85,
-		hop = true,
-		build = function(model, root)
-			local c = root.CFrame
-			local fur = Enum.Material.Fabric
-			local brown = rgb(142, 112, 82)
-			oval(model, Vector3.new(1.2, 1.1, 1.7), brown, c, fur)
-			local head = c * CFrame.new(0, 0.6, -0.85)
-			oval(model, Vector3.new(0.8, 0.75, 0.9), brown, head, fur)
-			oval(model, Vector3.new(0.4, 0.3, 0.3), rgb(214, 196, 176), head * CFrame.new(0, -0.18, -0.38), fur)
-			ball(model, Vector3.one * 0.12, rgb(180, 110, 110), head * CFrame.new(0, -0.05, -0.46), fur)
-			eyePair(model, head * CFrame.new(0, 0.12, -0.3), 0.3, 0.14)
-			for _, side in { -1, 1 } do
-				local ear = head * CFrame.new(side * 0.18, 0.75, 0.1) * CFrame.Angles(0.15, 0, side * 0.12)
-				oval(model, Vector3.new(0.26, 1, 0.14), brown, ear, fur)
-				oval(model, Vector3.new(0.16, 0.8, 0.06), rgb(214, 160, 160), ear * CFrame.new(0, 0, -0.05), fur)
-				oval(model, Vector3.new(0.45, 0.6, 0.9), brown, c * CFrame.new(side * 0.45, -0.3, 0.45), fur)
-				oval(model, Vector3.new(0.2, 0.5, 0.2), brown, c * CFrame.new(side * 0.25, -0.55, -0.6), fur)
-			end
-			ball(model, Vector3.one * 0.45, rgb(240, 238, 232), c * CFrame.new(0, 0.2, 0.9), Enum.Material.Salt)
-		end,
-	},
-	-- A sheep: thick grainy wool, dark face and legs.
-	CloudSheep = {
-		speed = 2.5,
-		height = 1.6,
-		build = function(model, root)
-			local c = root.CFrame
-			local wool = Enum.Material.Salt
-			local woolColor = rgb(232, 226, 212)
-			oval(model, Vector3.new(1.9, 1.5, 2.6), woolColor, c, wool)
-			for _, offset in { Vector3.new(0.5, 0.55, 0.6), Vector3.new(-0.5, 0.55, -0.4), Vector3.new(0, 0.6, 0) } do
-				oval(model, Vector3.new(1.1, 0.8, 1.2), woolColor, c + offset, wool)
-			end
-			local head = c * CFrame.new(0, 0.45, -1.45)
-			local face = rgb(52, 44, 40)
-			oval(model, Vector3.new(0.7, 0.8, 0.95), face, head, Enum.Material.Fabric)
-			oval(model, Vector3.new(0.8, 0.45, 0.6), woolColor, head * CFrame.new(0, 0.4, 0.15), wool)
-			eyePair(model, head * CFrame.new(0, 0.12, -0.3), 0.28, 0.12)
-			for _, side in { -1, 1 } do
-				oval(
-					model,
-					Vector3.new(0.5, 0.18, 0.28),
-					face,
-					head * CFrame.new(side * 0.45, 0.15, 0.1) * CFrame.Angles(0, 0, side * -0.3),
-					Enum.Material.Fabric
-				)
-			end
-			for _, x in { -0.55, 0.55 } do
-				for _, z in { -0.85, 0.85 } do
-					leg(model, 1.3, 0.28, face, c * CFrame.new(x, -1, z), Enum.Material.Fabric)
-				end
-			end
-		end,
-	},
-	-- A baby dragon: scaly purple body, leathery wings, horns and a long tail.
-	StormDragon = {
-		speed = 7,
-		height = 10,
-		build = function(model, root)
-			local c = root.CFrame
-			local scales = Enum.Material.Slate
-			local purple = rgb(92, 64, 150)
-			oval(model, Vector3.new(1.5, 1.4, 2.6), purple, c, scales)
-			oval(model, Vector3.new(1.1, 0.9, 2), rgb(170, 140, 110), c * CFrame.new(0, -0.35, 0), scales)
-			local neck = c * CFrame.new(0, 0.7, -1.4) * CFrame.Angles(-0.6, 0, 0)
-			oval(model, Vector3.new(0.7, 0.7, 1.3), purple, neck, scales)
-			local head = c * CFrame.new(0, 1.25, -2.1)
-			oval(model, Vector3.new(0.9, 0.8, 1.3), purple, head, scales)
-			oval(model, Vector3.new(0.6, 0.4, 0.7), purple, head * CFrame.new(0, -0.15, -0.65), scales)
-			eyePair(model, head * CFrame.new(0, 0.15, -0.4), 0.32, 0.16)
-			for _, side in { -1, 1 } do
-				oval(
-					model,
-					Vector3.new(0.14, 0.6, 0.14),
-					rgb(222, 206, 170),
-					head * CFrame.new(side * 0.25, 0.55, 0.3) * CFrame.Angles(-0.5, 0, side * 0.2),
-					Enum.Material.Marble
-				)
-				-- Wing: a bony front edge and a thin leathery sail.
-				local wing = c * CFrame.new(side * 0.8, 0.6, -0.2) * CFrame.Angles(0, 0, side * 0.35)
-				part(model, {
-					Size = Vector3.new(3, 0.18, 0.18),
-					Color = purple,
-					Material = scales,
-					CFrame = wing * CFrame.new(side * 1.5, 0, 0),
-				})
-				local sail = part(model, {
-					Size = Vector3.new(3, 0.06, 1.6),
-					Color = rgb(150, 110, 190),
-					Material = Enum.Material.Fabric,
-					Transparency = 0.1,
-					CFrame = wing * CFrame.new(side * 1.5, 0, 0.8),
-				})
-				sail.Name = "Wing"
-				leg(model, 0.7, 0.28, purple, c * CFrame.new(side * 0.5, -0.8, 0.5), scales)
-			end
-			for i = 1, 4 do
-				oval(
-					model,
-					Vector3.new(0.7 - i * 0.12, 0.6 - i * 0.1, 0.9),
-					purple,
-					c * CFrame.new(0, 0.1 - i * 0.12, 1.1 + i * 0.7),
-					scales
-				)
-			end
-		end,
-	},
-}
-
-local function spawnPet(parent: Instance, frame: CFrame, style: PetStyle)
-	local model = Instance.new("Model")
-	model.Name = "IslandPet"
-	local root = part(model, {
-		Name = "Root",
-		Size = Vector3.one * 0.5,
-		Transparency = 1,
-		Anchored = true,
-	})
-	local function spot(): Vector3
+-- Island pets (built in Modules/PetModels, animated by the client's
+-- PetAnimator). The server only moves each pet around the island.
+local function spawnPet(parent: Instance, frame: CFrame, kindName: string)
+	local function spot(height: number): Vector3
 		local angle = rng:NextNumber(0, math.pi * 2)
 		local radius = rng:NextNumber(8, 40)
-		return frame:PointToWorldSpace(Vector3.new(math.cos(angle) * radius, style.height, math.sin(angle) * radius))
+		return frame:PointToWorldSpace(Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius))
 	end
-	root.CFrame = CFrame.new(spot())
-	style.build(model, root)
-	for _, item in model:GetDescendants() do
-		if item:IsA("BasePart") and item ~= root then
-			item.CastShadow = true
-			local weld = Instance.new("WeldConstraint")
-			weld.Part0 = root
-			weld.Part1 = item
-			weld.Parent = item
-		end
+	local model, kind = PetModels.build(kindName, CFrame.new(spot(0)))
+	if not model or not kind then
+		return
 	end
-	model.PrimaryPart = root
+	local root = model.PrimaryPart :: BasePart
+	root.CFrame = CFrame.new(spot(kind.height))
+	CollectionService:AddTag(model, "IslandPet")
 	model.Parent = parent
 
 	task.spawn(function()
 		while model.Parent do
-			task.wait(rng:NextNumber(2, 5))
+			task.wait(rng:NextNumber(2.5, 6))
 			if not model.Parent then
 				break
 			end
 			local from = root.Position
-			local goal = spot()
+			local goal = spot(kind.height)
 			local flat = Vector3.new(goal.X - from.X, 0, goal.Z - from.Z)
 			if flat.Magnitude < 1 then
 				continue
 			end
 			local facing = CFrame.lookAt(from, from + flat)
-			-- Turn to face the way it's going first.
-			local turn = TweenService:Create(root, TweenInfo.new(0.3), { CFrame = facing })
+			local turn = TweenService:Create(root, TweenInfo.new(0.4), { CFrame = facing })
 			turn:Play()
 			turn.Completed:Wait()
-			if style.hop then
+			if kind.hop then
 				-- Rabbits hop in short bounces.
 				local hops = math.ceil(flat.Magnitude / 2.5)
 				for i = 1, hops do
@@ -1244,12 +1042,12 @@ local function spawnPet(parent: Instance, frame: CFrame, style: PetStyle)
 					)
 					down:Play()
 					down.Completed:Wait()
-					task.wait(0.1)
+					task.wait(0.12)
 				end
 			else
 				local tween = TweenService:Create(
 					root,
-					TweenInfo.new(flat.Magnitude / style.speed, Enum.EasingStyle.Sine),
+					TweenInfo.new(flat.Magnitude / kind.speed, Enum.EasingStyle.Linear),
 					{ CFrame = facing.Rotation + goal }
 				)
 				tween:Play()
@@ -1570,11 +1368,8 @@ local function applyIsland(player: Player)
 	end
 	folder.Parent = plot.model
 	for id in cosmetics.pets do
-		local style = PETS[id]
-		if style then
-			for _ = 1, 2 do
-				spawnPet(folder, plot.cframe, style)
-			end
+		for _ = 1, 2 do
+			spawnPet(folder, plot.cframe, id)
 		end
 	end
 	fireworkIslands[player] = if cosmetics.decor.Fireworks then plot.cframe else nil
