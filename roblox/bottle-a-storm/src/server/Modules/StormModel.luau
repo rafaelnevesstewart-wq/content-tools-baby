@@ -3,7 +3,6 @@
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local StormData = require(Shared.StormData)
-local Format = require(Shared.Format)
 
 local StormModel = {}
 
@@ -412,10 +411,6 @@ function StormModel.nameTag(def: StormData.StormDef, mutation: string?, subtitle
 		line(4, subtitle, Color3.fromRGB(255, 225, 90), 16)
 	end
 	return gui
-end
-
-function StormModel.incomeText(record: { id: string, mut: string? }): string
-	return "+" .. Format.number(StormData.incomeOf(record)) .. " ⚡/s"
 end
 
 return StormModel

@@ -48,6 +48,22 @@ Config.Mixing = {
 	Range = 25, -- you must stand this close to your mixer
 }
 
+-- Storm moods. Happy storms earn more; neglected ones try to escape.
+Config.Mood = {
+	Start = 80, -- mood of a newly caught, mixed or rewarded storm (0-100)
+	DecayPerMinute = 2.5, -- only while you're online: about 25 minutes from Happy to Bored
+	TamerDecayMultiplier = 0.5, -- Storm Tamer pass: moods drop half as fast
+	PetAmount = 25,
+	PetCooldown = 45, -- seconds between pets for the same storm
+	RideGainPerMinute = 20, -- the storm you ride gets happier
+	EscapeBelow = 15, -- Restless storms can try to escape
+	EscapeChancePerMinute = 0.25,
+	EscapeWarnSeconds = 30, -- time you have to calm it down
+	CalmTo = 60, -- mood after you calm an escaping storm
+	SnackSeconds = 60, -- Storm Snacks cost this many seconds of your storms' income
+	SnackMinCost = 100,
+}
+
 -- Trading storms and Sparks with other players in the server.
 Config.Trading = {
 	MaxStorms = 4, -- per side

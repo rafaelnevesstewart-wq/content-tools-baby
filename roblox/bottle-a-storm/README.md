@@ -7,7 +7,8 @@ with no uploaded art.
 ## What's in this build
 
 These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1) and
-storm mixing and riding (v1.2) and trading (v1.3). That completes the design doc's build plan.
+storm mixing and riding (v1.2) and trading (v1.3), plus two extras from the doc: storm moods and
+the island sky aura.
 
 | Feature | Where |
 |---|---|
@@ -16,15 +17,17 @@ storm mixing and riding (v1.2) and trading (v1.3). That completes the design doc
 | Storm Mixer: combine two storms; 11 secret hybrid recipes, including a new Mythic tier | `MixService`, `Recipes`, `Mixer` |
 | Riding: pick a storm as your mount; speed boost plus a power based on its weather type | `RideService`, `RideController` |
 | Trading storms and Sparks with other players, with anti-scam checks | `TradeService`, `Trade` |
+| Storm moods: happy storms earn more, neglected ones try to escape; pet, ride or feed them | `MoodService` |
+| Island sky aura: a cloud canopy and weather over your island from your best storm | `AuraService` |
 | 8 player Sky Islands with pedestals, jar displays and a Collect pad for passive Sparks ⚡ | `PlotService`, `IncomeService` |
 | Stealing: grab a jar, carry it home (70% speed); Zapper tool, Lightning Rod traps, 60 s base lock | `StealService`, `PlotService` |
 | Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod | `ShopService`, `Shop` |
 | Saving with a session lock (no duplicate storms across servers), autosave, safe shutdown | `DataService` |
-| 3 game passes (VIP, Double Pedestals, Auto-Collect) and 5 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Summon Rainbow Hour) | `MonetizationService`, `Products` |
+| 4 game passes (VIP, Double Pedestals, Auto-Collect, Storm Tamer) and 5 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Summon Rainbow Hour) | `MonetizationService`, `Products` |
 | Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night) + forecast TV | `WeatherService`, `ForecastController` |
 | Mega-Storm raid every 45 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
-Not in this build yet: storm moods, island sky aura, thief styles, Climate Shift rebirth and the season pass.
+Not in this build yet: thief styles, Climate Shift rebirth and the season pass.
 
 ## Controls
 
@@ -33,6 +36,7 @@ Not in this build yet: storm moods, island sky aura, thief styles, Climate Shift
 | Hold your Storm Jar | `1` (hotbar) | tap the jar |
 | Throw the jar | click near a storm | tap near a storm |
 | Zapper / Storm Launcher | `2` / `3`, then click | tap the tool, then tap |
+| Pet your storm (or calm an escaping one) | `E` on your pedestal | tap "Pet" |
 | Pick a storm to ride | `R` on your pedestal | tap "Ride this storm" |
 | Hop on / off | `Q` | Ride button |
 | Use your ride's power | `Shift` | power button |
@@ -75,6 +79,42 @@ rarity, plus a power (`Shift`) based on its weather:
 | Rain, fog and rainbow (Drizzle Dot, Fog Bun, Rainbow Squall…) | ☁️ **Cloud Jump**: jump again in mid-air, plus you glide |
 
 You hop off automatically if you grab a stolen storm, or if your ride is sold, stolen or mixed.
+
+## Storm moods
+
+Every storm has a mood, shown on its pedestal label:
+
+| Mood | Earns |
+|---|---|
+| 😄 Happy (70+) | ×1.25 |
+| 🙂 Content (40+) | ×1 |
+| 😐 Bored (15+) | ×0.8 |
+| 😤 Restless (under 15) | ×0.5, and it may try to escape |
+
+- **Losing mood:** new storms start at 80. Moods drop 2.5 points a minute, **only while you're
+  online**. That's Bored after about 16 minutes and Restless after about 26.
+- **Cheering up:**
+  - **Pet it:** `E` on your own pedestal, +25, once every 45 s per storm.
+  - **Ride it:** +20 a minute while riding.
+  - **🍪 Storm Snacks:** from the Shop, makes every storm fully Happy. It costs 60 seconds of
+    your storms' base income, minimum ⚡100.
+- **Escapes:** a Restless storm has a 25% chance per minute to try to escape. Its jar shakes, a
+  warning appears and you get a toast. You have 30 s to press `E` on it. If you don't, it's
+  gone. Wild kinds fly back to the Wild Skies, where anyone can catch them again.
+- **Storm Tamer pass (399 R$):** storms never escape, and moods drop half as fast.
+- **Trades and steals:** a storm keeps its mood when it's traded or stolen.
+
+## Island sky aura
+
+A ring of clouds floats above every island, tinted in the colours of that island's best storm
+(by income). That storm's weather falls over the island: rain, snow, hail, fog, wind swirls,
+lightning sparks with flashes, sand or rainbow sparkles.
+- **Strength:** rarer storms make a stronger aura.
+- **Mutations:** mutated storms add sparkles.
+- **Legendary and Mythic:** these shine a beam of light into the sky that's visible from
+  anywhere on the map.
+- **Label:** "✨ Legendary Sky: Hurricane Hana", readable from far away.
+- **Updates:** within about 2 seconds of your best storm changing.
 
 ## Trading
 
@@ -140,6 +180,12 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 - [ ] Press **R** on a pedestal, then **Q** to ride. Try **Shift** for the power.
 - [ ] Press **E** on the purple cauldron. Mix Fog Bun + Mist Mouse to discover Ghost Fog.
       Mix two random commons to see an unknown mix.
+- [ ] Moods: check the 😄 label on a new storm and press **E** on it to pet it. Buy Storm Snacks.
+      To see an escape quickly, set `Config.Mood.DecayPerMinute` to 60 and
+      `EscapeChancePerMinute` to 1. Let a storm hit 😤, watch its jar shake, then calm it with E
+      (or let it escape).
+- [ ] Sky aura: catch a storm and look up. Its clouds and weather appear over your island.
+      A Legendary adds a light beam.
 - [ ] Trade (2 players): player 1 presses 🤝 Trade and picks player 2, and player 2 accepts.
       Add storms, press Ready on both and watch the countdown. Change something during the
       countdown and check it stops. Try trading with a full island.
@@ -168,8 +214,9 @@ src/shared/   Config, StormData (rarities, 15 storms, mutations), Economy (price
               Products (Robux IDs), WeatherEvents, RaidData (bosses), Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
-              IncomeService, CaptureService, RideService, MixService, TradeService,
-              StealService, RaidService, ShopService, MonetizationService
+              IncomeService, CaptureService, RideService, MoodService, MixService,
+              TradeService, StealService, RaidService, AuraService, ShopService,
+              MonetizationService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars),
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers

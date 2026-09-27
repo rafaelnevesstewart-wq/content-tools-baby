@@ -35,7 +35,7 @@ function IncomeService.rateOf(player: Player): number
 	local total = 0
 	for _, record in data.storms do
 		if not PlotService.isSlotStolen(player, record.slot) then
-			total += StormData.incomeOf(record)
+			total += StormData.earningOf(record)
 		end
 	end
 	if hasPass(player, "VIP") then
@@ -60,6 +60,11 @@ function IncomeService.sync(player: Player)
 	player:SetAttribute("TrapLevel", data.trapLevel)
 	player:SetAttribute("RaidShields", data.raidShields)
 	player:SetAttribute("StormCount", #data.storms)
+	local baseIncome = 0
+	for _, record in data.storms do
+		baseIncome += StormData.incomeOf(record)
+	end
+	player:SetAttribute("SnackCost", Economy.snackCost(baseIncome))
 
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then

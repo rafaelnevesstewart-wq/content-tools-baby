@@ -11,10 +11,12 @@ local order = {
 	"IncomeService",
 	"CaptureService",
 	"RideService",
+	"MoodService",
 	"MixService",
 	"TradeService",
 	"StealService",
 	"RaidService",
+	"AuraService",
 	"ShopService",
 	"MonetizationService",
 }

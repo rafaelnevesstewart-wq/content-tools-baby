@@ -173,6 +173,7 @@ local function mix(player: Player, uidA: any, uidB: any): (boolean, string)
 		mut = betterMutation(recordA.mut, recordB.mut),
 		slot = slotA,
 		at = os.time(),
+		mood = Config.Mood.Start,
 	}
 	table.insert(data.storms, record)
 	data.stats.mixed += 1

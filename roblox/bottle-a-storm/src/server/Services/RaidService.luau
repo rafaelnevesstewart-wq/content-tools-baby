@@ -418,6 +418,7 @@ local function reward(player: Player, isMVP: boolean)
 		mut = CaptureService.rollMutation(),
 		slot = 0,
 		at = os.time(),
+		mood = Config.Mood.Start,
 	}
 	local name = StormData.displayName(record)
 	local slot = PlotService.firstFreeSlot(player)

@@ -49,6 +49,12 @@ local function clearAttributes(player: Player)
 	player:SetAttribute("RideSpeed", nil)
 end
 
+-- The uid of the storm being ridden right now, if any.
+function RideService.mountUid(player: Player): string?
+	local current = mounts[player]
+	return if current then current.uid else nil
+end
+
 function RideService.isRiding(player: Player): boolean
 	return mounts[player] ~= nil
 end

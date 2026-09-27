@@ -142,6 +142,17 @@ local function buildUpgrades()
 		setBuyable(card, text, can)
 	end)
 
+	add("Snacks", function(card)
+		card.title.Text = "🍪 Storm Snacks"
+		card.body.Text = "Makes every storm 😄 Happy (+25% Sparks). Bored storms earn less and can escape!"
+		if attr("StormCount") == 0 then
+			setBuyable(card, "No storms", false)
+			return
+		end
+		local text, can = sparksPrice(attr("SnackCost"))
+		setBuyable(card, text, can)
+	end)
+
 	add("Trap", function(card)
 		local level = attr("TrapLevel")
 		card.title.Text = "⚡ Lightning Rod  Lv " .. level .. "/" .. #Config.Traps.Costs

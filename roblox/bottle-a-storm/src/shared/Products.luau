@@ -35,6 +35,13 @@ Products.Passes = {
 		name = "Auto-Collect",
 		description = "Sparks go straight to your wallet. No walking to the pad.",
 	},
+	{
+		key = "StormTamer",
+		id = 0,
+		price = 399,
+		name = "Storm Tamer",
+		description = "Your storms never escape, and they get bored half as fast.",
+	},
 } :: { Item }
 
 Products.DevProducts = {

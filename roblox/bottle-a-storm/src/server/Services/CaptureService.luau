@@ -124,6 +124,7 @@ local function bottle(player: Player, storm: StormSpawner.WildStorm)
 		mut = mutation,
 		slot = slot,
 		at = os.time(),
+		mood = Config.Mood.Start,
 	}
 	table.insert(data.storms, record)
 	data.stats.captured += 1

@@ -14,6 +14,7 @@ local Notify = require(Modules.Notify)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local MovementService = require(script.Parent.MovementService)
+local MoodService = require(script.Parent.MoodService)
 local PlotService = require(script.Parent.PlotService)
 
 local ShopService = {}
@@ -70,6 +71,22 @@ local handlers: { [string]: (Player, any) -> (boolean, string) } = {
 		data.bootsLevel += 1
 		MovementService.refresh(player)
 		return true, "👟 Boots of Wind level " .. data.bootsLevel .. "!"
+	end,
+
+	Snacks = function(player, data)
+		if #data.storms == 0 then
+			return false, "You don't have any storms to feed yet!"
+		end
+		local baseIncome = 0
+		for _, record in data.storms do
+			baseIncome += StormData.incomeOf(record)
+		end
+		local ok, err = spend(data, Economy.snackCost(baseIncome))
+		if not ok then
+			return false, err :: string
+		end
+		MoodService.feedAll(player)
+		return true, "🍪 Snack time! All your storms are 😄 Happy (+25% Sparks)."
 	end,
 
 	Trap = function(_player, data)

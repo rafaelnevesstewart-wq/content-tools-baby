@@ -27,6 +27,8 @@ PlotService.SellRequested = Signal.new()
 PlotService.CollectTouched = Signal.new()
 -- (owner, slot) when the owner picks a storm to ride
 PlotService.RideRequested = Signal.new()
+-- (owner, slot) when the owner pets one of their storms
+PlotService.PetRequested = Signal.new()
 -- (player) when a player gets an island
 PlotService.PlotAssigned = Signal.new()
 
@@ -294,6 +296,14 @@ local function buildPedestal(plot: Plot, slot: number): Model
 
 	-- Prompts are shown or hidden per player by the client (PromptController);
 	-- the server checks every trigger.
+	-- Owners press E to pet; everyone else presses E to steal. The client
+	-- shows the right one (PromptController).
+	local pet = prompt(base, "PetPrompt", "Pet", 0.4, Enum.KeyCode.E)
+	pet.Triggered:Connect(function(player)
+		if player == plot.owner then
+			PlotService.PetRequested:Fire(player, slot)
+		end
+	end)
 	local steal = prompt(base, "StealPrompt", "Steal", Config.Steal.HoldSeconds, Enum.KeyCode.E)
 	steal.Triggered:Connect(function(player)
 		if plot.owner and player ~= plot.owner then
@@ -319,6 +329,12 @@ local function buildPedestal(plot: Plot, slot: number): Model
 end
 
 -- Rebuilds the jar display for one slot from the owner's data.
+-- "😄 Happy · +125 ⚡/s"
+local function moodSubtitle(record: StormData.StormRecord): string
+	local tier = StormData.moodOf(record)
+	return tier.emoji .. " " .. tier.name .. " · +" .. Format.number(StormData.earningOf(record)) .. " ⚡/s"
+end
+
 local function refreshSlot(plot: Plot, slot: number)
 	local pedestal = plot.pedestals[slot]
 	if not pedestal then
@@ -374,7 +390,11 @@ local function refreshSlot(plot: Plot, slot: number)
 	storm:PivotTo(facing * CFrame.new(0, 3.6 * jarScale, 0))
 	storm.Parent = display
 
-	local tag = StormModel.nameTag(def, record.mut, StormModel.incomeText(record))
+	local tag = StormModel.nameTag(def, record.mut, moodSubtitle(record))
+	local moodLine = tag:FindFirstChild("Line4") :: TextLabel?
+	if moodLine then
+		moodLine.TextColor3 = StormData.moodOf(record).color
+	end
 	tag.StudsOffsetWorldSpace = Vector3.new(0, 9 * jarScale, 0)
 	tag.Parent = storm.PrimaryPart
 
@@ -558,6 +578,52 @@ function PlotService.slotPosition(owner: Player, slot: number): Vector3?
 	local plot = plotByPlayer[owner]
 	local pedestal = plot and plot.pedestals[slot]
 	return if pedestal and pedestal.PrimaryPart then pedestal.PrimaryPart.Position else nil
+end
+
+-- Updates just the mood/income line on a pedestal's label (no rebuild).
+function PlotService.updateSlotLabel(owner: Player, slot: number)
+	local plot = plotByPlayer[owner]
+	local pedestal = plot and plot.pedestals[slot]
+	local data = DataService.get(owner)
+	local record = data and stormInSlot(data, slot)
+	local display = pedestal and pedestal:FindFirstChild("Display")
+	local tag = display and display:FindFirstChild("NameTag", true)
+	local line = tag and tag:FindFirstChild("Line4") :: TextLabel?
+	if line and record then
+		line.Text = moodSubtitle(record)
+		line.TextColor3 = StormData.moodOf(record).color
+	end
+end
+
+-- The jar display on a pedestal (for the escape wobble).
+function PlotService.slotDisplay(owner: Player, slot: number): Model?
+	local plot = plotByPlayer[owner]
+	local pedestal = plot and plot.pedestals[slot]
+	return if pedestal then pedestal:FindFirstChild("Display") :: Model? else nil
+end
+
+-- A warning over a pedestal, or nil to remove it. Also relabels the Pet prompt.
+function PlotService.setSlotAlert(owner: Player, slot: number, text: string?, petAction: string?)
+	local plot = plotByPlayer[owner]
+	local pedestal = plot and plot.pedestals[slot]
+	local base = pedestal and pedestal.PrimaryPart
+	if not base then
+		return
+	end
+	local old = base:FindFirstChild("SlotAlert")
+	if old then
+		old:Destroy()
+	end
+	if text then
+		local label = billboard(base, Vector3.new(0, 7.5, 0), UDim2.fromOffset(280, 50))
+		label.Parent.Name = "SlotAlert"
+		label.Text = text
+		label.TextColor3 = Color3.fromRGB(255, 120, 90)
+	end
+	local pet = base:FindFirstChild("PetPrompt") :: ProximityPrompt?
+	if pet then
+		pet.ActionText = petAction or "Pet"
+	end
 end
 
 -- The owner's mixer, for the mixing animation and the distance check.

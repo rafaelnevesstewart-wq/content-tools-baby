@@ -36,6 +36,7 @@ local function refresh()
 
 		setEnabled(base, "SellPrompt", mine and hasStorm and not stolen)
 		setEnabled(base, "RidePrompt", mine and hasStorm and not stolen)
+		setEnabled(base, "PetPrompt", mine and hasStorm and not stolen)
 		setEnabled(
 			base,
 			"StealPrompt",

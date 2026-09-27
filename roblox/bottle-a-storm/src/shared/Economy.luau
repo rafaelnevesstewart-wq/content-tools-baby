@@ -28,6 +28,11 @@ function Economy.bootsCost(level: number): number?
 	return math.floor(Config.Boots.BaseCost * Config.Boots.CostGrowth ^ level)
 end
 
+-- Storm Snacks: makes every storm Happy. Priced from your storms' base income.
+function Economy.snackCost(baseIncome: number): number
+	return math.max(Config.Mood.SnackMinCost, math.floor(baseIncome * Config.Mood.SnackSeconds))
+end
+
 function Economy.trapCost(level: number): number?
 	return Config.Traps.Costs[level + 1]
 end

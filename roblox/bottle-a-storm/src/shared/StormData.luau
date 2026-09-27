@@ -37,6 +37,15 @@ export type StormRecord = {
 	mut: string?,
 	slot: number,
 	at: number,
+	mood: number?, -- 0-100; nil on storms saved before moods existed
+}
+
+export type MoodTier = {
+	name: string,
+	emoji: string,
+	min: number,
+	multiplier: number,
+	color: Color3,
 }
 
 local StormData = {}
@@ -303,6 +312,29 @@ StormData.Mutations = {
 	{ id = "Golden", name = "Golden", emoji = "✨", multiplier = 15, weight = 1, color = rgb(255, 200, 40) },
 } :: { Mutation }
 
+StormData.MoodTiers = {
+	{ name = "Happy", emoji = "😄", min = 70, multiplier = 1.25, color = Color3.fromRGB(120, 230, 120) },
+	{ name = "Content", emoji = "🙂", min = 40, multiplier = 1, color = Color3.fromRGB(230, 230, 230) },
+	{ name = "Bored", emoji = "😐", min = 15, multiplier = 0.8, color = Color3.fromRGB(255, 190, 90) },
+	{ name = "Restless", emoji = "😤", min = -math.huge, multiplier = 0.5, color = Color3.fromRGB(255, 100, 100) },
+} :: { MoodTier }
+
+StormData.DefaultMood = 80
+
+function StormData.moodValue(record: { mood: number? }): number
+	return record.mood or StormData.DefaultMood
+end
+
+function StormData.moodOf(record: { mood: number? }): MoodTier
+	local mood = StormData.moodValue(record)
+	for _, tier in StormData.MoodTiers do
+		if mood >= tier.min then
+			return tier
+		end
+	end
+	return StormData.MoodTiers[#StormData.MoodTiers]
+end
+
 local stormsById: { [string]: StormDef } = {}
 for _, def in StormData.Storms do
 	stormsById[def.id] = def
@@ -371,6 +403,11 @@ function StormData.incomeOf(record: { id: string, mut: string? }): number
 	end
 	local mutation = StormData.getMutation(record.mut)
 	return def.income * (if mutation then mutation.multiplier else 1)
+end
+
+-- What the storm earns right now, mood included (before VIP).
+function StormData.earningOf(record: { id: string, mut: string?, mood: number? }): number
+	return StormData.incomeOf(record) * StormData.moodOf(record).multiplier
 end
 
 -- "Charged Tornado Tony"
