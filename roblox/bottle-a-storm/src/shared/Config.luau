@@ -378,6 +378,22 @@ Config.Parade = {
 	MutationChance = 0.06,
 }
 
+-- Your Roblox group: members get a Sparks bonus. Put your group's ID here
+-- (the number in its web address). 0 turns the bonus off.
+Config.Group = {
+	Id = 0,
+	Bonus = 0.1, -- +10% Sparks
+	Name = "our group",
+}
+
+-- The like goal shown on the Wild Skies and in 🎁 Rewards → Codes. Roblox
+-- doesn't let games read their like count, so update this by hand and post
+-- the code when you reach the goal.
+Config.LikeGoal = {
+	Goal = 1000,
+	Reward = "a code for 30 minutes of Sparks",
+}
+
 -- Weather mutations (StormData.WeatherMutations): during a weather event, each
 -- storm on a pedestal rolls this chance every minute to pick one up.
 Config.WeatherMutations = {

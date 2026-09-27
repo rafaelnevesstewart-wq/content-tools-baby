@@ -80,6 +80,9 @@ function DailyService.sync(player: Player)
 	end
 	ensureQuests(player, data)
 	local ready = if dailyReady(data) then 1 else 0
+	if data.spin.day < today() or data.spin.extra > 0 then
+		ready += 1 -- a wheel spin is waiting
+	end
 	for _, quest in data.quests.list do
 		if quest.progress >= quest.target and not quest.claimed then
 			ready += 1
@@ -87,6 +90,8 @@ function DailyService.sync(player: Player)
 	end
 	player:SetAttribute("RewardsReady", ready)
 	player:SetAttribute("DailyReady", dailyReady(data))
+	player:SetAttribute("FreeSpin", data.spin.day < today())
+	player:SetAttribute("ExtraSpins", data.spin.extra)
 end
 
 local function progress(player: Player, kind: string, amount: number)

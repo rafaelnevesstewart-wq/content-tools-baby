@@ -5,12 +5,17 @@
 --     Finding all storms of a rarity completes a row (+5% Sparks forever).
 --   * Titles: earned by playing; pick one to show above your name.
 
+local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
 local RewardsData = require(Shared.RewardsData)
+local SpinData = require(Shared.SpinData)
 local StormData = require(Shared.StormData)
 local TitleData = require(Shared.TitleData)
 
@@ -425,6 +430,229 @@ local function buildTitles(page: Frame)
 	end
 end
 
+local function buildCodes(page: Frame)
+	UI.label({
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "🎟️ Got a code? Type it here! Codes are posted on our social media.",
+		TextSize = 16,
+		TextColor3 = UI.Colors.Muted,
+		Parent = page,
+	})
+	local row = UI.new("Frame", {
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 0, 46),
+		BackgroundTransparency = 1,
+		Parent = page,
+	})
+	local box: TextBox = UI.new("TextBox", {
+		Size = UDim2.new(1, -150, 1, 0),
+		BackgroundColor3 = UI.Colors.Track,
+		Font = UI.Font,
+		TextSize = 20,
+		TextColor3 = UI.Colors.Text,
+		PlaceholderText = "Enter code",
+		PlaceholderColor3 = UI.Colors.Muted,
+		Text = "",
+		ClearTextOnFocus = false,
+		Parent = row,
+	}, { UI.corner(10), UI.stroke(UI.Colors.Stroke, 1.5) })
+	UI.button({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.new(0, 140, 1, 0),
+		Text = "Redeem",
+		TextSize = 20,
+		BackgroundColor3 = UI.Colors.Good,
+		Parent = row,
+	}).Activated
+		:Connect(function()
+			local text = box.Text
+			if text ~= "" then
+				box.Text = ""
+				claimWith("RedeemCode", text)
+			end
+		end)
+
+	local group = UI.new("Frame", {
+		LayoutOrder = 3,
+		Size = UDim2.new(1, 0, 0, 70),
+		BackgroundColor3 = UI.Colors.PanelLight,
+		Parent = page,
+	}, { UI.corner(12), UI.padding(10) })
+	local inGroup = player:GetAttribute("InGroup") == true
+	local bonus = math.floor(Config.Group.Bonus * 100)
+	UI.label({
+		Size = UDim2.new(1, -170, 1, 0),
+		Text = if inGroup
+			then "👥 Group bonus is ON: +" .. bonus .. "% Sparks. Thanks for joining!"
+			else "👥 Join " .. Config.Group.Name .. " on Roblox for +" .. bonus .. "% Sparks forever!",
+		TextSize = 16,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = group,
+	})
+	if not inGroup then
+		UI.button({
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.fromScale(1, 0.5),
+			Size = UDim2.fromOffset(160, 42),
+			Text = "I joined! Check",
+			TextSize = 16,
+			BackgroundColor3 = UI.Colors.Stroke,
+			Parent = group,
+		}).Activated
+			:Connect(function()
+				claimWith("CheckGroup", nil)
+			end)
+	end
+	UI.label({
+		LayoutOrder = 4,
+		Size = UDim2.new(1, 0, 0, 40),
+		Text = "👍 Like the game! At "
+			.. Config.LikeGoal.Goal
+			.. " likes we'll post "
+			.. Config.LikeGoal.Reward
+			.. ".",
+		TextSize = 16,
+		TextWrapped = true,
+		Parent = page,
+	})
+end
+
+local wheelSpinning = false
+
+local function buildSpin(page: Frame)
+	local free = player:GetAttribute("FreeSpin") == true
+	local extra = player:GetAttribute("ExtraSpins") or 0
+	UI.label({
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 22),
+		Text = "🎡 One free spin every day!"
+			.. (if extra > 0 then "  You also have " .. extra .. " extra spins." else ""),
+		TextSize = 16,
+		TextColor3 = UI.Colors.Muted,
+		Parent = page,
+	})
+	local area = UI.new("Frame", {
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 1, -90),
+		BackgroundTransparency = 1,
+		Parent = page,
+	})
+	local wheel = UI.new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.52),
+		Size = UDim2.fromOffset(250, 250),
+		BackgroundColor3 = UI.Colors.PanelLight,
+		Parent = area,
+	}, { UI.corner(125), UI.stroke(UI.Colors.Spark, 4) })
+	UI.new("UIAspectRatioConstraint", { Parent = wheel })
+	local count = #SpinData.Prizes
+	for index, prize in SpinData.Prizes do
+		local angle = math.rad((index - 1) * 360 / count)
+		local slice = UI.label({
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5 + math.sin(angle) * 0.36, 0.5 - math.cos(angle) * 0.36),
+			Size = UDim2.fromOffset(78, 26),
+			Rotation = (index - 1) * 360 / count,
+			BackgroundColor3 = prize.color,
+			BackgroundTransparency = 0,
+			Text = prize.label,
+			TextScaled = true,
+			TextColor3 = Color3.new(1, 1, 1),
+			Parent = wheel,
+		})
+		UI.corner(8).Parent = slice
+	end
+	UI.label({
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(50, 50),
+		BackgroundColor3 = UI.Colors.Spark,
+		BackgroundTransparency = 0,
+		Text = "🎡",
+		TextSize = 26,
+		Parent = wheel,
+	})
+	UI.label({
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 0.52, -122),
+		Size = UDim2.fromOffset(40, 30),
+		Text = "▼",
+		TextSize = 30,
+		TextColor3 = UI.Colors.Spark,
+		ZIndex = 3,
+		Parent = area,
+	})
+
+	local buttons = UI.new("Frame", {
+		LayoutOrder = 3,
+		Size = UDim2.new(1, 0, 0, 46),
+		BackgroundTransparency = 1,
+		Parent = page,
+	}, { UI.list(10, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Center) })
+	local canSpin = free or extra > 0
+	local spinButton = UI.button({
+		LayoutOrder = 1,
+		Size = UDim2.fromOffset(200, 46),
+		Text = if free
+			then "🎡 Free spin!"
+			elseif extra > 0 then "🎡 Spin (" .. extra .. " left)"
+			else "Come back tomorrow",
+		TextSize = 20,
+		BackgroundColor3 = if canSpin then UI.Colors.Good else UI.Colors.Disabled,
+		AutoButtonColor = canSpin,
+		Parent = buttons,
+	})
+	local product = Products.get("SpinWheel3")
+	UI.button({
+		LayoutOrder = 2,
+		Size = UDim2.fromOffset(200, 46),
+		Text = "+3 spins  R$ " .. (if product then product.price else "?"),
+		TextSize = 18,
+		BackgroundColor3 = UI.Colors.Robux,
+		Parent = buttons,
+	}).Activated
+		:Connect(function()
+			if not product then
+				return
+			end
+			if product.id ~= 0 then
+				MarketplaceService:PromptProductPurchase(player, product.id)
+			elseif RunService:IsStudio() then
+				Remotes.event("DevPurchase"):FireServer(product.key)
+			else
+				Toasts.show("Extra spins are coming soon!", "info")
+			end
+		end)
+	spinButton.Activated:Connect(function()
+		if not canSpin or wheelSpinning then
+			return
+		end
+		wheelSpinning = true
+		local ok, result = Remotes.func("Spin"):InvokeServer()
+		if not ok or type(result) ~= "number" then
+			wheelSpinning = false
+			Toasts.show(tostring(result), "warn")
+			return
+		end
+		-- Turn so the prize's slice ends under the pointer at the top.
+		local target = -(result - 1) * 360 / count
+		local current = wheel.Rotation
+		local final = current + 360 * 5 + ((target - current) % 360)
+		local tween = TweenService:Create(
+			wheel,
+			TweenInfo.new(SpinData.SpinSeconds, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+			{ Rotation = final }
+		)
+		tween:Play()
+		tween.Completed:Wait()
+		wheelSpinning = false
+		Rewards.refresh()
+	end)
+end
+
 local function rebuild()
 	local data = info
 	for name, page in pages do
@@ -436,6 +664,12 @@ local function rebuild()
 	UI.list(10).Parent = page
 	if currentTab == "Titles" then
 		buildTitles(page)
+		return
+	elseif currentTab == "Codes" then
+		buildCodes(page)
+		return
+	elseif currentTab == "Spin" then
+		buildSpin(page)
 		return
 	end
 	if not data then
@@ -460,7 +694,7 @@ function Rewards.refresh()
 	if type(titleData) == "table" then
 		titles = titleData
 	end
-	if window.Visible then
+	if window.Visible and not wheelSpinning then
 		rebuild()
 	end
 end
@@ -528,12 +762,14 @@ function Rewards.start()
 			{ "Quests", "📜 Quests" },
 			{ "Index", "📖 Index" },
 			{ "Titles", "🏷️ Titles" },
+			{ "Codes", "🎟️ Codes" },
+			{ "Spin", "🎡 Spin" },
 		}
 	do
 		local name = entry[1]
 		local button = UI.button({
 			LayoutOrder = order,
-			Size = UDim2.new(0.25, -8, 1, 0),
+			Size = UDim2.new(1 / 6, -8, 1, 0),
 			Text = entry[2],
 			TextSize = 18,
 			Parent = tabRow,

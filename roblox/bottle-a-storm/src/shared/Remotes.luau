@@ -36,6 +36,9 @@ local FUNCTIONS = {
 	"GetTitles", -- client -> server: () -> titles and progress
 	"SetTitle", -- client -> server: (titleId or nil) -> (ok, message)
 	"Cosmetic", -- client -> server: (action, idOrValue) -> (ok, message)
+	"RedeemCode", -- client -> server: (text) -> (ok, message)
+	"Spin", -- client -> server: () -> (ok, prizeIndex or message)
+	"CheckGroup", -- client -> server: () -> (ok, message)
 	"GetMarket", -- client -> server: () -> market stock
 	"BuyMarket", -- client -> server: (slot) -> (ok, message)
 	"OpenJar", -- client -> server: (jarKey) -> (ok, message)

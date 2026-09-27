@@ -22,6 +22,13 @@ local PlotService = require(script.Parent.PlotService)
 local RewardService = {}
 
 local rng = Random.new()
+local quiet: { [Player]: boolean } = {} -- set while granting silently
+
+local function tell(player: Player, text: string, kind: string)
+	if not quiet[player] then
+		Notify.player(player, text, kind)
+	end
+end
 
 function RewardService.randomMutation(): string
 	local total = 0
@@ -60,13 +67,25 @@ function RewardService.giveStorm(player: Player, def: StormData.StormDef, mutati
 	PlotService.refreshSlot(player, slot)
 	IndexService.discover(player, def.id)
 	IncomeService.sync(player)
-	Notify.player(player, "🎁 " .. StormData.displayName(record) .. " is on your island!", "rare")
+	tell(player, "🎁 " .. StormData.displayName(record) .. " is on your island!", "rare")
 	return nil
 end
 
 -- Gives one reward. Returns an error message if it couldn't be given, in
 -- which case nothing is used up. `theme` is needed for season exclusives.
-function RewardService.grant(player: Player, reward: SeasonData.Reward, theme: SeasonData.Theme?): string?
+-- With `silent`, no pop-up messages (the caller announces it later).
+function RewardService.grant(
+	player: Player,
+	reward: SeasonData.Reward,
+	theme: SeasonData.Theme?,
+	silent: boolean?
+): string?
+	if silent then
+		quiet[player] = true
+		local ok, result = pcall(RewardService.grant, player, reward, theme, false)
+		quiet[player] = nil
+		return if ok then result else "Something went wrong."
+	end
 	local data = DataService.get(player)
 	if not data then
 		return "Your data isn't loaded yet."
@@ -75,17 +94,17 @@ function RewardService.grant(player: Player, reward: SeasonData.Reward, theme: S
 		local amount = math.floor(math.max(reward.min or 0, IncomeService.rateOf(player) * 60 * (reward.minutes or 0)))
 		data.sparks += amount
 		IncomeService.sync(player)
-		Notify.player(player, "💰 +⚡" .. Format.number(amount) .. " Sparks!", "success")
+		tell(player, "💰 +⚡" .. Format.number(amount) .. " Sparks!", "success")
 	elseif reward.kind == "snacks" then
 		if #data.storms == 0 then
 			return "You don't have any storms to feed yet. Catch one first!"
 		end
 		MoodService.feedAll(player)
-		Notify.player(player, "🍪 Snack time! All your storms are Happy.", "success")
+		tell(player, "🍪 Snack time! All your storms are Happy.", "success")
 	elseif reward.kind == "shield" then
 		data.raidShields += reward.amount or 1
 		IncomeService.sync(player)
-		Notify.player(player, "🛡️ +" .. (reward.amount or 1) .. " Raid Shield!", "success")
+		tell(player, "🛡️ +" .. (reward.amount or 1) .. " Raid Shield!", "success")
 	elseif reward.kind == "storm" then
 		local options = StormData.wildOfRarity(reward.rarity or 3)
 		local def = options[rng:NextInteger(1, #options)]

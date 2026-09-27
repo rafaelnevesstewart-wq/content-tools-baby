@@ -21,6 +21,7 @@ local MarketService = require(script.Parent.MarketService)
 local IncomeService = require(script.Parent.IncomeService)
 local PlotService = require(script.Parent.PlotService)
 local SeasonService = require(script.Parent.SeasonService)
+local SpinService = require(script.Parent.SpinService)
 local WeatherService = require(script.Parent.WeatherService)
 
 local MonetizationService = {}
@@ -64,6 +65,9 @@ local productHandlers: { [string]: (Player, any) -> boolean } = {
 		SeasonService.addXp(player, Config.Season.SkipTierXp)
 		Notify.player(player, "⏭️ Skipped a season tier!", "success")
 		return true
+	end,
+	SpinWheel3 = function(player)
+		return SpinService.addSpins(player, 3)
 	end,
 	MysteryGoldenJar = function(player)
 		return MarketService.openGoldenJar(player)

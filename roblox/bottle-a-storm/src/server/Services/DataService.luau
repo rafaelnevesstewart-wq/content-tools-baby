@@ -61,6 +61,8 @@ local function defaultData()
 		theme = "Meadow", -- island theme
 		themes = { Meadow = true },
 		titles = {}, -- unlocked title id -> true; data.title is the one shown
+		codes = {}, -- redeemed code -> true
+		spin = { day = -1, extra = 0 }, -- daily wheel: last free spin day, bought spins
 		-- Cosmetics: owned ids, plus what's in use. hat, trail, back, aura and
 		-- flag are saved when set.
 		cosmetics = {

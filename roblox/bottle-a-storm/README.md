@@ -195,6 +195,31 @@ Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Go
   - Which ones depends on the event. They stack (up to 4) and multiply together.
   - They show on the pedestal label and count toward income, selling and trading.
 
+**Social and growth**
+- **🎟️ Redeem codes** (🎁 Rewards → Codes, `CommunityService`):
+  - Codes live in `src/server/Modules/Codes.luau`, on the server only, so nobody can dig
+    them out.
+  - Each can be used once per player and can have an expiry date. Starter codes: `RELEASE`,
+    `STORMY`, `THANKYOU`, `LIGHTNING`, `LIKES1K`.
+- **👥 Group bonus:** group members get +10% Sparks. Put your group's ID in `Config.Group.Id`.
+  Players can press "I joined! Check" in the Codes tab.
+- **👍 Like goal:** a sign near the spawn and a line in the Codes tab (`Config.LikeGoal`).
+  Roblox doesn't let games read their like count, so update the goal by hand and post a
+  code when you reach it.
+- **🏆 Global leaderboards** (`LeaderboardService`):
+  - Three boards near the Wild Skies spawn show the world's top 10 for Sparks earned, storms
+    caught and storms stolen. They update every 2 minutes (OrderedDataStores).
+  - Avatar statues of the top 3 Sparks earners stand on a gold, silver and bronze podium.
+  - Without data store access (Studio with API access off), the boards show this server's
+    players.
+
+**Events and fun**
+- **🎡 Daily spin wheel** (🎁 Rewards → Spin, `SpinService`):
+  - One free spin a day; the Robux "3 Wheel Spins" product (49 R$) gives more.
+  - 10 prizes, from 10 minutes of Sparks up to a Legendary storm. Odds are in
+    `src/shared/SpinData.luau`.
+  - The prize is announced when the wheel stops.
+
 ## Cosmetics (🎨 Style)
 
 Bought in the 🎨 Style window, mostly with Sparks. A few special ones are Robux Developer
@@ -523,18 +548,19 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
               Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
               SeasonData, RewardsData (daily rewards, quests), BattleData, TitleData,
-              ThemeData, CosmeticsData, MarketData, Sounds,
+              ThemeData, CosmeticsData, MarketData, SpinData, Sounds,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, SeasonService, MixService,
               TradeService, StealService, GuardService, BuddyService, FlightService, GrumpService,
-              BalloonService, WeatherMutationService, ParadeService, MarketService, RaidService,
+              BalloonService, WeatherMutationService, ParadeService, MarketService,
+              CommunityService, LeaderboardService, SpinService, RaidService,
               IndexService, RewardService, DailyService, EventService, BattleService,
               TitleService, AuraService, ClimateService, ThemeService,
               CosmeticService, ShopService,
               MonetizationService
-  Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars),
+  Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars), Codes,
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, Rewards, PedestalMenu, Battle,

@@ -88,6 +88,13 @@ Products.DevProducts = {
 		description = "Hatch an Epic or Legendary storm, always mutated.",
 	},
 	{
+		key = "SpinWheel3",
+		id = 0,
+		price = 49,
+		name = "3 Wheel Spins",
+		description = "Three extra spins on the daily prize wheel.",
+	},
+	{
 		key = "SeasonPremium",
 		id = 0,
 		price = 299,
