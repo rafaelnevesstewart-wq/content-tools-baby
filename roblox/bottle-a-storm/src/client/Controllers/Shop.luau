@@ -116,7 +116,7 @@ local function buildUpgrades()
 				.. nextJar.name
 				.. ": catch "
 				.. StormData.Rarities[nextJar.maxRarity].name
-				.. " storms, easier bottling."
+				.. " storms, fewer dodges and hits."
 			else "The best jar there is. Every storm fears it."
 		local text, can = sparksPrice(Economy.jarCost(tier))
 		setBuyable(card, text, can)

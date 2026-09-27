@@ -6,7 +6,9 @@ local order = {
 	"Toasts",
 	"Shop",
 	"HUD",
-	"CaptureMinigame",
+	"ThrowController",
+	"RideController",
+	"Mixer",
 	"PromptController",
 	"ForecastController",
 }

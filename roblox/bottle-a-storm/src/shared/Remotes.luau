@@ -6,14 +6,15 @@ local RunService = game:GetService("RunService")
 
 local EVENTS = {
 	"Notify", -- server -> client: (text, kind)
-	"CaptureStart", -- server -> client: (info)
-	"CaptureResult", -- client -> server: (uid, success)
-	"CaptureEnd", -- server -> client: (uid)
+	"ThrowJar", -- client -> server: (targetPosition)
+	"ToggleRide", -- client -> server: ()
 	"DevPurchase", -- client -> server, Studio only: (itemKey)
 }
 
 local FUNCTIONS = {
 	"BuyItem", -- client -> server: (itemKey) -> (ok, message)
+	"GetMixer", -- client -> server: () -> mixer info
+	"MixStorms", -- client -> server: (uidA, uidB) -> (ok, message)
 }
 
 local folder: Instance

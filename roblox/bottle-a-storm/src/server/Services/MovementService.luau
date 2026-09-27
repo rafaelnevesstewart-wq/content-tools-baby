@@ -46,7 +46,9 @@ function MovementService.refresh(player: Player)
 
 	local data = DataService.get(player)
 	local boots = if data then data.bootsLevel else 0
-	local speed = Config.Movement.BaseWalkSpeed + boots * Config.Boots.SpeedPerLevel
+	local speed = Config.Movement.BaseWalkSpeed
+		+ boots * Config.Boots.SpeedPerLevel
+		+ (player:GetAttribute("RideSpeed") or 0)
 	if player:GetAttribute("Carrying") then
 		speed *= Config.Steal.CarrySpeedMultiplier
 	end

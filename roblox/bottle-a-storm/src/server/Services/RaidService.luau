@@ -401,12 +401,7 @@ end
 ---------------------------------------------------------------------------
 
 local function randomStormOfRarity(rarity: number): StormData.StormDef
-	local options = {}
-	for _, def in StormData.Storms do
-		if def.rarity == rarity then
-			table.insert(options, def)
-		end
-	end
+	local options = StormData.wildOfRarity(rarity)
 	return options[rng:NextInteger(1, #options)]
 end
 

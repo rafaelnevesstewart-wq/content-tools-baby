@@ -14,11 +14,11 @@ local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 local StormModel = require(Modules.StormModel)
 
-local CaptureService = require(script.Parent.CaptureService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local MovementService = require(script.Parent.MovementService)
 local PlotService = require(script.Parent.PlotService)
+local RideService = require(script.Parent.RideService)
 
 local StealService = {}
 
@@ -145,7 +145,7 @@ local function begin(thief: Player, owner: Player, slot: number)
 	if thief == owner or carries[thief] or not DataService.get(thief) then
 		return
 	end
-	if CaptureService.isCapturing(thief) or MovementService.isStunned(thief) then
+	if MovementService.isStunned(thief) then
 		return
 	end
 	if workspace:GetAttribute("RaidState") == "active" then
@@ -179,6 +179,7 @@ local function begin(thief: Player, owner: Player, slot: number)
 		name = name,
 		visual = attachVisual(thief, record),
 	}
+	RideService.dismount(thief)
 	thief:SetAttribute("Carrying", name)
 	PlotService.setSlotStolen(owner, slot, true)
 	MovementService.refresh(thief)

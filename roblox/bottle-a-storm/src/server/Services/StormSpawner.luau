@@ -1,5 +1,6 @@
 -- Spawns wild storms on the Wild Skies island and makes them roam. Rarer
--- storms are faster and run away from nearby players.
+-- storms are faster and run away from nearby players. Also tracks jar hits
+-- (dizzy stars), dodges and the "sucked into the jar" animation.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -7,7 +8,6 @@ local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
-local Signal = require(Shared.Signal)
 local StormData = require(Shared.StormData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
@@ -17,18 +17,18 @@ local StormModel = require(Modules.StormModel)
 
 local StormSpawner = {}
 
--- (player, uid) when someone presses "Bottle" on a wild storm.
-StormSpawner.BottleRequested = Signal.new()
-
 export type WildStorm = {
 	uid: string,
 	def: StormData.StormDef,
 	model: Model,
 	root: BasePart,
-	catcher: Player?,
-	escapeUntil: number,
+	catcher: Player?, -- set while it's being sucked into a jar
 	expiresAt: number,
 	burstUntil: number,
+	stunnedUntil: number,
+	fleeFrom: Vector3?,
+	hits: { [Player]: { count: number, at: number } },
+	dizzyAt: number,
 	alive: boolean,
 	tween: Tween?,
 }
@@ -75,12 +75,7 @@ local function rollStorm(): StormData.StormDef
 			break
 		end
 	end
-	local options = {}
-	for _, def in StormData.Storms do
-		if def.rarity == rarityIndex then
-			table.insert(options, def)
-		end
-	end
+	local options = StormData.wildOfRarity(rarityIndex)
 	return options[rng:NextInteger(1, #options)]
 end
 
@@ -103,6 +98,15 @@ end
 
 local function pickTarget(storm: WildStorm): Vector3
 	local position = storm.root.Position
+	local fleeFrom = storm.fleeFrom
+	if fleeFrom then
+		storm.fleeFrom = nil
+		local away = Vector3.new(position.X - fleeFrom.X, 0, position.Z - fleeFrom.Z)
+		if away.Magnitude < 0.1 then
+			away = Vector3.new(rng:NextNumber(-1, 1), 0, rng:NextNumber(-1, 1))
+		end
+		return clampToWild(position + away.Unit * rng:NextNumber(16, 26))
+	end
 	if storm.def.rarity >= 3 then
 		local threat = nearestPlayerWithin(position, Config.Wild.DodgeRadius)
 		if threat then
@@ -123,8 +127,8 @@ end
 local function roam(storm: WildStorm)
 	local rarity = StormData.rarityOf(storm.def)
 	while storm.alive do
-		if storm.catcher then
-			task.wait(0.25)
+		if storm.catcher or os.clock() < storm.stunnedUntil then
+			task.wait(0.1)
 			continue
 		end
 		local from = storm.root.Position
@@ -144,7 +148,7 @@ local function roam(storm: WildStorm)
 			tween.Completed:Wait()
 			storm.tween = nil
 		end
-		if storm.alive and not storm.catcher then
+		if storm.alive and not storm.catcher and os.clock() >= storm.stunnedUntil then
 			local pause = if os.clock() < storm.burstUntil then 0.1 else rng:NextNumber(0.8, 2.4)
 			task.wait(pause)
 		end
@@ -153,7 +157,6 @@ end
 
 local function spawnStorm(def: StormData.StormDef?)
 	local chosen = def or rollStorm()
-	local rarity = StormData.rarityOf(chosen)
 	local uid = HttpService:GenerateGUID(false)
 	local model = StormModel.build(chosen)
 	model.Name = "Wild_" .. chosen.id
@@ -164,28 +167,18 @@ local function spawnStorm(def: StormData.StormDef?)
 
 	StormModel.nameTag(chosen).Parent = root
 
-	local bottle = Instance.new("ProximityPrompt")
-	bottle.Name = "BottlePrompt"
-	bottle.ActionText = "Bottle"
-	bottle.ObjectText = chosen.name .. " (" .. rarity.name .. ")"
-	bottle.HoldDuration = 0
-	bottle.MaxActivationDistance = Config.Capture.PromptDistance
-	bottle.RequiresLineOfSight = false
-	bottle.KeyboardKeyCode = Enum.KeyCode.E
-	bottle.Parent = root
-	bottle.Triggered:Connect(function(player)
-		StormSpawner.BottleRequested:Fire(player, uid)
-	end)
-
 	local storm: WildStorm = {
 		uid = uid,
 		def = chosen,
 		model = model,
 		root = root,
 		catcher = nil,
-		escapeUntil = 0,
 		expiresAt = os.clock() + (Config.Wild.Lifetime[chosen.rarity] or 120),
 		burstUntil = 0,
+		stunnedUntil = 0,
+		fleeFrom = nil,
+		hits = {},
+		dizzyAt = 0,
 		alive = true,
 		tween = nil,
 	}
@@ -205,37 +198,128 @@ function StormSpawner.get(uid: string): WildStorm?
 	return storms[uid]
 end
 
--- Stops the storm so a player can try to bottle it. Returns false if it's busy.
-function StormSpawner.reserve(uid: string, player: Player): boolean
-	local storm = storms[uid]
-	if not storm or storm.catcher or os.clock() < storm.escapeUntil then
-		return false
+-- The wild storm closest to `point` (flat distance), if one is within reach.
+function StormSpawner.findNear(point: Vector3, radius: number): WildStorm?
+	local best: WildStorm? = nil
+	local bestDistance = math.huge
+	for _, storm in storms do
+		if not storm.catcher then
+			local offset = storm.root.Position - point
+			local flat = Vector3.new(offset.X, 0, offset.Z).Magnitude
+			local reach = radius + 2.5 * StormData.rarityOf(storm.def).scale
+			if flat <= reach and math.abs(offset.Y) < 15 and flat < bestDistance then
+				best = storm
+				bestDistance = flat
+			end
+		end
 	end
-	storm.catcher = player
+	return best
+end
+
+local function stopMoving(storm: WildStorm)
 	if storm.tween then
 		storm.tween:Cancel()
 	end
-	local prompt = storm.root:FindFirstChild("BottlePrompt") :: ProximityPrompt?
-	if prompt then
-		prompt.Enabled = false
-	end
-	return true
 end
 
--- Lets the storm go after a failed catch. It bolts away for a moment.
-function StormSpawner.release(uid: string)
+-- A hit that didn't catch it: the storm freezes for a moment.
+function StormSpawner.daze(uid: string, seconds: number)
 	local storm = storms[uid]
-	if not storm then
+	if storm then
+		storm.stunnedUntil = os.clock() + seconds
+		storm.expiresAt = math.max(storm.expiresAt, os.clock() + 20)
+		stopMoving(storm)
+	end
+end
+
+-- The storm dodged a jar: it dashes away from the thrower.
+function StormSpawner.dodge(uid: string, from: Vector3)
+	local storm = storms[uid]
+	if storm then
+		storm.fleeFrom = from
+		storm.burstUntil = os.clock() + 1.5
+		storm.stunnedUntil = 0
+		stopMoving(storm)
+	end
+end
+
+local function setDizzyText(storm: WildStorm, text: string?)
+	local gui = storm.root:FindFirstChild("Dizzy") :: BillboardGui?
+	if not text then
+		if gui then
+			gui:Destroy()
+		end
 		return
 	end
-	storm.catcher = nil
-	storm.escapeUntil = os.clock() + Config.Capture.EscapeCooldown
-	storm.burstUntil = os.clock() + 2.5
-	storm.expiresAt = math.max(storm.expiresAt, os.clock() + 20)
-	local prompt = storm.root:FindFirstChild("BottlePrompt") :: ProximityPrompt?
-	if prompt then
-		prompt.Enabled = true
+	if not gui then
+		local newGui = Instance.new("BillboardGui")
+		newGui.Name = "Dizzy"
+		newGui.Size = UDim2.fromOffset(160, 40)
+		newGui.StudsOffsetWorldSpace = Vector3.new(0, 3.2 * StormData.rarityOf(storm.def).scale, 0)
+		newGui.MaxDistance = 90
+		newGui.LightInfluence = 0
+		local label = Instance.new("TextLabel")
+		label.Name = "Stars"
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.Font = Enum.Font.FredokaOne
+		label.TextSize = 26
+		label.TextColor3 = Color3.fromRGB(255, 230, 90)
+		label.TextStrokeTransparency = 0.2
+		label.Parent = newGui
+		newGui.Parent = storm.root
+		gui = newGui
 	end
+	((gui :: BillboardGui):FindFirstChild("Stars") :: TextLabel).Text = text
+end
+
+-- Counts a jar hit from `player`. Hits wear off after Config.Throw.DizzySeconds.
+-- Returns how many hits this player has landed in a row.
+function StormSpawner.addHit(uid: string, player: Player, needed: number): number
+	local storm = storms[uid]
+	if not storm then
+		return 0
+	end
+	local now = os.clock()
+	local entry = storm.hits[player]
+	if not entry or now - entry.at > Config.Throw.DizzySeconds then
+		entry = { count = 0, at = now }
+		storm.hits[player] = entry
+	end
+	entry.count += 1
+	entry.at = now
+	storm.dizzyAt = now
+	setDizzyText(storm, string.rep("💫", entry.count) .. " " .. entry.count .. "/" .. needed)
+	return entry.count
+end
+
+-- Final hit: shrinks the storm into the jar, then removes it. Returns false
+-- if someone else is already catching it.
+function StormSpawner.capture(uid: string, player: Player): boolean
+	local storm = storms[uid]
+	if not storm or storm.catcher then
+		return false
+	end
+	storm.catcher = player
+	stopMoving(storm)
+	setDizzyText(storm, nil)
+	local model = storm.model
+	local scale = Instance.new("NumberValue")
+	scale.Value = 1
+	scale.Changed:Connect(function(value)
+		if model.Parent then
+			model:ScaleTo(math.max(value, 0.05))
+		end
+	end)
+	local tween = TweenService:Create(scale, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+		Value = 0.05,
+	})
+	tween.Completed:Connect(function()
+		scale:Destroy()
+		StormSpawner.remove(uid)
+	end)
+	tween:Play()
+	return true
 end
 
 function StormSpawner.remove(uid: string)
@@ -313,6 +397,10 @@ function StormSpawner.start()
 			for uid, storm in storms do
 				if not storm.catcher and t >= storm.expiresAt then
 					StormSpawner.remove(uid)
+				elseif storm.dizzyAt > 0 and t - storm.dizzyAt > Config.Throw.DizzySeconds then
+					storm.dizzyAt = 0
+					storm.hits = {}
+					setDizzyText(storm, nil)
 				end
 			end
 		end

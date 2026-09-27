@@ -6,12 +6,15 @@ with no uploaded art.
 
 ## What's in this build
 
-These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1).
+These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1) and
+storm mixing and riding (v1.2).
 
 | Feature | Where |
 |---|---|
 | Wild Skies island with 15 storms (Common → Legendary) that roam; Rare+ ones run from you | `StormSpawner`, `StormModel` |
-| Bottling tug-of-war minigame, jar tier limits which rarities you can catch, 6 mutations | `CaptureService`, `CaptureMinigame` |
+| Catching by throwing your Storm Jar: rarer storms dodge and need 2–3 hits; 6 mutations | `CaptureService`, `ThrowController` |
+| Storm Mixer: combine two storms; 11 secret hybrid recipes, including a new Mythic tier | `MixService`, `Recipes`, `Mixer` |
+| Riding: pick a storm as your mount; speed boost plus a power based on its weather type | `RideService`, `RideController` |
 | 8 player Sky Islands with pedestals, jar displays and a Collect pad for passive Sparks ⚡ | `PlotService`, `IncomeService` |
 | Stealing: grab a jar, carry it home (70% speed); Zapper tool, Lightning Rod traps, 60 s base lock | `StealService`, `PlotService` |
 | Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod | `ShopService`, `Shop` |
@@ -20,8 +23,57 @@ These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid 
 | Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night) + forecast TV | `WeatherService`, `ForecastController` |
 | Mega-Storm raid every 45 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
-Not in this build yet: fusion and riding storms (v1.2), trading (v1.3),
+Not in this build yet: trading (v1.3),
 storm moods, island sky aura, thief styles, Climate Shift rebirth and the season pass.
+
+## Controls
+
+| Action | PC | Phone |
+|---|---|---|
+| Hold your Storm Jar | `1` (hotbar) | tap the jar |
+| Throw the jar | click near a storm | tap near a storm |
+| Zapper / Storm Launcher | `2` / `3`, then click | tap the tool, then tap |
+| Pick a storm to ride | `R` on your pedestal | tap "Ride this storm" |
+| Hop on / off | `Q` | Ride button |
+| Use your ride's power | `Shift` | power button |
+| Mix storms | `E` on your cauldron | tap "Mix Storms" |
+
+## Catching: throw the jar
+
+Hold the Storm Jar and click or tap on or near a storm. There's a little aim assist.
+- **Too strong:** if your jar can't hold that rarity, it bounces off. Upgrade your jar in the Shop.
+- **Dodge:** rarer storms may dodge (Uncommon 10%, Rare 25%, Epic 35%, Legendary 45%).
+  Better jars cut that by up to 60%.
+- **Hits:** each hit adds 💫 dizzy stars and freezes the storm for a moment. Commons and Uncommons
+  need 1 hit, Rare and Epic 2, Legendary 3. A jar stronger than the storm saves one hit. Wait
+  more than 6 seconds between hits and the stars wear off. If other players are throwing at the
+  same storm, whoever finishes their hits first gets it.
+
+## Storm Mixer
+
+The cauldron on your island. Pick two of your storms, pay a Sparks fee (30 seconds of both
+storms' income, minimum 50) and get one storm back on the first storm's pedestal.
+- **Secret recipe:** you get a hybrid. There are 11, from Rare up to the new **Mythic** tier,
+  which you can only get by mixing. The recipes live on the server only, so players have to
+  discover and share them. New discoveries are announced to the server, and the mixer's recipe
+  book lists the ones you've found. The full list is in `src/server/Modules/Recipes.luau`.
+- **Any other pair:** a random wild storm of the higher rarity, with a 20% chance of one rarity up.
+- The result keeps the better mutation of the two.
+
+## Riding
+
+Press `R` on one of your pedestals to make that storm your ride, then `Q` to hop on. The storm
+floats under your feet and stays on its pedestal earning Sparks. You get +2 to +10 speed by
+rarity, plus a power (`Shift`) based on its weather:
+
+| Storms | Power |
+|---|---|
+| Wind (Breezy Boi, Tornado Tony, Hurricane Hana…) | 🌪️ **Updraft**: launches you high into the sky |
+| Lightning (Thunder Pup, Thundernado…) | ⚡ **Blink Dash**: teleports you forward |
+| Ice and sand (Hail Hopper, Dust Devil, Blizzard King…) | 🏄 **Surf Boost**: a burst of speed |
+| Rain, fog and rainbow (Drizzle Dot, Fog Bun, Rainbow Squall…) | ☁️ **Cloud Jump**: jump again in mid-air, plus you glide |
+
+You hop off automatically if you grab a stolen storm, or if your ride is sold, stolen or mixed.
 
 ## The Mega-Storm raid
 
@@ -65,10 +117,13 @@ every 5 minutes.
 Use **Test → Clients and Servers** with 2 players to try stealing.
 
 - [ ] You spawn on your island. The sign says "<name>'s Island".
-- [ ] Walk the bridge to the Wild Skies. Press **E** on a storm and hold click/tap/Space to keep
-      the 🫙 under the ⛈️ until the meter fills. The storm appears on a pedestal at home.
+- [ ] Walk the bridge to the Wild Skies. Press **1** to hold the Storm Jar and click a storm.
+      It gets sucked in and appears on a pedestal at home.
+- [ ] Throw at a Rare storm with a Reinforced Jar: it may dodge, and needs 2 hits (💫 1/2).
 - [ ] Sparks pile up on the yellow Collect pad. Step on it to collect.
-- [ ] Buy a Reinforced Jar in the Shop, then catch a Rare storm.
+- [ ] Press **R** on a pedestal, then **Q** to ride. Try **Shift** for the power.
+- [ ] Press **E** on the purple cauldron. Mix Fog Bun + Mist Mouse to discover Ghost Fog.
+      Mix two random commons to see an unknown mix.
 - [ ] With player 2, hold **E** on player 1's pedestal. Player 1 gets a warning. Player 1
       equips the Zapper and clicks near player 2, and the storm flies back.
 - [ ] Press the blue Lock button. Player 2 is pushed out and can't steal until it ends.
@@ -94,18 +149,20 @@ src/shared/   Config, StormData (rarities, 15 storms, mutations), Economy (price
               Products (Robux IDs), WeatherEvents, RaidData (bosses), Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
-              IncomeService, CaptureService, StealService, RaidService, ShopService,
-              MonetizationService
-  Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars), Notify
+              IncomeService, CaptureService, RideService, MixService, StealService,
+              RaidService, ShopService, MonetizationService
+  Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars),
+              Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
-  Controllers/ HUD, Shop, CaptureMinigame, Toasts, PromptController, ForecastController, UI
+  Controllers/ HUD, Shop, Mixer, ThrowController, RideController, Toasts,
+               PromptController, ForecastController, UI
 ```
 
 ## Known limits
 
-- The client runs the minigame and reports a win. The server rejects wins that come too fast
-  (< 1.8 s) or from too far away (> 30 studs), but a cheater could still auto-win catches.
-  Harden this before a big launch, for example with server-side replay of input timing.
+- Riding powers run on the player's own client (that's how Roblox moves characters), so an
+  exploiter could fake them. That's normal for movement abilities; the server still checks
+  every catch, steal and purchase.
 - No offline earnings yet: storms only earn while you're in the game.
 - All art is placeholder (plain parts, emoji in the UI).
 

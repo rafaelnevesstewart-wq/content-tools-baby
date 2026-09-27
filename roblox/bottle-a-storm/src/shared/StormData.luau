@@ -18,6 +18,7 @@ export type StormDef = {
 	income: number, -- Sparks per second
 	colors: { Color3 },
 	fx: string, -- particle style, see StormModel
+	hybrid: boolean?, -- only made in the Storm Mixer, never found in the wild
 }
 
 export type Mutation = {
@@ -85,6 +86,15 @@ StormData.Rarities = {
 		speed = 17,
 		pull = 0.9,
 		scale = 1.5,
+	},
+	{
+		index = 6,
+		name = "Mythic",
+		color = Color3.fromRGB(255, 80, 140),
+		weight = 0, -- never wild: only from the Storm Mixer
+		speed = 18,
+		pull = 1,
+		scale = 1.65,
 	},
 } :: { Rarity }
 
@@ -181,6 +191,107 @@ StormData.Storms = {
 		colors = { rgb(40, 90, 150), rgb(30, 130, 110) },
 		fx = "rain",
 	},
+
+	-- Hybrids: only from the Storm Mixer. The recipes are secret (server only).
+	{
+		id = "GhostFog",
+		name = "Ghost Fog",
+		rarity = 3,
+		income = 90,
+		colors = { rgb(225, 230, 255), rgb(180, 170, 220) },
+		fx = "fog",
+		hybrid = true,
+	},
+	{
+		id = "ZappyDrizzle",
+		name = "Zappy Drizzle",
+		rarity = 3,
+		income = 140,
+		colors = { rgb(150, 190, 240), rgb(255, 235, 120) },
+		fx = "lightning",
+		hybrid = true,
+	},
+	{
+		id = "SleetSprite",
+		name = "Sleet Sprite",
+		rarity = 4,
+		income = 400,
+		colors = { rgb(210, 235, 255), rgb(170, 200, 235) },
+		fx = "hail",
+		hybrid = true,
+	},
+	{
+		id = "SandTwister",
+		name = "Sand Twister",
+		rarity = 4,
+		income = 450,
+		colors = { rgb(230, 200, 140), rgb(170, 240, 215) },
+		fx = "dust",
+		hybrid = true,
+	},
+	{
+		id = "Thundernado",
+		name = "Thundernado",
+		rarity = 4,
+		income = 900,
+		colors = { rgb(90, 95, 130), rgb(140, 155, 140) },
+		fx = "lightning",
+		hybrid = true,
+	},
+	{
+		id = "DoubleRainbow",
+		name = "Double Rainbow",
+		rarity = 4,
+		income = 1100,
+		colors = { rgb(255, 150, 180), rgb(150, 255, 200), rgb(160, 200, 255) },
+		fx = "rainbow",
+		hybrid = true,
+	},
+	{
+		id = "DesertCyclone",
+		name = "Desert Cyclone",
+		rarity = 5,
+		income = 6000,
+		colors = { rgb(235, 195, 110), rgb(70, 190, 190) },
+		fx = "hurricane",
+		hybrid = true,
+	},
+	{
+		id = "FrostVortex",
+		name = "Frost Vortex",
+		rarity = 5,
+		income = 7500,
+		colors = { rgb(200, 230, 255), rgb(120, 150, 200) },
+		fx = "snow",
+		hybrid = true,
+	},
+	{
+		id = "StormSerpent",
+		name = "Storm Serpent",
+		rarity = 6,
+		income = 15000,
+		colors = { rgb(40, 90, 150), rgb(255, 235, 100) },
+		fx = "lightning",
+		hybrid = true,
+	},
+	{
+		id = "AuroraSerpent",
+		name = "Aurora Serpent",
+		rarity = 6,
+		income = 25000,
+		colors = { rgb(120, 255, 200), rgb(200, 120, 255) },
+		fx = "rainbow",
+		hybrid = true,
+	},
+	{
+		id = "TyphoonTitan",
+		name = "Typhoon Titan",
+		rarity = 6,
+		income = 40000,
+		colors = { rgb(30, 110, 140), rgb(70, 190, 190) },
+		fx = "hurricane",
+		hybrid = true,
+	},
 } :: { StormDef }
 
 StormData.Mutations = {
@@ -211,6 +322,41 @@ function StormData.getMutation(id: string?): Mutation?
 		return nil
 	end
 	return mutationsById[id]
+end
+
+-- Wild (non-hybrid) storms of one rarity.
+function StormData.wildOfRarity(rarity: number): { StormDef }
+	local list = {}
+	for _, def in StormData.Storms do
+		if def.rarity == rarity and not def.hybrid then
+			table.insert(list, def)
+		end
+	end
+	return list
+end
+
+-- Each storm's riding power, from its weather type.
+local ABILITIES: { [string]: string } = {
+	wind = "Updraft",
+	hurricane = "Updraft",
+	lightning = "BlinkDash",
+	snow = "Surf",
+	hail = "Surf",
+	dust = "Surf",
+	rain = "CloudJump",
+	fog = "CloudJump",
+	rainbow = "CloudJump",
+}
+
+StormData.AbilityInfo = {
+	Updraft = { name = "Updraft", emoji = "🌪️", description = "launches you high into the sky" },
+	BlinkDash = { name = "Blink Dash", emoji = "⚡", description = "teleports you forward" },
+	Surf = { name = "Surf Boost", emoji = "🏄", description = "a burst of speed" },
+	CloudJump = { name = "Cloud Jump", emoji = "☁️", description = "jump again in mid-air; you also glide" },
+}
+
+function StormData.abilityOf(def: StormDef): string
+	return ABILITIES[def.fx] or "Surf"
 end
 
 function StormData.rarityOf(def: StormDef): Rarity

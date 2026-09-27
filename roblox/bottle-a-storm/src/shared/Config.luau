@@ -24,13 +24,41 @@ Config.Wild = {
 	Lifetime = { 150, 130, 110, 90, 75 },
 }
 
-Config.Capture = {
-	PromptDistance = 12,
-	MaxDistance = 30, -- you must stay this close while bottling
-	MinSeconds = 1.8, -- the fastest possible honest catch; faster results are rejected
-	Timeout = 25,
-	EscapeCooldown = 3, -- a storm that just escaped can't be bottled for this long
+-- Catching: throw your Storm Jar at a storm. Rarer storms dodge and need more hits.
+Config.Throw = {
+	Cooldown = 0.7,
+	Range = 60, -- farthest you can throw
+	AimRadius = 6, -- how close to a storm your click must land (plus the storm's size)
+	Speed = 90, -- jar flight speed, studs per second
+	DazeSeconds = 0.9, -- a storm freezes this long after a hit that doesn't catch it
+	DizzySeconds = 6, -- hits wear off if you wait longer than this between them
+	-- By rarity index: Common, Uncommon, Rare, Epic, Legendary
+	HitsNeeded = { 1, 1, 2, 2, 3 },
+	DodgeChance = { 0, 0.1, 0.25, 0.35, 0.45 },
+	JarDodgeReduction = 0.6, -- the best jar cuts dodge chance by this much
 	MutationChance = 0.08,
+}
+
+-- Storm Mixer: combine two storms into one.
+Config.Mixing = {
+	FeeSeconds = 30, -- fee = this many seconds of both storms' income
+	MinFee = 50,
+	MixSeconds = 2.5,
+	UpgradeChance = 0.2, -- unknown mixes: chance the result is one rarity higher
+	Range = 25, -- you must stand this close to your mixer
+}
+
+-- Riding your storms.
+Config.Ride = {
+	SpeedByRarity = { 2, 3, 4, 6, 8, 10 }, -- extra walk speed while riding
+	MountScale = 0.6,
+	Cooldowns = { Updraft = 5, BlinkDash = 3, Surf = 5, CloudJump = 0.3 },
+	UpdraftPower = 120, -- upward launch speed
+	DashDistance = 32,
+	SurfSpeed = 85,
+	SurfSeconds = 0.6,
+	CloudJumpPower = 60,
+	GlideFallSpeed = 14, -- cloud riders fall no faster than this
 }
 
 -- Jars decide the rarest storm you can hold and how wide your catch zone is.

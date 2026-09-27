@@ -49,11 +49,13 @@ local function defaultData()
 		raidShields = 0,
 		storms = {}, -- { StormRecord }
 		discovered = {}, -- storm id -> true
+		recipes = {}, -- hybrid id -> true, the Storm Mixer recipes this player found
 		receipts = {}, -- recent purchase ids, to never grant a purchase twice
 		stats = {
 			captured = 0,
 			stolen = 0,
 			sparksEarned = 0,
+			mixed = 0,
 		},
 	}
 end

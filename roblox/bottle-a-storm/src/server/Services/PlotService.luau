@@ -25,6 +25,8 @@ PlotService.StealRequested = Signal.new()
 PlotService.SellRequested = Signal.new()
 -- (owner)
 PlotService.CollectTouched = Signal.new()
+-- (owner, slot) when the owner picks a storm to ride
+PlotService.RideRequested = Signal.new()
 -- (player) when a player gets an island
 PlotService.PlotAssigned = Signal.new()
 
@@ -38,6 +40,7 @@ export type Plot = {
 	lockedUntil: number,
 	lockReadyAt: number,
 	barrier: Part,
+	mixer: Model,
 	sign: TextLabel,
 	collectLabel: TextLabel,
 	pedestalFolder: Folder,
@@ -161,6 +164,45 @@ local function buildPlotProps(info: WorldBuilder.PlotInfo): Plot
 		end
 	end)
 
+	-- Storm Mixer cauldron. The client opens the mixer window when the prompt fires.
+	local mixer = Instance.new("Model")
+	mixer.Name = "StormMixer"
+	local pot = makePart({
+		Name = "Pot",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(4, 8, 8),
+		CFrame = cframe * CFrame.new(0, 2, -14) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(60, 55, 80),
+		Material = Enum.Material.Metal,
+		Parent = mixer,
+	})
+	local swirl = makePart({
+		Name = "Swirl",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(6, 6, 6),
+		CFrame = cframe * CFrame.new(0, 4.5, -14),
+		Color = Color3.fromRGB(170, 90, 255),
+		Material = Enum.Material.Neon,
+		Transparency = 0.25,
+		CanCollide = false,
+		Parent = mixer,
+	})
+	local bubbles = Instance.new("ParticleEmitter")
+	bubbles.Name = "Bubbles"
+	bubbles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	bubbles.Color = ColorSequence.new(Color3.fromRGB(220, 170, 255))
+	bubbles.Size = NumberSequence.new(0.4)
+	bubbles.Rate = 6
+	bubbles.Speed = NumberRange.new(2, 4)
+	bubbles.Lifetime = NumberRange.new(0.8, 1.4)
+	bubbles.LightEmission = 0.6
+	bubbles.Parent = swirl
+	billboard(swirl, Vector3.new(0, 5, 0), UDim2.fromOffset(200, 50)).Text = "🧪 Storm Mixer"
+	local mixPrompt = prompt(pot, "MixerPrompt", "Mix Storms", 0, Enum.KeyCode.E)
+	mixPrompt.ObjectText = "Combine two storms"
+	mixer.PrimaryPart = pot
+	mixer.Parent = props
+
 	-- Welcome arch over the bridge entrance
 	local archFrame = cframe * CFrame.new(0, 0, -(Config.World.PlotRadius - 6))
 	for _, side in { -1, 1 } do
@@ -211,6 +253,7 @@ local function buildPlotProps(info: WorldBuilder.PlotInfo): Plot
 		lockedUntil = 0,
 		lockReadyAt = 0,
 		barrier = barrier,
+		mixer = mixer,
 		sign = sign,
 		collectLabel = collectLabel,
 		pedestalFolder = pedestalFolder,
@@ -255,6 +298,12 @@ local function buildPedestal(plot: Plot, slot: number): Model
 	steal.Triggered:Connect(function(player)
 		if plot.owner and player ~= plot.owner then
 			PlotService.StealRequested:Fire(player, plot.owner, slot)
+		end
+	end)
+	local ride = prompt(base, "RidePrompt", "Ride this storm", 0.3, Enum.KeyCode.R)
+	ride.Triggered:Connect(function(player)
+		if player == plot.owner then
+			PlotService.RideRequested:Fire(player, slot)
 		end
 	end)
 	local sell = prompt(base, "SellPrompt", "Sell", 1, Enum.KeyCode.F)
@@ -338,6 +387,10 @@ local function refreshSlot(plot: Plot, slot: number)
 	end
 	if steal then
 		steal.ObjectText = objectText
+	end
+	local ride = base:FindFirstChild("RidePrompt") :: ProximityPrompt?
+	if ride then
+		ride.ObjectText = objectText
 	end
 end
 
@@ -505,6 +558,12 @@ function PlotService.slotPosition(owner: Player, slot: number): Vector3?
 	local plot = plotByPlayer[owner]
 	local pedestal = plot and plot.pedestals[slot]
 	return if pedestal and pedestal.PrimaryPart then pedestal.PrimaryPart.Position else nil
+end
+
+-- The owner's mixer, for the mixing animation and the distance check.
+function PlotService.getMixer(owner: Player): Model?
+	local plot = plotByPlayer[owner]
+	return if plot then plot.mixer else nil
 end
 
 function PlotService.isLocked(owner: Player): boolean

@@ -35,6 +35,7 @@ local function refresh()
 		local locked = plot ~= nil and (plot:GetAttribute("LockedUntil") or 0) > now
 
 		setEnabled(base, "SellPrompt", mine and hasStorm and not stolen)
+		setEnabled(base, "RidePrompt", mine and hasStorm and not stolen)
 		setEnabled(
 			base,
 			"StealPrompt",
@@ -47,9 +48,15 @@ local function refresh()
 	if plots then
 		for _, plot in plots:GetChildren() do
 			local props = plot:FindFirstChild("Props")
+			local mine = plot:GetAttribute("OwnerUserId") == player.UserId
 			local button = props and props:FindFirstChild("LockButton")
 			if button then
-				setEnabled(button, "LockPrompt", plot:GetAttribute("OwnerUserId") == player.UserId)
+				setEnabled(button, "LockPrompt", mine)
+			end
+			local mixer = props and props:FindFirstChild("StormMixer")
+			local pot = mixer and mixer:FindFirstChild("Pot")
+			if pot then
+				setEnabled(pot, "MixerPrompt", mine)
 			end
 		end
 	end
