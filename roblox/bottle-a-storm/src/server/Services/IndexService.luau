@@ -20,7 +20,7 @@ local IndexService = {}
 -- Storm ids that make up each rarity row (no season exclusives).
 local rows: { [number]: { string } } = {}
 for _, def in StormData.Storms do
-	if not def.season then
+	if not StormData.isExclusive(def) then
 		rows[def.rarity] = rows[def.rarity] or {}
 		table.insert(rows[def.rarity], def.id)
 	end

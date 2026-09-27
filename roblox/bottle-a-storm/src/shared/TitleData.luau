@@ -146,6 +146,15 @@ TitleData.List = {
 		progress = stat("splashes"),
 	},
 	{
+		id = "SkyClimber",
+		name = "Sky Climber",
+		emoji = "🏔️",
+		color = rgb(170, 220, 255),
+		goal = "Reach the Secret Sky Island",
+		target = 1,
+		progress = stat("obbyClears"),
+	},
+	{
 		id = "Collector",
 		name = "Collector",
 		emoji = "📖",

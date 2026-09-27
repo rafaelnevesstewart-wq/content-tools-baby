@@ -599,6 +599,16 @@ local function finish(won: boolean)
 	publish()
 end
 
+-- Admin panel: bring the next Mega-Storm now (after the usual warning).
+function RaidService.startSoon(): boolean
+	if phase ~= "idle" then
+		return false
+	end
+	startsAt = now() + Config.Raid.WarningSeconds + 1
+	publish()
+	return true
+end
+
 function RaidService.isActive(): boolean
 	return phase == "active"
 end

@@ -10,6 +10,7 @@ local TweenService = game:GetService("TweenService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local ClimateData = require(Shared.ClimateData)
 local Config = require(Shared.Config)
+local HolidayData = require(Shared.HolidayData)
 local StormData = require(Shared.StormData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
@@ -75,6 +76,7 @@ local wildZone: Zone
 local folder: Folder
 local rng = Random.new()
 local event: WeatherEvents.WeatherEvent? = nil
+local holidayStorms: { StormData.StormDef }? = nil -- Epic, Legendary
 local paused = false
 
 local function randomPointIn(zone: Zone): Vector3
@@ -107,11 +109,22 @@ local function rollBiome(list: { StormData.StormDef }): StormData.StormDef
 	return list[#list]
 end
 
+-- Admin luck: Rare and rarer storms spawn much more often for a while.
+local function luckMultiplier(): number
+	local untilTime = workspace:GetAttribute("LuckUntil")
+	return if type(untilTime) == "number" and untilTime > workspace:GetServerTimeNow()
+		then Config.Admin.LuckMultiplier
+		else 1
+end
+
 local function rollStorm(): StormData.StormDef
 	local total = 0
 	local weights = {}
+	local luck = luckMultiplier()
 	for index, rarity in StormData.Rarities do
-		local weight = rarity.weight * (if event then event.rarityMultipliers[index] or 1 else 1)
+		local weight = rarity.weight
+			* (if event then event.rarityMultipliers[index] or 1 else 1)
+			* (if index >= 3 then luck else 1)
 		weights[index] = weight
 		total += weight
 	end
@@ -437,6 +450,21 @@ function StormSpawner.burst(amount: number)
 	end
 end
 
+-- The running holiday's storms (Epic, Legendary), or nil when none is on.
+function StormSpawner.setHolidayStorms(defs: { StormData.StormDef }?)
+	holidayStorms = defs
+end
+
+-- Admin "storm rain": a burst of storms on the Wild Skies, rolled with luck.
+function StormSpawner.stormRain(count: number)
+	if paused then
+		return
+	end
+	for _ = 1, count do
+		spawnStorm(wildZone, nil)
+	end
+end
+
 -- A golden-hunt or race storm on the Wild Skies. Returns its uid.
 function StormSpawner.spawnSpecial(def: StormData.StormDef, options: SpecialOptions): string
 	return spawnStorm(wildZone, def, options)
@@ -508,7 +536,14 @@ local function spawnLoop(zone: Zone)
 		end
 		task.wait(wait)
 		if zone.count < cap and not paused then
-			spawnStorm(zone, nil)
+			local special = holidayStorms
+			if isWild and special and rng:NextNumber() < HolidayData.SpawnChance then
+				-- A holiday event storm.
+				local def = if rng:NextNumber() < HolidayData.LegendaryShare then special[2] else special[1]
+				spawnStorm(zone, def)
+			else
+				spawnStorm(zone, nil)
+			end
 		end
 	end
 end

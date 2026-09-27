@@ -38,6 +38,9 @@ local FUNCTIONS = {
 	"Cosmetic", -- client -> server: (action, idOrValue) -> (ok, message)
 	"RedeemCode", -- client -> server: (text) -> (ok, message)
 	"Spin", -- client -> server: () -> (ok, prizeIndex or message)
+	"AdminCommand", -- client -> server: (command, arg) -> (ok, message), admins only
+	"GetHoliday", -- client -> server: () -> event info and your currency
+	"BuyHoliday", -- client -> server: (index) -> (ok, message)
 	"CheckGroup", -- client -> server: () -> (ok, message)
 	"GetMarket", -- client -> server: () -> market stock
 	"BuyMarket", -- client -> server: (slot) -> (ok, message)

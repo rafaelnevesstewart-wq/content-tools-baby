@@ -16,6 +16,7 @@ local RaidData = require(Shared.RaidData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local Climate = require(script.Parent.Climate)
+local AdminPanel = require(script.Parent.AdminPanel)
 local Battle = require(script.Parent.Battle)
 local Market = require(script.Parent.Market)
 local Rewards = require(script.Parent.Rewards)
@@ -37,6 +38,7 @@ local weatherChip: TextLabel
 local raidChip: TextLabel
 local lockChip: TextLabel
 local boostChip: TextLabel
+local eventChip: TextLabel
 local carryBanner: TextLabel
 local bossBar: Frame
 local bossTitle: TextLabel
@@ -304,6 +306,9 @@ function HUD.start()
 	boostChip = chip(chips, 4, 28, 15)
 	boostChip.BackgroundColor3 = Color3.fromRGB(70, 56, 26)
 	boostChip.Visible = false
+	eventChip = chip(chips, 5, 28, 15)
+	eventChip.BackgroundColor3 = Color3.fromRGB(70, 56, 26)
+	eventChip.Visible = false
 	buildBossBar(top)
 
 	-- Left: the icon bar, two buttons wide. It shrinks on short (phone) screens.
@@ -379,6 +384,13 @@ function HUD.start()
 	iconButton(bar, 8, "🌍", "Climate", Color3.fromRGB(140, 195, 255)).Activated:Connect(function()
 		Climate.toggle()
 	end)
+	local adminButton = iconButton(bar, 20, "👑", "Admin", UI.Colors.Spark)
+	adminButton.Activated:Connect(AdminPanel.toggle)
+	local function refreshAdmin()
+		adminButton.Visible = AdminPanel.isAdmin()
+	end
+	player:GetAttributeChangedSignal("IsAdmin"):Connect(refreshAdmin)
+	refreshAdmin()
 	local lockItem = Products.get("EmergencyLock")
 	if lockItem then
 		iconButton(bar, 9, "🔒", "R$" .. lockItem.price, Color3.fromRGB(255, 160, 190)).Activated:Connect(
@@ -416,6 +428,22 @@ function HUD.start()
 			local text, color = lockText(now)
 			lockChip.Text = text
 			lockChip.TextColor3 = color
+			-- Admin Abuse / luck / holiday event chip.
+			local abuseUntil = workspace:GetAttribute("AbuseUntil")
+			local luckUntil = workspace:GetAttribute("LuckUntil")
+			local holiday = workspace:GetAttribute("Holiday")
+			if type(abuseUntil) == "number" and abuseUntil > now then
+				eventChip.Visible = true
+				eventChip.Text = "👑 ADMIN ABUSE " .. Format.time(abuseUntil - now)
+			elseif type(luckUntil) == "number" and luckUntil > now then
+				eventChip.Visible = true
+				eventChip.Text = "🍀 10x LUCK " .. Format.time(luckUntil - now)
+			elseif type(holiday) == "string" then
+				eventChip.Visible = true
+				eventChip.Text = "🎉 Event: " .. Format.number(player:GetAttribute("HolidayPoints") or 0) .. " points"
+			else
+				eventChip.Visible = false
+			end
 			local boostEndsAt = player:GetAttribute("BoostEndsAt")
 			boostChip.Visible = type(boostEndsAt) == "number" and boostEndsAt > now
 			if boostChip.Visible then

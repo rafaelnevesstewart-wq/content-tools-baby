@@ -201,6 +201,23 @@ local function loop(first: number, interval: number, event: () -> ())
 	end
 end
 
+-- Admin panel: start one right now (it's skipped if one is already running).
+function EventService.startGolden(): boolean
+	if raidGoing() or workspace:GetAttribute("SpecialStorm") then
+		return false
+	end
+	task.spawn(golden)
+	return true
+end
+
+function EventService.startRace(): boolean
+	if raidGoing() or workspace:GetAttribute("SpecialStorm") then
+		return false
+	end
+	task.spawn(race)
+	return true
+end
+
 function EventService.start()
 	CaptureService.Caught:Connect(onCaught)
 	local studio = RunService:IsStudio()

@@ -219,6 +219,29 @@ Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Go
   - 10 prizes, from 10 minutes of Sparks up to a Legendary storm. Odds are in
     `src/shared/SpinData.luau`.
   - The prize is announced when the wheel stops.
+- **👑 Admin Abuse** (`AdminService`, `AdminPanel`):
+  - The game's owner (plus anyone in `Config.Admin.UserIds`, and everyone in Studio) gets a
+    👑 Admin button.
+  - From it you can start ADMIN ABUSE (30 minutes of x2 Sparks, x10 luck and a storm rain
+    every minute), 10x luck, a storm rain, a Mega-Storm right now, a Golden Hunt, a Storm Race,
+    any weather, or give everyone Sparks.
+  - Admin Abuse also starts by itself every Saturday at 17:00 UTC (`Config.Admin`). A HUD
+    chip counts it down.
+- **🎉 Holiday events** (`HolidayService`, `HolidayData`):
+  - Spooky Skies 🎃 (Oct 15–Nov 5), Frosty Skies 🎄 (Dec 10–Jan 6) and Sunny Skies 🏖️
+    (Jun 20–Jul 20).
+  - While one is on, its Epic and Legendary storms roam the Wild Skies. Every catch earns the
+    event currency (🍬 Candy, ❄️ Snowflakes, 🐚 Seashells).
+  - The Wild Skies gets glowing pumpkins, snowmen or beach umbrellas. The 🏪 Market gets an
+    🎉 Event tab that sells the event storms and extras.
+  - **In Studio, Halloween is always on so you can test it** (`Config.Holiday.StudioEvent`;
+    set it to `nil` to use the real calendar).
+- **🏔️ Secret sky obby** (`ObbyService`):
+  - A hidden path of 30 cloud platforms starts behind the trees at the edge of the Wild Skies
+    (southwest, about 200° around) and climbs to a secret island.
+  - Touch both glowing checkpoints on the way, then claim a free Legendary storm at the
+    shrine, once a day (and earn the "Sky Climber" title).
+  - Cloud Flight switches off near the path, so you have to climb it.
 
 ## Cosmetics (🎨 Style)
 
@@ -498,6 +521,11 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 - [ ] Fighting: on the Wild Skies, press **3** and click a grumpy cloud until it pops. Stand
       still under one to get splashed. With 2 players, press **4** and throw a balloon at
       player 2 (off their island, then on it), and at a thief carrying a storm.
+- [ ] Trending update: buy a storm from the Storm Parade (E). In 🏪 Market, buy from the
+      Storm Market and open a Mystery Jar. Use the 👑 Admin panel to start a weather event and
+      wait for weather mutations, or start Admin Abuse. Try a code (`RELEASE`), spin the wheel,
+      check the leaderboards near the spawn, visit the 🎉 Event tab (Halloween in Studio), and
+      climb the secret sky path.
 - [ ] Cloud Flight: press **G**. In Studio it grants the pass for free. Press **G** again to
       fly, try Space and Ctrl, then steal a storm while flying (you should land).
 - [ ] Offline earnings: play, leave, and join again after 2+ minutes. (In Studio, turn on
@@ -548,14 +576,15 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
               Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
               SeasonData, RewardsData (daily rewards, quests), BattleData, TitleData,
-              ThemeData, CosmeticsData, MarketData, SpinData, Sounds,
+              ThemeData, CosmeticsData, MarketData, SpinData, HolidayData, Sounds,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, SeasonService, MixService,
               TradeService, StealService, GuardService, BuddyService, FlightService, GrumpService,
               BalloonService, WeatherMutationService, ParadeService, MarketService,
-              CommunityService, LeaderboardService, SpinService, RaidService,
+              CommunityService, LeaderboardService, SpinService, AdminService,
+              HolidayService, ObbyService, RaidService,
               IndexService, RewardService, DailyService, EventService, BattleService,
               TitleService, AuraService, ClimateService, ThemeService,
               CosmeticService, ShopService,
@@ -565,6 +594,7 @@ src/server/   Main.server.luau starts the services in order
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, Rewards, PedestalMenu, Battle,
                BuddyController, FlightController, CombatController, Aim, Style, Market,
+               HolidayShop, AdminPanel,
                BiomeController, ThrowController, RideController, Toasts, TutorialController,
                StormAnimator, AmbientController, JuiceController, Sfx,
                PromptController, ForecastController, UI

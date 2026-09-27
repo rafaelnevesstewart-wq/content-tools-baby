@@ -12,6 +12,8 @@ local order = {
 	"Season",
 	"Rewards",
 	"Market",
+	"HolidayShop",
+	"AdminPanel",
 	"Style",
 	"PedestalMenu",
 	"Battle",

@@ -198,7 +198,9 @@ end
 
 -- Where to look for a storm you haven't found yet.
 local function hint(def: StormData.StormDef): string
-	if def.season then
+	if def.holiday then
+		return "Holiday event"
+	elseif def.season then
 		return "Season pass"
 	elseif def.hybrid then
 		return "Storm Mixer"
@@ -218,7 +220,7 @@ local function buildIndex(page: Frame, data: Info)
 	local have, all = 0, 0
 	for _, def in StormData.Storms do
 		table.insert(list, def)
-		if not def.season then
+		if not StormData.isExclusive(def) then
 			totals[def.rarity] = totals[def.rarity] or { have = 0, all = 0 }
 			totals[def.rarity].all += 1
 			all += 1
@@ -229,7 +231,7 @@ local function buildIndex(page: Frame, data: Info)
 		end
 	end
 	table.sort(list, function(a, b)
-		local sa, sb = if a.season then 1 else 0, if b.season then 1 else 0
+		local sa, sb = if StormData.isExclusive(a) then 1 else 0, if StormData.isExclusive(b) then 1 else 0
 		if sa ~= sb then
 			return sa < sb
 		end
@@ -317,9 +319,9 @@ local function buildIndex(page: Frame, data: Info)
 		capped({
 			Position = UDim2.fromOffset(4, 36),
 			Size = UDim2.new(1, -8, 0, 22),
-			Text = (if def.season then "🌟 " else "") .. StormData.rarityOf(def).name .. (if known
-				then ""
-				else " · " .. hint(def)),
+			Text = (if def.holiday then "🎉 " elseif def.season then "🌟 " else "")
+				.. StormData.rarityOf(def).name
+				.. (if known then "" else " · " .. hint(def)),
 			TextScaled = true,
 			TextColor3 = UI.Colors.Muted,
 			Parent = tile,

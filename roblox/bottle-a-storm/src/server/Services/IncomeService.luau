@@ -52,10 +52,20 @@ function IncomeService.rateOf(player: Player): number
 	local eventBonus = if event then event.incomeMultiplier or 1 else 1
 	local indexBonus = 1 + Config.Index.RowBonus * (data.indexRows or 0)
 	local groupBonus = if player:GetAttribute("InGroup") == true then 1 + Config.Group.Bonus else 1
+	local abuseUntil = workspace:GetAttribute("AbuseUntil")
+	local abuseBonus = if type(abuseUntil) == "number" and abuseUntil > workspace:GetServerTimeNow()
+		then Config.Admin.AbuseIncomeMultiplier
+		else 1
 	local beginnerBonus = if (data.playSeconds or 0) < Config.Beginner.BoostSeconds
 		then Config.Beginner.Multiplier
 		else 1
-	return total * ClimateData.at(data.climate).multiplier * eventBonus * indexBonus * beginnerBonus * groupBonus
+	return total
+		* ClimateData.at(data.climate).multiplier
+		* eventBonus
+		* indexBonus
+		* beginnerBonus
+		* groupBonus
+		* abuseBonus
 end
 
 -- Pushes the profile's numbers to attributes, leaderstats and the collect pad.

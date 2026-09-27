@@ -22,6 +22,7 @@ export type StormDef = {
 	biome: string?, -- only lives on that Climate Shift island (see ClimateData)
 	weight: number?, -- spawn weight on its biome island
 	season: string?, -- only from that season's pass (see SeasonData)
+	holiday: string?, -- only during that holiday event (see HolidayData)
 }
 
 export type Mutation = {
@@ -441,6 +442,63 @@ StormData.Storms = {
 		weight = 3,
 	},
 
+	-- Holiday event storms (see HolidayData): they roam the Wild Skies and sit in
+	-- the event shop only while their holiday is on.
+	{
+		id = "SpookyFog",
+		name = "Spooky Fog",
+		rarity = 4,
+		income = 700,
+		colors = { rgb(120, 110, 140), rgb(255, 140, 40) },
+		fx = "fog",
+		holiday = "Halloween",
+	},
+	{
+		id = "PhantomSquall",
+		name = "Phantom Squall",
+		rarity = 5,
+		income = 4500,
+		colors = { rgb(70, 60, 90), rgb(150, 255, 170) },
+		fx = "wind",
+		holiday = "Halloween",
+	},
+	{
+		id = "FrostbiteFlurry",
+		name = "Frostbite Flurry",
+		rarity = 4,
+		income = 700,
+		colors = { rgb(220, 240, 255), rgb(200, 40, 50) },
+		fx = "snow",
+		holiday = "Winter",
+	},
+	{
+		id = "JollyNoreaster",
+		name = "Jolly Nor'easter",
+		rarity = 5,
+		income = 4500,
+		colors = { rgb(240, 245, 255), rgb(40, 140, 70) },
+		fx = "snow",
+		holiday = "Winter",
+	},
+	{
+		id = "BeachBreeze",
+		name = "Beach Breeze",
+		rarity = 4,
+		income = 700,
+		colors = { rgb(120, 210, 230), rgb(250, 230, 170) },
+		fx = "wind",
+		holiday = "Summer",
+	},
+	{
+		id = "TropicalTyphoon",
+		name = "Tropical Typhoon",
+		rarity = 5,
+		income = 4500,
+		colors = { rgb(60, 170, 150), rgb(255, 180, 80) },
+		fx = "hurricane",
+		holiday = "Summer",
+	},
+
 	-- Season pass exclusives (see SeasonData): Epic (free track), Legendary and Mythic (premium).
 	-- Spring Showers
 	{
@@ -609,6 +667,12 @@ function StormData.getMutation(id: string?): Mutation?
 	return mutationsById[id]
 end
 
+-- Season pass and holiday storms: only from their pass or event, so they're
+-- not in the wild roll or the Storm Index rows.
+function StormData.isExclusive(def: StormDef): boolean
+	return def.season ~= nil or def.holiday ~= nil
+end
+
 -- Storms of one rarity that roam the Wild Skies (no hybrids, no biome storms).
 -- Storms that live on one Climate Shift island.
 function StormData.ofBiome(biome: string): { StormDef }
@@ -624,7 +688,7 @@ end
 function StormData.wildOfRarity(rarity: number): { StormDef }
 	local list = {}
 	for _, def in StormData.Storms do
-		if def.rarity == rarity and not def.hybrid and not def.biome and not def.season then
+		if def.rarity == rarity and not def.hybrid and not def.biome and not StormData.isExclusive(def) then
 			table.insert(list, def)
 		end
 	end

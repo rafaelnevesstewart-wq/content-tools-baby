@@ -63,6 +63,8 @@ local function defaultData()
 		titles = {}, -- unlocked title id -> true; data.title is the one shown
 		codes = {}, -- redeemed code -> true
 		spin = { day = -1, extra = 0 }, -- daily wheel: last free spin day, bought spins
+		holiday = { key = "", points = 0 }, -- event currency for the running holiday
+		obby = { lastDay = -1 }, -- last day the secret sky island reward was claimed
 		-- Cosmetics: owned ids, plus what's in use. hat, trail, back, aura and
 		-- flag are saved when set.
 		cosmetics = {
@@ -91,6 +93,7 @@ local function defaultData()
 			huntsWon = 0, -- Golden Hunts and Storm Races
 			grumpsPopped = 0, -- grumpy clouds you helped pop
 			splashes = 0, -- players you hit with water balloons
+			obbyClears = 0, -- times you reached the secret sky island
 		},
 	}
 end

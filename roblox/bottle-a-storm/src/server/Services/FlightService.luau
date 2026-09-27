@@ -16,6 +16,7 @@ local Notify = require(Modules.Notify)
 
 local CosmeticService = require(script.Parent.CosmeticService)
 local MovementService = require(script.Parent.MovementService)
+local ObbyService = require(script.Parent.ObbyService)
 local RideService = require(script.Parent.RideService)
 local StealService = require(script.Parent.StealService)
 
@@ -118,6 +119,8 @@ function FlightService.start()
 				local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 				if StealService.isCarrying(player) then
 					land(player, "🫙 The storm is too heavy to fly with! Run home!")
+				elseif character and ObbyService.inZone((character:GetPivot()).Position) then
+					land(player, "🌬️ The sky path is too windy to fly! Climb it instead.")
 				elseif MovementService.isStunned(player) then
 					land(player, "⚡ You got zapped off your cloud!")
 				elseif not humanoid or humanoid.Health <= 0 then

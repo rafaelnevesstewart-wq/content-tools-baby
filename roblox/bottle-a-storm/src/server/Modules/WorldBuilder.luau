@@ -702,6 +702,10 @@ local function wildBlocked(p: Vector3): boolean
 	if p.Z > -128 and p.Z < -76 and math.abs(p.X) < 78 then
 		return true -- leaderboards and the winners' podium
 	end
+	local degrees = math.deg(math.atan2(p.Z, p.X)) % 360
+	if degrees > 192 and degrees < 222 and p.Magnitude > 130 then
+		return true -- the first steps of the secret sky path
+	end
 	local angle = math.atan2(p.Z, p.X)
 	for index = 1, Config.MaxPlots do
 		local bridgeAngle = (index - 1) / Config.MaxPlots * math.pi * 2
@@ -712,6 +716,9 @@ local function wildBlocked(p: Vector3): boolean
 	end
 	return false
 end
+
+-- Other services use this to keep things off the Wild Skies' busy spots.
+WorldBuilder.isWildBlocked = wildBlocked
 
 export type BiomeInfo = {
 	climate: ClimateData.Climate,

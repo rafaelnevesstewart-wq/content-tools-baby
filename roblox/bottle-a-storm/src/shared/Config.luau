@@ -394,6 +394,39 @@ Config.LikeGoal = {
 	Reward = "a code for 30 minutes of Sparks",
 }
 
+-- Holiday events (dates are in HolidayData). In Studio you can force one on to
+-- test it: "Halloween", "Winter", "Summer", or nil for the real calendar.
+Config.Holiday = {
+	StudioEvent = "Halloween" :: string?,
+}
+
+-- Admin Abuse: the owner (and anyone in UserIds) gets a 👑 Admin panel to
+-- start crazy server-wide events. It also runs by itself once a week.
+Config.Admin = {
+	UserIds = {} :: { number }, -- extra admins besides the game's owner
+	AbuseMinutes = 30,
+	AbuseIncomeMultiplier = 2,
+	LuckMultiplier = 10, -- Rare+ storms spawn this much more often while luck is on
+	LuckMinutes = 10,
+	StormRainEvery = 60, -- seconds between storm rains during Admin Abuse
+	StormRainCount = 12,
+	-- Weekly automatic Admin Abuse (UTC). Weekday: 1 = Sunday ... 7 = Saturday.
+	WeeklyDay = 7,
+	WeeklyHour = 17,
+}
+
+-- The secret sky obby: a hidden path of cloud platforms from the edge of the
+-- Wild Skies up to a secret island with a free Legendary storm once a day.
+Config.Obby = {
+	StartAngle = 200, -- degrees around the Wild Skies
+	Radius = 150,
+	Steps = 30,
+	StepAngle = 3.3, -- degrees between platforms
+	Rise = 3.4, -- studs up per platform
+	BaseHeight = 3,
+	Checkpoints = { 10, 20 }, -- platforms that must be touched on the way up
+}
+
 -- Weather mutations (StormData.WeatherMutations): during a weather event, each
 -- storm on a pedestal rolls this chance every minute to pick one up.
 Config.WeatherMutations = {
