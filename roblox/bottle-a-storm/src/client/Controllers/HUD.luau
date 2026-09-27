@@ -16,6 +16,7 @@ local RaidData = require(Shared.RaidData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local Climate = require(script.Parent.Climate)
+local Battle = require(script.Parent.Battle)
 local Rewards = require(script.Parent.Rewards)
 local Season = require(script.Parent.Season)
 local Shop = require(script.Parent.Shop)
@@ -33,6 +34,7 @@ local unclaimedChip: TextLabel
 local weatherChip: TextLabel
 local raidChip: TextLabel
 local lockChip: TextLabel
+local boostChip: TextLabel
 local carryBanner: TextLabel
 local bossBar: Frame
 local bossTitle: TextLabel
@@ -297,6 +299,9 @@ function HUD.start()
 	weatherChip = chip(chips, 1, 28, 15)
 	raidChip = chip(chips, 2, 28, 15)
 	lockChip = chip(chips, 3, 28, 15)
+	boostChip = chip(chips, 4, 28, 15)
+	boostChip.BackgroundColor3 = Color3.fromRGB(255, 236, 200)
+	boostChip.Visible = false
 	buildBossBar(top)
 
 	-- Left: the icon bar. It shrinks on short (phone) screens.
@@ -313,7 +318,7 @@ function HUD.start()
 	local function fitBar()
 		local camera = workspace.CurrentCamera
 		local height = if camera then camera.ViewportSize.Y else 800
-		barScale.Scale = math.clamp((height - 140) / 520, 0.55, 1)
+		barScale.Scale = math.clamp((height - 140) / 600, 0.5, 1)
 	end
 	fitBar()
 	if workspace.CurrentCamera then
@@ -353,12 +358,15 @@ function HUD.start()
 	iconButton(bar, 4, "🤝", "Trade", Color3.fromRGB(255, 180, 140)).Activated:Connect(function()
 		Trade.openMenu()
 	end)
-	iconButton(bar, 5, "🌍", "Climate", Color3.fromRGB(140, 195, 255)).Activated:Connect(function()
+	iconButton(bar, 5, "⚔️", "Battle", Color3.fromRGB(255, 150, 150)).Activated:Connect(function()
+		Battle.openMenu()
+	end)
+	iconButton(bar, 6, "🌍", "Climate", Color3.fromRGB(140, 195, 255)).Activated:Connect(function()
 		Climate.toggle()
 	end)
 	local lockItem = Products.get("EmergencyLock")
 	if lockItem then
-		iconButton(bar, 6, "🔒", "R$" .. lockItem.price, Color3.fromRGB(255, 160, 190)).Activated:Connect(
+		iconButton(bar, 7, "🔒", "R$" .. lockItem.price, Color3.fromRGB(255, 160, 190)).Activated:Connect(
 			buyEmergencyLock
 		)
 	end
@@ -393,6 +401,11 @@ function HUD.start()
 			local text, color = lockText(now)
 			lockChip.Text = text
 			lockChip.TextColor3 = color
+			local boostEndsAt = player:GetAttribute("BoostEndsAt")
+			boostChip.Visible = type(boostEndsAt) == "number" and boostEndsAt > now
+			if boostChip.Visible then
+				boostChip.Text = "🚀 x2 Beginner Boost " .. Format.time(boostEndsAt - now)
+			end
 			refreshRaid(now)
 			task.wait(0.25)
 		end

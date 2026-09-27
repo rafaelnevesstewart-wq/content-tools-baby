@@ -13,7 +13,10 @@ local EVENTS = {
 	"TradeUpdate", -- server -> client: (state or nil when the trade closes)
 	"DevPurchase", -- client -> server, Studio only: (itemKey)
 	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake, pop-ups
-	"PedestalAction", -- client -> server: (slot, "ride" | "guard" | "sell")
+	"PedestalAction", -- client -> server: (slot, "ride" | "guard" | "buddy" | "sell")
+	"BattleAction", -- client -> server: ("request", userId) | ("respond", fromUserId, accept)
+	"BattleInvite", -- server -> client: (fromUserId, fromName)
+	"BattlePlay", -- server -> client: (battle) the whole fight, for the battle window
 }
 
 local FUNCTIONS = {
@@ -26,6 +29,8 @@ local FUNCTIONS = {
 	"GetRewards", -- client -> server: () -> daily, quests and Storm Index info
 	"ClaimDaily", -- client -> server: () -> (ok, message)
 	"ClaimQuest", -- client -> server: (index) -> (ok, message)
+	"GetTitles", -- client -> server: () -> titles and progress
+	"SetTitle", -- client -> server: (titleId or nil) -> (ok, message)
 }
 
 local folder: Instance

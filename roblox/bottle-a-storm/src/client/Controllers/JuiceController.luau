@@ -130,17 +130,95 @@ local function welcome(amount: number, awaySeconds: number)
 	Sfx.play("coins")
 end
 
+local rareCatchPlaying = false
+
+-- The big moment for an Epic-or-better catch: white flash, the camera swoops
+-- in on the storm, and a banner pops up with its name.
+local function rareCatch(name: string, rarityName: string, color: Color3, position: Vector3)
+	local screen = UI.screen("RareCatch", 10)
+	local flash = UI.new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BackgroundTransparency = 0.1,
+		Parent = screen,
+	})
+	TweenService:Create(flash, TweenInfo.new(0.7), { BackgroundTransparency = 1 }):Play()
+
+	local banner = UI.new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.28),
+		Size = UDim2.fromOffset(460, 110),
+		BackgroundColor3 = UI.Colors.Panel,
+		Parent = screen,
+	}, { UI.corner(24), UI.stroke(color, 5), UI.padding(8) })
+	local scale = UI.new("UIScale", { Scale = 0.2, Parent = banner })
+	UI.label({
+		Size = UDim2.new(1, 0, 0.5, 0),
+		Text = "✨ " .. string.upper(rarityName) .. " CATCH! ✨",
+		TextScaled = true,
+		TextColor3 = UI.ink(color),
+		Parent = banner,
+	})
+	UI.label({
+		Position = UDim2.fromScale(0, 0.5),
+		Size = UDim2.new(1, 0, 0.5, 0),
+		Text = name,
+		TextScaled = true,
+		TextColor3 = UI.Colors.Text,
+		Parent = banner,
+	})
+	TweenService:Create(scale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+		:Play()
+	Sfx.play("chime")
+	task.delay(2.6, function()
+		TweenService:Create(scale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Scale = 0 })
+			:Play()
+		task.wait(0.35)
+		screen:Destroy()
+	end)
+
+	-- Camera swoop (skipped if one is already playing).
+	local camera = workspace.CurrentCamera
+	if not camera or rareCatchPlaying then
+		return
+	end
+	rareCatchPlaying = true
+	local from = camera.CFrame
+	local away = from.Position - position
+	local direction = if away.Magnitude > 0.1 then away.Unit else Vector3.new(0, 0.3, 1).Unit
+	local closeUp = CFrame.lookAt(position + direction * 14 + Vector3.new(0, 3, 0), position)
+	camera.CameraType = Enum.CameraType.Scriptable
+	TweenService
+		:Create(camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = closeUp })
+		:Play()
+	task.delay(1.8, function()
+		local back = TweenService:Create(camera, TweenInfo.new(0.4, Enum.EasingStyle.Quad), { CFrame = from })
+		back:Play()
+		back.Completed:Wait()
+		camera.CameraType = Enum.CameraType.Custom
+		rareCatchPlaying = false
+	end)
+end
+
 local function shake(strength: number)
 	shakeStrength = math.max(shakeStrength, strength)
 	shakeUntil = os.clock() + 0.35
 end
 
 function JuiceController.start()
-	Remotes.event("Juice").OnClientEvent:Connect(function(kind, a, b, c)
+	Remotes.event("Juice").OnClientEvent:Connect(function(kind, a, b, c, d)
 		if kind == "float" and type(a) == "string" and typeof(b) == "Vector3" then
 			float(a, b, if typeof(c) == "Color3" then c else nil)
 		elseif kind == "sound" and type(a) == "string" then
 			Sfx.play(a)
+		elseif
+			kind == "rareCatch"
+			and type(a) == "string"
+			and type(b) == "string"
+			and typeof(c) == "Color3"
+			and typeof(d) == "Vector3"
+		then
+			rareCatch(a, b, c, d)
 		elseif kind == "welcome" and type(a) == "number" and type(b) == "number" then
 			welcome(a, b)
 		elseif kind == "shake" then

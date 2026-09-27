@@ -16,6 +16,7 @@ local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
+local Notify = require(Modules.Notify)
 
 local DataService = require(script.Parent.DataService)
 local PlotService = require(script.Parent.PlotService)
@@ -50,7 +51,10 @@ function IncomeService.rateOf(player: Player): number
 	local event = WeatherService.current()
 	local eventBonus = if event then event.incomeMultiplier or 1 else 1
 	local indexBonus = 1 + Config.Index.RowBonus * (data.indexRows or 0)
-	return total * ClimateData.at(data.climate).multiplier * eventBonus * indexBonus
+	local beginnerBonus = if (data.playSeconds or 0) < Config.Beginner.BoostSeconds
+		then Config.Beginner.Multiplier
+		else 1
+	return total * ClimateData.at(data.climate).multiplier * eventBonus * indexBonus * beginnerBonus
 end
 
 -- Pushes the profile's numbers to attributes, leaderstats and the collect pad.
@@ -149,11 +153,58 @@ local function payOffline(player: Player)
 	Juice.welcome(player, amount, away)
 end
 
+-- Storms level up the longer you own them (see StormData.LevelSeconds).
+local function levelUp(player: Player, record: StormData.StormRecord)
+	local level = StormData.levelOf(record)
+	PlotService.refreshSlot(player, record.slot)
+	local position = PlotService.slotPosition(player, record.slot)
+	if position then
+		Juice.float(player, "LEVEL UP! Lv " .. level, position + Vector3.new(0, 7, 0), Color3.fromRGB(120, 200, 255))
+	end
+	Juice.sound(player, "chime")
+	Notify.player(
+		player,
+		"⬆️ "
+			.. StormData.displayName(record)
+			.. " reached Lv "
+			.. level
+			.. "! It now earns +"
+			.. math.floor((StormData.levelMultiplier(record) - 1) * 100 + 0.5)
+			.. "% more.",
+		"success"
+	)
+end
+
+local function growStorms(player: Player, data: any, dt: number)
+	for _, record in data.storms do
+		if not PlotService.isSlotStolen(player, record.slot) then
+			local before = StormData.levelOf(record)
+			record.xp = (record.xp or 0) + dt
+			if StormData.levelOf(record) > before then
+				levelUp(player, record)
+			end
+		end
+	end
+end
+
 local function tick(dt: number)
 	for _, player in Players:GetPlayers() do
 		local data = DataService.get(player)
 		if data and PlotService.getPlot(player) then
 			data.lastSeen = os.time()
+			local wasBoosted = (data.playSeconds or 0) < Config.Beginner.BoostSeconds
+			data.playSeconds = (data.playSeconds or 0) + dt
+			local boostLeft = Config.Beginner.BoostSeconds - data.playSeconds
+			if boostLeft > 0 and not player:GetAttribute("BoostEndsAt") then
+				-- For the HUD timer. Set once per visit so it doesn't change every second.
+				player:SetAttribute("BoostEndsAt", workspace:GetServerTimeNow() + boostLeft)
+			elseif boostLeft <= 0 and player:GetAttribute("BoostEndsAt") then
+				player:SetAttribute("BoostEndsAt", nil)
+			end
+			if wasBoosted and boostLeft <= 0 then
+				Notify.player(player, "🚀 Your Beginner Boost is over. You're a real storm catcher now!", "info")
+			end
+			growStorms(player, data, dt)
 			local earned = IncomeService.rateOf(player) * dt
 			if earned > 0 then
 				data.stats.sparksEarned += earned

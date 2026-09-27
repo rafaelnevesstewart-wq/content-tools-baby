@@ -1,5 +1,6 @@
 -- Server-wide weather events on a timer. Publishes the current and next event
 -- as workspace attributes; the forecast TV and HUD count down from those.
+-- Between events the sky follows a day and night cycle (Config.DayNight).
 
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
@@ -30,6 +31,10 @@ type LightingState = {
 }
 local baseline: LightingState
 local override: LightingState? = nil
+local tweeningUntil = 0 -- the day cycle waits while a lighting tween plays
+
+local NIGHT_AMBIENT = Color3.fromRGB(95, 95, 150)
+local NIGHT_OUTDOOR = Color3.fromRGB(105, 105, 165)
 
 local function now(): number
 	return workspace:GetServerTimeNow()
@@ -42,8 +47,43 @@ local function publish()
 	workspace:SetAttribute("NextWeatherAt", nextAt)
 end
 
+-- 0 in the day, 1 at night, in between at dawn and dusk.
+local function nightness(clock: number): number
+	if clock >= 7 and clock <= 17 then
+		return 0
+	elseif clock > 17 and clock < 19 then
+		return (clock - 17) / 2
+	elseif clock > 5 and clock < 7 then
+		return (7 - clock) / 2
+	end
+	return 1
+end
+
+-- What the sky looks like at time `t` with no event on: day runs from 7:00 to
+-- 18:00, then night until 7:00 again.
+local function dayState(t: number): LightingState
+	local cycle = Config.DayNight.CycleSeconds
+	local dayShare = 1 - Config.DayNight.NightShare
+	local phase = (t % cycle) / cycle
+	local clock
+	if phase < dayShare then
+		clock = 7 + phase / dayShare * 11
+	else
+		clock = (18 + (phase - dayShare) / Config.DayNight.NightShare * 13) % 24
+	end
+	local night = nightness(clock)
+	return {
+		ClockTime = clock,
+		Ambient = baseline.Ambient:Lerp(NIGHT_AMBIENT, night),
+		OutdoorAmbient = baseline.OutdoorAmbient:Lerp(NIGHT_OUTDOOR, night),
+		AtmosphereColor = baseline.AtmosphereColor,
+		AtmosphereDensity = baseline.AtmosphereDensity,
+	}
+end
+
 local function applyLighting(requested: LightingState)
 	local state = override or requested
+	tweeningUntil = os.clock() + 4.2
 	local info = TweenInfo.new(4, Enum.EasingStyle.Sine)
 	TweenService:Create(Lighting, info, {
 		ClockTime = state.ClockTime,
@@ -87,7 +127,7 @@ local function endEvent()
 	current = nil
 	endsAt = 0
 	StormSpawner.setEvent(nil)
-	applyLighting(baseline)
+	applyLighting(dayState(now() + 4))
 	publish()
 	if ended then
 		Notify.all(ended.emoji .. " " .. ended.name .. " is over. Check the forecast TV for the next one!", "info")
@@ -97,7 +137,7 @@ end
 -- Forces a look (the Mega-Storm's dark sky) until cleared with nil.
 function WeatherService.setLightingOverride(state: LightingState?)
 	override = state
-	applyLighting(if current then current.lighting else baseline)
+	applyLighting(if current then current.lighting else dayState(now() + 4))
 end
 
 function WeatherService.current(): WeatherEvents.WeatherEvent?
@@ -140,6 +180,19 @@ function WeatherService.init()
 end
 
 function WeatherService.start()
+	-- The day and night cycle, whenever no event or Mega-Storm sets the sky.
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			if not current and not override and os.clock() >= tweeningUntil then
+				local state = dayState(now())
+				Lighting.ClockTime = state.ClockTime
+				Lighting.Ambient = state.Ambient
+				Lighting.OutdoorAmbient = state.OutdoorAmbient
+			end
+		end
+	end)
+
 	task.spawn(function()
 		while true do
 			task.wait(1)

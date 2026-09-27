@@ -34,7 +34,7 @@ Config.Throw = {
 	DizzySeconds = 6, -- hits wear off if you wait longer than this between them
 	-- By rarity index: Common, Uncommon, Rare, Epic, Legendary, Mythic, Cosmic
 	HitsNeeded = { 1, 1, 2, 2, 3, 3, 4 },
-	DodgeChance = { 0, 0.1, 0.25, 0.35, 0.45, 0.5, 0.55 },
+	DodgeChance = { 0, 0.05, 0.15, 0.22, 0.3, 0.38, 0.45 },
 	JarDodgeReduction = 0.6, -- the best jar cuts dodge chance by this much
 	MutationChance = 0.08,
 }
@@ -101,8 +101,8 @@ Config.Ride = {
 -- Jars decide the rarest storm you can hold and how wide your catch zone is.
 Config.Jars = {
 	{ name = "Glass Jar", cost = 0, maxRarity = 2, power = 0 },
-	{ name = "Reinforced Jar", cost = 500, maxRarity = 3, power = 0.3 },
-	{ name = "Crystal Jar", cost = 15000, maxRarity = 4, power = 0.6 },
+	{ name = "Reinforced Jar", cost = 250, maxRarity = 3, power = 0.3 },
+	{ name = "Crystal Jar", cost = 10000, maxRarity = 4, power = 0.6 },
 	{ name = "Quantum Jar", cost = 250000, maxRarity = 5, power = 1 },
 	-- These need a Climate Shift first (climate = the level you must be at).
 	{ name = "Aurora Jar", cost = 2000000, maxRarity = 6, power = 1, climate = 1 },
@@ -119,20 +119,20 @@ Config.Pedestals = {
 	Start = 3,
 	Max = 10,
 	MaxWithPass = 20,
-	BaseCost = 60, -- cheap first upgrades so new players feel progress quickly
+	BaseCost = 40, -- cheap first upgrades so new players feel progress quickly
 	CostGrowth = 2.2,
 }
 
 Config.Boots = {
 	MaxLevel = 5,
-	BaseCost = 200,
+	BaseCost = 100,
 	CostGrowth = 4,
 	SpeedPerLevel = 3,
 }
 
 -- Lightning Rod traps stun a thief the moment they grab one of your storms.
 Config.Traps = {
-	Costs = { 1000, 10000, 100000 },
+	Costs = { 500, 10000, 100000 },
 	StunPerLevel = 1.5,
 }
 
@@ -143,7 +143,7 @@ Config.Income = {
 }
 
 Config.Lock = {
-	Duration = 60,
+	Duration = 90,
 	Cooldown = 60, -- after a free lock ends, wait this long before locking again
 	EmergencyDuration = 300, -- the Robux lock
 }
@@ -152,6 +152,8 @@ Config.Steal = {
 	HoldSeconds = 1.5,
 	CarrySpeedMultiplier = 0.7,
 	PromptDistance = 10,
+	-- When one of your storms is stolen, you get this many seconds of its income back.
+	RefundSeconds = 120,
 }
 
 Config.Zapper = {
@@ -165,8 +167,8 @@ Config.Movement = {
 }
 
 Config.Weather = {
-	FirstEventDelay = 240,
-	Interval = 600, -- time between the end of one event and the start of the next
+	FirstEventDelay = 120,
+	Interval = 300, -- time between the end of one event and the start of the next
 	Duration = 180,
 }
 
@@ -213,9 +215,9 @@ Config.Combo = {
 
 -- The golden storm hunt: a fast golden storm; first to catch it wins.
 Config.Golden = {
-	FirstDelay = 180,
+	FirstDelay = 120,
 	StudioFirstDelay = 30, -- shorter in Studio so you can test it
-	Interval = 540,
+	Interval = 270,
 	Lifetime = 60,
 	Rarity = 3, -- Rare (any Reinforced Jar can catch it)
 	SpeedMultiplier = 1.7,
@@ -225,9 +227,9 @@ Config.Golden = {
 
 -- Storm races: a storm zooms around a ring track on the Wild Skies.
 Config.Race = {
-	FirstDelay = 360,
+	FirstDelay = 240,
 	StudioFirstDelay = 75,
-	Interval = 720,
+	Interval = 360,
 	WarningSeconds = 20,
 	Lifetime = 90,
 	Rarity = 2, -- Uncommon, so even a Glass Jar can catch it
@@ -275,6 +277,42 @@ Config.Products = {
 	SparksSmallSeconds = 300, -- or 5 minutes of your income, whichever is more
 	SparksLargeMin = 15000,
 	SparksLargeSeconds = 3600,
+}
+
+-- New players earn extra for their first minutes of play.
+Config.Beginner = {
+	BoostSeconds = 900, -- 15 minutes of play time
+	Multiplier = 2,
+}
+
+-- Storm buddy: one storm that floats next to you everywhere.
+Config.Buddy = {
+	Scale = 0.45,
+}
+
+-- Storm battles: your best 3 storms against another player's, for Sparks.
+-- Nobody loses a storm.
+Config.Battle = {
+	TeamSize = 3,
+	RequestSeconds = 20, -- a challenge expires after this
+	RequestCooldown = 5, -- seconds between challenges you send
+	Cooldown = 90, -- seconds between battles for each player
+	PrizesPerDay = 10, -- only this many wins a day pay a prize (stops farming with a friend)
+	PrizeSeconds = 120, -- winner: 2 minutes of their income...
+	PrizeMin = 500, -- ...or at least this
+	ConsolationSeconds = 30, -- loser: 30 seconds of income...
+	ConsolationMin = 100,
+	MaxTurns = 60, -- after this many hits, the side with more HP left wins
+	AdvantageMultiplier = 1.5, -- weather type advantage (see BattleData)
+	CritChance = 0.12,
+	CritMultiplier = 1.6,
+	PlaybackTurnSeconds = 0.8, -- how long each hit takes to show in the battle window
+}
+
+-- Day and night: one full day in the sky takes this long.
+Config.DayNight = {
+	CycleSeconds = 720, -- 12 minutes
+	NightShare = 0.3, -- 30% of it is night
 }
 
 Config.AutosaveSeconds = 60

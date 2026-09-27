@@ -1,8 +1,9 @@
--- The 🎁 Rewards window, with three tabs:
+-- The 🎁 Rewards window, with four tabs:
 --   * Daily: 7-day login streak. Claim one reward a day.
 --   * Quests: 3 small goals that change every day.
 --   * Index: every storm in the game. Ones you haven't found show as "???".
 --     Finding all storms of a rarity completes a row (+5% Sparks forever).
+--   * Titles: earned by playing; pick one to show above your name.
 
 local Players = game:GetService("Players")
 
@@ -11,6 +12,7 @@ local Config = require(Shared.Config)
 local Remotes = require(Shared.Remotes)
 local RewardsData = require(Shared.RewardsData)
 local StormData = require(Shared.StormData)
+local TitleData = require(Shared.TitleData)
 
 local Toasts = require(script.Parent.Toasts)
 local UI = require(script.Parent.UI)
@@ -34,6 +36,8 @@ local pages: { [string]: Frame } = {}
 local tabs: { [string]: TextButton } = {}
 local currentTab = "Daily"
 local info: Info? = nil
+type TitleInfo = { equipped: string?, list: { { id: string, unlocked: boolean, progress: number } } }
+local titles: TitleInfo? = nil
 local busy = false
 
 local function clear(frame: Instance)
@@ -318,6 +322,109 @@ local function buildIndex(page: Frame, data: Info)
 	end
 end
 
+local function buildTitles(page: Frame)
+	local data = titles
+	if not data then
+		UI.label({ Size = UDim2.new(1, 0, 0, 30), Text = "Loading...", Parent = page })
+		return
+	end
+	local header = UI.new("Frame", {
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 36),
+		BackgroundTransparency = 1,
+		Parent = page,
+	})
+	UI.label({
+		Size = UDim2.new(1, -150, 1, 0),
+		Text = "Earn titles by playing. Tap one you've earned to show it above your name!",
+		TextSize = 15,
+		TextWrapped = true,
+		TextColor3 = UI.Colors.Muted,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = header,
+	})
+	UI.button({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.fromOffset(140, 36),
+		Text = "Hide my title",
+		TextSize = 16,
+		Parent = header,
+	}).Activated
+		:Connect(function()
+			claimWith("SetTitle", nil)
+		end)
+
+	local scroll = UI.new("ScrollingFrame", {
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 1, -46),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = UI.Colors.Stroke,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		Parent = page,
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(186, 76),
+			CellPadding = UDim2.fromOffset(8, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		}),
+		UI.padding(4),
+	})
+	for order, entry in data.list do
+		local title = TitleData.get(entry.id)
+		if not title then
+			continue
+		end
+		local showing = data.equipped == entry.id
+		local tile = UI.button({
+			LayoutOrder = order,
+			Text = "",
+			AutoButtonColor = entry.unlocked,
+			BackgroundColor3 = if showing
+				then Color3.fromRGB(255, 240, 190)
+				elseif entry.unlocked then UI.Colors.Panel
+				else UI.Colors.Disabled,
+			Parent = scroll,
+		})
+		capped({
+			Position = UDim2.fromOffset(6, 4),
+			Size = UDim2.new(1, -12, 0, 26),
+			Text = title.emoji .. " " .. title.name,
+			TextScaled = true,
+			TextColor3 = if entry.unlocked then UI.ink(title.color) else UI.Colors.Muted,
+			Parent = tile,
+		}, 19)
+		capped({
+			Position = UDim2.fromOffset(6, 30),
+			Size = UDim2.new(1, -12, 0, 18),
+			Text = title.goal,
+			TextScaled = true,
+			TextColor3 = UI.Colors.Muted,
+			Parent = tile,
+		}, 13)
+		capped({
+			Position = UDim2.fromOffset(6, 50),
+			Size = UDim2.new(1, -12, 0, 20),
+			Text = if showing
+				then "✓ Showing"
+				elseif entry.unlocked then "Tap to show"
+				else "🔒 " .. math.floor(entry.progress) .. " / " .. title.target,
+			TextScaled = true,
+			TextColor3 = if entry.unlocked then UI.Colors.Good else UI.Colors.Muted,
+			Parent = tile,
+		}, 14)
+		if entry.unlocked and not showing then
+			tile.Activated:Connect(function()
+				claimWith("SetTitle", entry.id)
+			end)
+		end
+	end
+end
+
 local function rebuild()
 	local data = info
 	for name, page in pages do
@@ -327,6 +434,10 @@ local function rebuild()
 	local page = pages[currentTab]
 	clear(page)
 	UI.list(10).Parent = page
+	if currentTab == "Titles" then
+		buildTitles(page)
+		return
+	end
 	if not data then
 		UI.label({ Size = UDim2.new(1, 0, 0, 30), Text = "Loading...", Parent = page })
 		return
@@ -344,6 +455,10 @@ function Rewards.refresh()
 	local data = Remotes.func("GetRewards"):InvokeServer()
 	if type(data) == "table" then
 		info = data
+	end
+	local titleData = Remotes.func("GetTitles"):InvokeServer()
+	if type(titleData) == "table" then
+		titles = titleData
 	end
 	if window.Visible then
 		rebuild()
@@ -407,11 +522,18 @@ function Rewards.start()
 		BackgroundTransparency = 1,
 		Parent = window,
 	}, { UI.list(8, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left) })
-	for order, entry in { { "Daily", "📅 Daily" }, { "Quests", "📜 Quests" }, { "Index", "📖 Storm Index" } } do
+	for order, entry in
+		{
+			{ "Daily", "📅 Daily" },
+			{ "Quests", "📜 Quests" },
+			{ "Index", "📖 Index" },
+			{ "Titles", "🏷️ Titles" },
+		}
+	do
 		local name = entry[1]
 		local button = UI.button({
 			LayoutOrder = order,
-			Size = UDim2.fromOffset(150, 38),
+			Size = UDim2.new(0.25, -8, 1, 0),
 			Text = entry[2],
 			TextSize = 18,
 			Parent = tabRow,

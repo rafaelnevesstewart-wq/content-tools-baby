@@ -8,6 +8,7 @@ local Debris = game:GetService("Debris")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local Format = require(Shared.Format)
 local StormData = require(Shared.StormData)
 local ThiefStyles = require(Shared.ThiefStyles)
 local Signal = require(Shared.Signal)
@@ -134,6 +135,9 @@ local function bank(thief: Player)
 	end
 
 	local record = table.remove(ownerData.storms, index) :: StormData.StormRecord
+	-- Storm insurance: the owner gets some Sparks back so losing a storm stings less.
+	local refund = math.floor(StormData.earningOf(record) * Config.Steal.RefundSeconds)
+	ownerData.sparks += refund
 	record.slot = newSlot
 	table.insert(thiefData.storms, record)
 	thiefData.stats.stolen += 1
@@ -148,7 +152,17 @@ local function bank(thief: Player)
 	IncomeService.sync(thief)
 
 	Notify.player(thief, "😈 You stole " .. carry.name .. "!", "rare")
-	Notify.player(carry.owner, "💔 " .. thief.DisplayName .. " stole your " .. carry.name .. "!", "warn")
+	Notify.player(
+		carry.owner,
+		"💔 "
+			.. thief.DisplayName
+			.. " stole your "
+			.. carry.name
+			.. "! Storm insurance paid you ⚡"
+			.. Format.number(refund)
+			.. ".",
+		"warn"
+	)
 end
 
 local function styleOf(player: Player): string?

@@ -1,8 +1,10 @@
 -- Brings every storm creature to life on this screen: a gentle bob, a happy
 -- sway and a blink every few seconds. Storms are tagged "StormCreature" by
 -- StormModel; their visible parts hang off a "BodyWeld" we animate locally.
+-- At night every storm glows softly in its own color.
 
 local CollectionService = game:GetService("CollectionService")
+local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 
 local StormAnimator = {}
@@ -47,6 +49,49 @@ local function add(instance: Instance)
 	}
 end
 
+-- 0 in the day, 1 at night (same curve as the server's day cycle).
+local function nightness(): number
+	local clock = Lighting.ClockTime
+	if clock >= 7 and clock <= 17 then
+		return 0
+	elseif clock > 17 and clock < 19 then
+		return (clock - 17) / 2
+	elseif clock > 5 and clock < 7 then
+		return (7 - clock) / 2
+	end
+	return 1
+end
+
+local function updateNightGlow()
+	local night = nightness()
+	for model, entry in tracked do
+		local root = entry.weld.Part0
+		if not root then
+			continue
+		end
+		local glow = root:FindFirstChild("NightGlow") :: PointLight?
+		if night <= 0 then
+			if glow then
+				glow.Enabled = false
+			end
+			continue
+		end
+		if not glow then
+			local body = entry.weld.Part1
+			local light = Instance.new("PointLight")
+			light.Name = "NightGlow"
+			light.Color = if body then body.Color:Lerp(Color3.new(1, 1, 1), 0.3) else Color3.new(1, 1, 1)
+			light.Range = 10 * entry.scale
+			light.Shadows = false
+			light.Parent = root
+			glow = light
+		end
+		local light = glow :: PointLight
+		light.Enabled = model.Parent ~= nil
+		light.Brightness = 1.4 * night
+	end
+end
+
 local function setLids(entry: Tracked, closed: boolean)
 	for _, lid in entry.lids do
 		lid.Transparency = if closed then 0 else 1
@@ -60,6 +105,13 @@ function StormAnimator.start()
 	CollectionService:GetInstanceAddedSignal("StormCreature"):Connect(add)
 	CollectionService:GetInstanceRemovedSignal("StormCreature"):Connect(function(model)
 		tracked[model :: Model] = nil
+	end)
+
+	task.spawn(function()
+		while true do
+			updateNightGlow()
+			task.wait(1)
+		end
 	end)
 
 	RunService.RenderStepped:Connect(function()

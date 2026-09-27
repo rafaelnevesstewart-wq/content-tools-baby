@@ -41,6 +41,7 @@ export type StormRecord = {
 	slot: number,
 	at: number,
 	mood: number?, -- 0-100; nil on storms saved before moods existed
+	xp: number?, -- seconds owned while online; sets the storm's level
 }
 
 export type MoodTier = {
@@ -58,7 +59,7 @@ StormData.Rarities = {
 		index = 1,
 		name = "Common",
 		color = Color3.fromRGB(200, 205, 215),
-		weight = 60,
+		weight = 55,
 		speed = 6,
 		pull = 0.15,
 		scale = 1,
@@ -76,7 +77,7 @@ StormData.Rarities = {
 		index = 3,
 		name = "Rare",
 		color = Color3.fromRGB(80, 160, 255),
-		weight = 10,
+		weight = 14,
 		speed = 11,
 		pull = 0.5,
 		scale = 1.2,
@@ -85,7 +86,7 @@ StormData.Rarities = {
 		index = 4,
 		name = "Epic",
 		color = Color3.fromRGB(190, 90, 255),
-		weight = 4,
+		weight = 6,
 		speed = 14,
 		pull = 0.7,
 		scale = 1.35,
@@ -94,7 +95,7 @@ StormData.Rarities = {
 		index = 5,
 		name = "Legendary",
 		color = Color3.fromRGB(255, 190, 40),
-		weight = 1,
+		weight = 1.8,
 		speed = 17,
 		pull = 0.9,
 		scale = 1.5,
@@ -629,6 +630,32 @@ function StormData.wildOfRarity(rarity: number): { StormDef }
 	return list
 end
 
+-- Storm levels. Storms level up the longer you own them (time online):
+-- the seconds needed to reach each level, Lv 1 to Lv 10.
+StormData.LevelSeconds = { 0, 300, 900, 1800, 3600, 7200, 14400, 28800, 57600, 100800 }
+StormData.LevelBonus = 0.1 -- +10% income per level above 1
+
+function StormData.levelOf(record: { xp: number? }): number
+	local xp = record.xp or 0
+	local level = 1
+	for index, needed in StormData.LevelSeconds do
+		if xp >= needed then
+			level = index
+		end
+	end
+	return level
+end
+
+-- Seconds of ownership still needed for the next level, or nil at max level.
+function StormData.toNextLevel(record: { xp: number? }): number?
+	local nextNeeded = StormData.LevelSeconds[StormData.levelOf(record) + 1]
+	return if nextNeeded then nextNeeded - (record.xp or 0) else nil
+end
+
+function StormData.levelMultiplier(record: { xp: number? }): number
+	return 1 + StormData.LevelBonus * (StormData.levelOf(record) - 1)
+end
+
 -- Each storm's riding power, from its weather type.
 local ABILITIES: { [string]: string } = {
 	wind = "Updraft",
@@ -669,9 +696,9 @@ function StormData.incomeOf(record: { id: string, mut: string? }): number
 	return def.income * (if mutation then mutation.multiplier else 1)
 end
 
--- What the storm earns right now, mood included (before VIP).
-function StormData.earningOf(record: { id: string, mut: string?, mood: number? }): number
-	return StormData.incomeOf(record) * StormData.moodOf(record).multiplier
+-- What the storm earns right now, mood and level included (before VIP).
+function StormData.earningOf(record: { id: string, mut: string?, mood: number?, xp: number? }): number
+	return StormData.incomeOf(record) * StormData.moodOf(record).multiplier * StormData.levelMultiplier(record)
 end
 
 -- "Charged Tornado Tony"

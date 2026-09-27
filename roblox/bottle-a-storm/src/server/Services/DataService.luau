@@ -56,7 +56,13 @@ local function defaultData()
 		indexRows = 0, -- completed Storm Index rarity rows (each is +5% income)
 		daily = { lastDay = -1, streak = 0 }, -- login reward streak
 		quests = { day = -1, list = {} }, -- today's quests
-		-- Also saved when set: guardUid, mountUid, lastSeen (for offline earnings).
+		playSeconds = 0, -- total time played (the Beginner Boost lasts 15 minutes)
+		battles = { day = -1, wins = 0, losses = 0 }, -- today's battles that paid out
+		theme = "Meadow", -- island theme
+		themes = { Meadow = true },
+		titles = {}, -- unlocked title id -> true; data.title is the one shown
+		-- Also saved when set: guardUid, buddyUid, mountUid, lastSeen (for offline
+		-- earnings), title.
 		storms = {}, -- { StormRecord }
 		discovered = {}, -- storm id -> true
 		recipes = {}, -- hybrid id -> true, the Storm Mixer recipes this player found
@@ -68,6 +74,9 @@ local function defaultData()
 			mixed = 0,
 			trades = 0,
 			shifts = 0,
+			raids = 0,
+			battlesWon = 0,
+			huntsWon = 0, -- Golden Hunts and Storm Races
 		},
 	}
 end

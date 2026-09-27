@@ -17,6 +17,7 @@ local Effects = require(Modules.Effects)
 local Notify = require(Modules.Notify)
 
 local CaptureService = require(script.Parent.CaptureService)
+local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local StormSpawner = require(script.Parent.StormSpawner)
 
@@ -175,6 +176,10 @@ local function onCaught(player: Player, _record: any, storm: StormSpawner.WildSt
 	local settings = if storm.tag == "golden" then Config.Golden else Config.Race
 	local prize = math.floor(math.max(settings.PrizeMin, IncomeService.rateOf(player) * settings.PrizeSeconds))
 	IncomeService.addSparks(player, prize)
+	local data = DataService.get(player)
+	if data then
+		data.stats.huntsWon += 1
+	end
 	Effects.confetti(storm.root.Position)
 	local what = if storm.tag == "golden" then "won the Golden Hunt" else "won the Storm Race"
 	Notify.player(player, "🏆 You " .. what .. "! +⚡" .. Format.number(prize) .. " Sparks!", "rare")

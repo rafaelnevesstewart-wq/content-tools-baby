@@ -11,6 +11,7 @@ local order = {
 	"Season",
 	"Rewards",
 	"PedestalMenu",
+	"Battle",
 	"HUD",
 	"BiomeController",
 	"ThrowController",
@@ -22,6 +23,7 @@ local order = {
 	"AmbientController",
 	"JuiceController",
 	"TutorialController",
+	"BuddyController",
 }
 
 for _, name in order do

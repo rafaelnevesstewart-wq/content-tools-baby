@@ -1,4 +1,5 @@
--- Things bought with Sparks: jars, pedestals, boots and Lightning Rod traps.
+-- Things bought with Sparks: jars, pedestals, boots, Lightning Rod traps,
+-- thief styles and island themes.
 -- Also handles selling storms from your own pedestals.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
@@ -17,6 +18,7 @@ local IncomeService = require(script.Parent.IncomeService)
 local MovementService = require(script.Parent.MovementService)
 local MoodService = require(script.Parent.MoodService)
 local PlotService = require(script.Parent.PlotService)
+local ThemeService = require(script.Parent.ThemeService)
 
 local ShopService = {}
 
@@ -148,6 +150,11 @@ local function onBuy(player: Player, itemKey: any): (boolean, string)
 		local ok, message = onStyle(player, data, string.sub(itemKey, 7))
 		IncomeService.sync(player)
 		MovementService.refresh(player)
+		return ok, message
+	end
+	if type(itemKey) == "string" and data and string.sub(itemKey, 1, 6) == "Theme:" then
+		local ok, message = ThemeService.buyOrEquip(player, string.sub(itemKey, 7))
+		IncomeService.sync(player)
 		return ok, message
 	end
 	local handler = type(itemKey) == "string" and handlers[itemKey]

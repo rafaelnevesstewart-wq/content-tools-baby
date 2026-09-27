@@ -1,4 +1,4 @@
--- The shop window: Sparks upgrades on one tab, Robux items on the other.
+-- The shop window: Sparks upgrades, island themes, thief styles and Robux items.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -11,6 +11,7 @@ local Format = require(Shared.Format)
 local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
 local StormData = require(Shared.StormData)
+local ThemeData = require(Shared.ThemeData)
 local ThiefStyles = require(Shared.ThiefStyles)
 
 local Toasts = require(script.Parent.Toasts)
@@ -31,6 +32,7 @@ local window: Frame
 local upgradeList: ScrollingFrame
 local robuxList: ScrollingFrame
 local styleList: ScrollingFrame
+local themeList: ScrollingFrame
 local tabButtons: { [string]: TextButton } = {}
 local refreshers: { () -> () } = {}
 
@@ -248,8 +250,40 @@ local function buildStyles()
 	end
 end
 
+local function buildThemes()
+	for order, theme in ThemeData.List do
+		local card = makeCard(themeList, order)
+		card.title.Text = theme.emoji .. " " .. theme.name
+		card.body.Text = theme.description
+		if theme.ground then
+			card.frame.BackgroundColor3 = UI.Colors.PanelLight:Lerp(theme.ground, 0.35)
+		end
+		card.button.Activated:Connect(function()
+			if card.button.Active then
+				buySparks("Theme:" .. theme.key)
+			end
+		end)
+		local function run()
+			local owned = theme.cost == 0
+				or table.find(string.split(player:GetAttribute("UnlockedThemes") or "", ","), theme.key) ~= nil
+			if player:GetAttribute("Theme") == theme.key then
+				setBuyable(card, "✓ Using", false)
+				card.button.BackgroundColor3 = UI.Colors.Good
+			elseif owned then
+				setBuyable(card, "Use", true, UI.Colors.Stroke)
+			else
+				local text, can = sparksPrice(theme.cost)
+				setBuyable(card, text, can)
+			end
+		end
+		table.insert(refreshers, run)
+		run()
+	end
+end
+
 local function showTab(name: string)
 	upgradeList.Visible = name == "Upgrades"
+	themeList.Visible = name == "Themes"
 	robuxList.Visible = name == "Robux"
 	styleList.Visible = name == "Styles"
 	for tab, button in tabButtons do
@@ -323,13 +357,18 @@ function Shop.start()
 		BackgroundTransparency = 1,
 		Parent = window,
 	}, { UI.list(8, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left) })
-	local tabList = { { "Upgrades", "⚡ Upgrades" }, { "Styles", "🥷 Styles" }, { "Robux", "💎 Robux" } }
+	local tabList = {
+		{ "Upgrades", "⚡ Upgrades" },
+		{ "Themes", "🏝️ Themes" },
+		{ "Styles", "🥷 Styles" },
+		{ "Robux", "💎 Robux" },
+	}
 	for index, tab in tabList do
 		local button = UI.button({
 			LayoutOrder = index,
 			Size = UDim2.new(1 / #tabList, -6, 1, 0),
 			Text = tab[2],
-			TextSize = 20,
+			TextSize = 17,
 			Parent = tabs,
 		})
 		button.Activated:Connect(function()
@@ -341,7 +380,9 @@ function Shop.start()
 	upgradeList = makeList("Upgrades")
 	robuxList = makeList("Robux")
 	styleList = makeList("Styles")
+	themeList = makeList("Themes")
 	buildUpgrades()
+	buildThemes()
 	buildRobux()
 	buildStyles()
 	showTab("Upgrades")

@@ -20,6 +20,7 @@ local window: Frame
 local title: TextLabel
 local info: TextLabel
 local guardButton: TextButton
+local buddyButton: TextButton
 local sellButton: TextButton
 local currentBase: BasePart? = nil
 local sellArmed = false
@@ -61,11 +62,21 @@ local function open(base: BasePart)
 
 	title.Text = StormData.displayName(record)
 	title.TextColor3 = UI.ink(StormData.rarityOf(def).color)
-	info.Text = StormData.rarityOf(def).name .. " · ⚡" .. Format.number(StormData.incomeOf(record)) .. "/s"
+	local level = base:GetAttribute("StormLevel")
+	info.Text = "Lv "
+		.. (if type(level) == "number" then level else 1)
+		.. " · "
+		.. StormData.rarityOf(def).name
+		.. " · ⚡"
+		.. Format.number(StormData.incomeOf(record))
+		.. "/s base"
 
 	local guarding = player:GetAttribute("GuardUid") ~= nil
 		and player:GetAttribute("GuardUid") == base:GetAttribute("StormUid")
 	guardButton.Text = if guarding then "🛡️ Stop guarding" else "🛡️ Guard my island"
+	local isBuddy = player:GetAttribute("BuddyUid") ~= nil
+		and player:GetAttribute("BuddyUid") == base:GetAttribute("StormUid")
+	buddyButton.Text = if isBuddy then "💕 Stop following me" else "💕 Make it my buddy"
 	sellButton.Text = "💰 Sell for ⚡" .. Format.number(sellPrice(base))
 	sellButton.BackgroundColor3 = UI.Colors.Warn
 	window.Visible = true
@@ -83,6 +94,18 @@ function PedestalMenu.start()
 		Visible = false,
 		Parent = screen,
 	}, { UI.corner(18), UI.stroke(UI.Colors.Stroke, 3), UI.padding(12), UI.list(8) })
+
+	-- Shrinks on short (phone) screens so every button fits.
+	local scale = UI.new("UIScale", { Parent = window })
+	local function fit()
+		local camera = workspace.CurrentCamera
+		local height = if camera then camera.ViewportSize.Y else 800
+		scale.Scale = math.clamp((height - 40) / 480, 0.55, 1)
+	end
+	fit()
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit)
+	end
 
 	title = UI.label({ LayoutOrder = 1, Size = UDim2.new(1, 0, 0, 28), TextSize = 22, Parent = window })
 	info = UI.label({
@@ -111,7 +134,11 @@ function PedestalMenu.start()
 	guardButton.Activated:Connect(function()
 		send("guard")
 	end)
-	sellButton = big(5, "💰 Sell", UI.Colors.Warn)
+	buddyButton = big(5, "💕 Make it my buddy", Color3.fromRGB(255, 160, 200))
+	buddyButton.Activated:Connect(function()
+		send("buddy")
+	end)
+	sellButton = big(6, "💰 Sell", UI.Colors.Warn)
 	sellButton.Activated:Connect(function()
 		local base = currentBase
 		if not base then
@@ -125,7 +152,7 @@ function PedestalMenu.start()
 		end
 		send("sell")
 	end)
-	big(6, "Close", UI.Colors.PanelLight).Activated:Connect(close)
+	big(7, "Close", UI.Colors.PanelLight).Activated:Connect(close)
 
 	ProximityPromptService.PromptTriggered:Connect(function(prompt, who)
 		if who ~= player or prompt.Name ~= "OptionsPrompt" then

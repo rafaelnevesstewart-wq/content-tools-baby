@@ -24,6 +24,12 @@ function Juice.welcome(player: Player, amount: number, awaySeconds: number)
 	juice:FireClient(player, "welcome", amount, awaySeconds)
 end
 
+-- The big rare-catch moment: a screen flash, a camera zoom on the storm and
+-- a banner with its name.
+function Juice.rareCatch(player: Player, name: string, rarityName: string, color: Color3, position: Vector3)
+	juice:FireClient(player, "rareCatch", name, rarityName, color, position)
+end
+
 -- Shakes the player's camera.
 function Juice.shake(player: Player, strength: number?)
 	juice:FireClient(player, "shake", strength or 1)

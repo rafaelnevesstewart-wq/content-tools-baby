@@ -28,6 +28,8 @@ PlotService.SellRequested = Signal.new()
 PlotService.CollectTouched = Signal.new()
 -- (owner, slot) when the owner picks a storm to guard their island
 PlotService.GuardRequested = Signal.new()
+-- (owner, slot) the owner picked a storm to follow them around as a buddy.
+PlotService.BuddyRequested = Signal.new()
 -- (owner, slot) when the owner picks a storm to ride
 PlotService.RideRequested = Signal.new()
 -- (owner, slot) when the owner pets one of their storms
@@ -326,12 +328,21 @@ local function buildPedestal(plot: Plot, slot: number): Model
 	return model
 end
 
--- Rebuilds the jar display for one slot from the owner's data.
--- "😄 Happy · +125 ⚡/s"
+-- "Lv 3 · 😄 Happy · +125 ⚡/s"
 local function moodSubtitle(record: StormData.StormRecord): string
 	local tier = StormData.moodOf(record)
-	return tier.emoji .. " " .. tier.name .. " · +" .. Format.number(StormData.earningOf(record)) .. " ⚡/s"
+	return "Lv "
+		.. StormData.levelOf(record)
+		.. " · "
+		.. tier.emoji
+		.. " "
+		.. tier.name
+		.. " · +"
+		.. Format.number(StormData.earningOf(record))
+		.. " ⚡/s"
 end
+
+-- Rebuilds the jar display for one slot from the owner's data.
 
 local function refreshSlot(plot: Plot, slot: number)
 	local pedestal = plot.pedestals[slot]
@@ -357,6 +368,7 @@ local function refreshSlot(plot: Plot, slot: number)
 	base:SetAttribute("StormId", if record then record.id else nil)
 	base:SetAttribute("StormMut", if record then record.mut else nil)
 	base:SetAttribute("StormUid", if record then record.uid else nil)
+	base:SetAttribute("StormLevel", if record then StormData.levelOf(record) else nil)
 	base:SetAttribute("BeingStolen", beingStolen)
 
 	local options = base:FindFirstChild("OptionsPrompt") :: ProximityPrompt?
@@ -742,6 +754,8 @@ function PlotService.start()
 			PlotService.RideRequested:Fire(player, slot)
 		elseif action == "guard" then
 			PlotService.GuardRequested:Fire(player, slot)
+		elseif action == "buddy" then
+			PlotService.BuddyRequested:Fire(player, slot)
 		elseif action == "sell" then
 			PlotService.SellRequested:Fire(player, slot)
 		end

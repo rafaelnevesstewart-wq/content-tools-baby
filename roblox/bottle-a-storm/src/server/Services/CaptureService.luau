@@ -181,6 +181,11 @@ local function bottle(player: Player, storm: StormSpawner.WildStorm)
 	if pedestal then
 		Effects.confetti(pedestal + Vector3.new(0, 4, 0), 40)
 	end
+	-- Epic or better (and event storms) get the big moment: flash, zoom, banner.
+	if def.rarity >= 4 or storm.tag then
+		local rarity = StormData.rarityOf(def)
+		Juice.rareCatch(player, name, rarity.name, rarity.color, storm.root.Position)
+	end
 	if not storm.tag and (def.rarity >= 5 or (mutation and def.rarity >= 3)) then
 		Notify.allExcept(player, "🎉 " .. player.DisplayName .. " bottled " .. name .. "!", "rare")
 	end
