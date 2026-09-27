@@ -20,6 +20,7 @@ local IncomeService = require(script.Parent.IncomeService)
 local MovementService = require(script.Parent.MovementService)
 local PlotService = require(script.Parent.PlotService)
 local RideService = require(script.Parent.RideService)
+local SeasonService = require(script.Parent.SeasonService)
 
 local StealService = {}
 
@@ -131,6 +132,7 @@ local function bank(thief: Player)
 	record.slot = newSlot
 	table.insert(thiefData.storms, record)
 	thiefData.stats.stolen += 1
+	SeasonService.addXp(thief, Config.Season.StealXp)
 	thiefData.discovered[record.id] = true
 
 	clearCarry(thief)

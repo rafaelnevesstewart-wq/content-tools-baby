@@ -200,7 +200,8 @@ local function buildRobux()
 			end
 		end)
 		local function run()
-			local owned = isPass and player:GetAttribute(Products.passAttribute(item.key)) == true
+			local owned = (isPass and player:GetAttribute(Products.passAttribute(item.key)) == true)
+				or (item.key == "SeasonPremium" and player:GetAttribute("SeasonPremium") == true)
 			if item.key == "RaidShield" then
 				card.body.Text = item.description .. " (You have " .. attr("RaidShields") .. ")"
 			end

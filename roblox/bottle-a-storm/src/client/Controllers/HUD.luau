@@ -14,6 +14,7 @@ local WeatherEvents = require(Shared.WeatherEvents)
 
 local Shop = require(script.Parent.Shop)
 local Climate = require(script.Parent.Climate)
+local Season = require(script.Parent.Season)
 local Trade = require(script.Parent.Trade)
 local Toasts = require(script.Parent.Toasts)
 local UI = require(script.Parent.UI)
@@ -248,6 +249,17 @@ function HUD.start()
 	sideButton(side, 5, "🌍 Climate", Color3.fromRGB(70, 110, 170)).Activated:Connect(function()
 		Climate.toggle()
 	end)
+	local seasonButton = sideButton(side, 6, "🎟️ Season", Color3.fromRGB(190, 140, 40))
+	seasonButton.Activated:Connect(function()
+		Season.toggle()
+	end)
+	-- Shows how many rewards are waiting to be claimed.
+	local function refreshSeasonButton()
+		local waiting = player:GetAttribute("SeasonClaimable") or 0
+		seasonButton.Text = if waiting > 0 then "🎟️ Season (" .. waiting .. "!)" else "🎟️ Season"
+	end
+	player:GetAttributeChangedSignal("SeasonClaimable"):Connect(refreshSeasonButton)
+	refreshSeasonButton()
 	local lockItem = Products.get("EmergencyLock")
 	if lockItem then
 		sideButton(side, 3, "🔒 Lock R$" .. lockItem.price, Color3.fromRGB(70, 130, 220)).Activated:Connect(function()

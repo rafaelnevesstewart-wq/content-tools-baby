@@ -48,6 +48,9 @@ local function defaultData()
 		trapLevel = 0,
 		raidShields = 0,
 		climate = 0, -- Climate Shift level: 0 Temperate, 1 Arctic, 2 Volcano, 3 Space
+		-- Season pass progress; reset when a new season starts. Claimed tiers use
+		-- string keys ("5" = true) so the DataStore never sees an array with holes.
+		season = { id = -1, xp = 0, premium = false, claimedFree = {}, claimedPremium = {} },
 		thiefStyles = {}, -- unlocked style key -> true; data.thiefStyle is the equipped one
 		storms = {}, -- { StormRecord }
 		discovered = {}, -- storm id -> true

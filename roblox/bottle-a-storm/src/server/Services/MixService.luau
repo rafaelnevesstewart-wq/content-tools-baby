@@ -22,6 +22,7 @@ local Recipes = require(Modules.Recipes)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local PlotService = require(script.Parent.PlotService)
+local SeasonService = require(script.Parent.SeasonService)
 
 local MixService = {}
 
@@ -177,6 +178,7 @@ local function mix(player: Player, uidA: any, uidB: any): (boolean, string)
 	}
 	table.insert(data.storms, record)
 	data.stats.mixed += 1
+	SeasonService.addXp(player, Config.Season.MixXp)
 	data.discovered[result.id] = true
 	local newRecipe = recipe ~= nil and not data.recipes[result.id]
 	if recipe then

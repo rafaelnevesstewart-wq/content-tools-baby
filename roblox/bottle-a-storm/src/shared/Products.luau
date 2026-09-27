@@ -74,6 +74,20 @@ Products.DevProducts = {
 		description = "If the next Mega-Storm wins, your storms stay safe.",
 	},
 	{
+		key = "SeasonPremium",
+		id = 0,
+		price = 299,
+		name = "Season Premium",
+		description = "Unlock this season's premium rewards, including 2 exclusive storms.",
+	},
+	{
+		key = "SeasonSkip",
+		id = 0,
+		price = 49,
+		name = "Skip a Season Tier",
+		description = "Jump one tier ahead on the season pass.",
+	},
+	{
 		key = "SummonWeather",
 		id = 0,
 		price = 79,

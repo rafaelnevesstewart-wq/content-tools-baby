@@ -7,6 +7,7 @@ local order = {
 	"Shop",
 	"Trade",
 	"Climate",
+	"Season",
 	"HUD",
 	"BiomeController",
 	"ThrowController",

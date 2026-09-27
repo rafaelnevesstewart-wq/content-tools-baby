@@ -25,6 +25,7 @@ local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local MovementService = require(script.Parent.MovementService)
 local PlotService = require(script.Parent.PlotService)
+local SeasonService = require(script.Parent.SeasonService)
 local StealService = require(script.Parent.StealService)
 local StormSpawner = require(script.Parent.StormSpawner)
 local WeatherService = require(script.Parent.WeatherService)
@@ -542,6 +543,9 @@ local function finish(won: boolean)
 		table.insert(lines, i .. ". " .. ranked[i].DisplayName .. " (" .. Format.number(damage[ranked[i]]) .. ")")
 	end
 	local top = if #lines > 0 then "  Top damage: " .. table.concat(lines, "  ") else ""
+	for _, player in ranked do
+		SeasonService.addXp(player, Config.Season.RaidFightXp + (if won then Config.Season.RaidWinXp else 0))
+	end
 
 	if won then
 		local root = bossRoot()

@@ -23,6 +23,7 @@ local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local MovementService = require(script.Parent.MovementService)
 local PlotService = require(script.Parent.PlotService)
+local SeasonService = require(script.Parent.SeasonService)
 local StormSpawner = require(script.Parent.StormSpawner)
 local WeatherService = require(script.Parent.WeatherService)
 
@@ -129,6 +130,7 @@ local function bottle(player: Player, storm: StormSpawner.WildStorm)
 	}
 	table.insert(data.storms, record)
 	data.stats.captured += 1
+	SeasonService.addXp(player, Config.Season.CatchXpPerRarity * def.rarity)
 	local firstTime = not data.discovered[def.id]
 	data.discovered[def.id] = true
 	PlotService.refreshSlot(player, slot)

@@ -64,6 +64,18 @@ Config.Mood = {
 	SnackMinCost = 100,
 }
 
+-- Season pass: Season Stars earned by playing (tiers and rewards are in SeasonData).
+Config.Season = {
+	PlaytimeXpPerMinute = 3,
+	CatchXpPerRarity = 8, -- a Rare (rarity 3) catch gives 24
+	StealXp = 30,
+	MixXp = 20,
+	RaidFightXp = 60, -- dealt any damage in a raid
+	RaidWinXp = 100, -- extra when the server wins
+	SkipTierXp = 250, -- the Robux "Skip a Tier" product
+	DuplicatePremiumTiers = 3, -- if you buy Premium twice, you get this many tier skips instead
+}
+
 -- Trading storms and Sparks with other players in the server.
 Config.Trading = {
 	MaxStorms = 4, -- per side

@@ -18,6 +18,7 @@ local Notify = require(Modules.Notify)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local PlotService = require(script.Parent.PlotService)
+local SeasonService = require(script.Parent.SeasonService)
 local WeatherService = require(script.Parent.WeatherService)
 
 local MonetizationService = {}
@@ -52,6 +53,14 @@ local productHandlers: { [string]: (Player, any) -> boolean } = {
 	RaidShield = function(player, data)
 		data.raidShields += 1
 		Notify.player(player, "🛡️ Raid Shield ready! You have " .. data.raidShields .. ".", "success")
+		return true
+	end,
+	SeasonPremium = function(player)
+		return SeasonService.grantPremium(player)
+	end,
+	SeasonSkip = function(player)
+		SeasonService.addXp(player, Config.Season.SkipTierXp)
+		Notify.player(player, "⏭️ Skipped a season tier!", "success")
 		return true
 	end,
 	SummonWeather = function(player)

@@ -19,6 +19,8 @@ local FUNCTIONS = {
 	"GetMixer", -- client -> server: () -> mixer info
 	"MixStorms", -- client -> server: (uidA, uidB) -> (ok, message)
 	"ClimateShift", -- client -> server: () -> (ok, message)
+	"GetSeason", -- client -> server: () -> your season progress
+	"SeasonClaim", -- client -> server: (tier, "free" | "premium") -> (ok, message)
 }
 
 local folder: Instance

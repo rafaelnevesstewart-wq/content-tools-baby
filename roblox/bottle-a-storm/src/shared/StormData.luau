@@ -21,6 +21,7 @@ export type StormDef = {
 	hybrid: boolean?, -- only made in the Storm Mixer, never found in the wild
 	biome: string?, -- only lives on that Climate Shift island (see ClimateData)
 	weight: number?, -- spawn weight on its biome island
+	season: string?, -- only from that season's pass (see SeasonData)
 }
 
 export type Mutation = {
@@ -437,6 +438,120 @@ StormData.Storms = {
 		biome = "Space",
 		weight = 3,
 	},
+
+	-- Season pass exclusives (see SeasonData): Epic (free track), Legendary and Mythic (premium).
+	-- Spring Showers
+	{
+		id = "BlossomDrizzle",
+		name = "Blossom Drizzle",
+		rarity = 4,
+		income = 800,
+		colors = { rgb(255, 190, 215), rgb(255, 240, 245) },
+		fx = "rain",
+		season = "SpringShowers",
+	},
+	{
+		id = "PetalTwister",
+		name = "Petal Twister",
+		rarity = 5,
+		income = 7000,
+		colors = { rgb(255, 150, 190), rgb(170, 230, 150) },
+		fx = "wind",
+		season = "SpringShowers",
+	},
+	{
+		id = "CherryMonsoon",
+		name = "Cherry Monsoon",
+		rarity = 6,
+		income = 35000,
+		colors = { rgb(255, 120, 170), rgb(120, 60, 90) },
+		fx = "rain",
+		season = "SpringShowers",
+	},
+	-- Summer Heatwave
+	{
+		id = "SunnyPuff",
+		name = "Sunny Puff",
+		rarity = 4,
+		income = 900,
+		colors = { rgb(255, 230, 110), rgb(255, 250, 220) },
+		fx = "fire",
+		season = "SummerHeatwave",
+	},
+	{
+		id = "HeatwaveHawk",
+		name = "Heatwave Hawk",
+		rarity = 5,
+		income = 7500,
+		colors = { rgb(255, 160, 60), rgb(255, 90, 60) },
+		fx = "fire",
+		season = "SummerHeatwave",
+	},
+	{
+		id = "TropicalTyphoon",
+		name = "Tropical Typhoon",
+		rarity = 6,
+		income = 38000,
+		colors = { rgb(60, 210, 190), rgb(255, 220, 120) },
+		fx = "hurricane",
+		season = "SummerHeatwave",
+	},
+	-- Autumn Gusts
+	{
+		id = "LeafyBreeze",
+		name = "Leafy Breeze",
+		rarity = 4,
+		income = 850,
+		colors = { rgb(230, 150, 60), rgb(200, 90, 40) },
+		fx = "wind",
+		season = "AutumnGusts",
+	},
+	{
+		id = "PumpkinTornado",
+		name = "Pumpkin Tornado",
+		rarity = 5,
+		income = 8000,
+		colors = { rgb(255, 140, 30), rgb(60, 130, 50) },
+		fx = "wind",
+		season = "AutumnGusts",
+	},
+	{
+		id = "HarvestMoonSquall",
+		name = "Harvest Moon Squall",
+		rarity = 6,
+		income = 36000,
+		colors = { rgb(255, 200, 110), rgb(120, 70, 140) },
+		fx = "rainbow",
+		season = "AutumnGusts",
+	},
+	-- Winter Wonder
+	{
+		id = "JingleFlurry",
+		name = "Jingle Flurry",
+		rarity = 4,
+		income = 900,
+		colors = { rgb(240, 250, 255), rgb(220, 60, 70) },
+		fx = "snow",
+		season = "WinterWonder",
+	},
+	{
+		id = "CandyCaneCyclone",
+		name = "Candy Cane Cyclone",
+		rarity = 5,
+		income = 8500,
+		colors = { rgb(255, 255, 255), rgb(230, 50, 60) },
+		fx = "hurricane",
+		season = "WinterWonder",
+	},
+	{
+		id = "AuroraReindeer",
+		name = "Aurora Reindeer",
+		rarity = 6,
+		income = 40000,
+		colors = { rgb(150, 110, 80), rgb(120, 255, 200) },
+		fx = "rainbow",
+		season = "WinterWonder",
+	},
 } :: { StormDef }
 
 StormData.Mutations = {
@@ -507,7 +622,7 @@ end
 function StormData.wildOfRarity(rarity: number): { StormDef }
 	local list = {}
 	for _, def in StormData.Storms do
-		if def.rarity == rarity and not def.hybrid and not def.biome then
+		if def.rarity == rarity and not def.hybrid and not def.biome and not def.season then
 			table.insert(list, def)
 		end
 	end
