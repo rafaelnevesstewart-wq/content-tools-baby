@@ -45,10 +45,19 @@ function RewardService.randomMutation(): string
 	return StormData.Mutations[1].id
 end
 
--- Puts a storm on a free pedestal. Returns an error message if there's no room.
+local BED_WARS = Config.GameMode == "BedWars"
+
+-- Is there room for one more storm? (In Bed Wars storms are kits, so there's
+-- no pedestal limit.)
+function RewardService.hasRoom(player: Player): boolean
+	return BED_WARS or PlotService.firstFreeSlot(player) ~= nil
+end
+
+-- Puts a storm on a free pedestal (in Bed Wars: into your kit collection).
+-- Returns an error message if there's no room.
 function RewardService.giveStorm(player: Player, def: StormData.StormDef, mutation: string?, mood: number?): string?
 	local data = DataService.get(player)
-	local slot = PlotService.firstFreeSlot(player)
+	local slot = if BED_WARS then 0 else PlotService.firstFreeSlot(player)
 	if not data then
 		return "Your data isn't loaded yet."
 	end
@@ -67,7 +76,13 @@ function RewardService.giveStorm(player: Player, def: StormData.StormDef, mutati
 	PlotService.refreshSlot(player, slot)
 	IndexService.discover(player, def.id)
 	IncomeService.sync(player)
-	tell(player, "🎁 " .. StormData.displayName(record) .. " is on your island!", "rare")
+	tell(
+		player,
+		"🎁 "
+			.. StormData.displayName(record)
+			.. (if BED_WARS then " joined your kits! Pick it in 🌪️ Kits." else " is on your island!"),
+		"rare"
+	)
 	return nil
 end
 
@@ -120,8 +135,10 @@ function RewardService.grant(
 end
 
 function RewardService.start()
-	-- New players get a free, happy starter storm so they earn right away.
-	PlotService.PlotAssigned:Connect(function(player)
+	-- New players get a free, happy starter storm so they earn right away
+	-- (in Bed Wars it's their first kit).
+	local signal = if BED_WARS then DataService.ProfileLoaded else PlotService.PlotAssigned
+	signal:Connect(function(player)
 		local data = DataService.get(player)
 		local def = StormData.get(Config.Starter.StormId)
 		if not data or data.starterGiven or not def then
@@ -130,7 +147,13 @@ function RewardService.start()
 		data.starterGiven = true
 		if #data.storms == 0 then
 			RewardService.giveStorm(player, def, nil, 100)
-			Notify.player(player, "👋 Welcome! Follow the arrow to the Wild Skies to catch more storms!", "info")
+			Notify.player(
+				player,
+				if BED_WARS
+					then "👋 Welcome to Bed Wars! Protect your cloud bed and break everyone else's!"
+					else "👋 Welcome! Follow the arrow to the Wild Skies to catch more storms!",
+				"info"
+			)
 		end
 	end)
 end

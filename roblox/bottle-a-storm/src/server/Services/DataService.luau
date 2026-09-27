@@ -77,7 +77,7 @@ local function defaultData()
 			signEmoji = "🏝️",
 		},
 		-- Also saved when set: guardUid, buddyUid, mountUid, lastSeen (for offline
-		-- earnings), title.
+		-- earnings), title, kit (the storm uid you bring to Bed Wars matches).
 		storms = {}, -- { StormRecord }
 		discovered = {}, -- storm id -> true
 		recipes = {}, -- hybrid id -> true, the Storm Mixer recipes this player found
@@ -95,6 +95,12 @@ local function defaultData()
 			grumpsPopped = 0, -- grumpy clouds you helped pop
 			splashes = 0, -- players you hit with water balloons
 			obbyClears = 0, -- times you reached the secret sky island
+			-- Bed Wars
+			kills = 0,
+			finalKills = 0,
+			bedsBroken = 0,
+			wins = 0,
+			matches = 0,
 		},
 	}
 end

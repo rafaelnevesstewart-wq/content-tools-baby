@@ -21,6 +21,11 @@ local EVENTS = {
 	"BattleAction", -- client -> server: ("request", userId) | ("respond", fromUserId, accept)
 	"BattleInvite", -- server -> client: (fromUserId, fromName)
 	"BattlePlay", -- server -> client: (battle) the whole fight, for the battle window
+	-- Bed Wars
+	"Swing", -- client -> server: (aimPoint) sword swing
+	"ShootBow", -- client -> server: (aimPoint)
+	"UseItem", -- client -> server: (itemKey, aimPoint) Storm Apple / Wind Pearl
+	"PlaceBlock", -- client -> server: (blockKey, point)
 }
 
 local FUNCTIONS = {
@@ -45,6 +50,11 @@ local FUNCTIONS = {
 	"GetMarket", -- client -> server: () -> market stock
 	"BuyMarket", -- client -> server: (slot) -> (ok, message)
 	"OpenJar", -- client -> server: (jarKey) -> (ok, message)
+	-- Bed Wars
+	"BuyMatchItem", -- client -> server: (itemKey) -> (ok, message)
+	"BuyUpgrade", -- client -> server: (upgradeKey) -> (ok, message)
+	"GetKits", -- client -> server: () -> your storms and the chosen kit
+	"ChooseKit", -- client -> server: (uid) -> (ok, message)
 }
 
 local folder: Instance

@@ -4,6 +4,46 @@
 
 local Config = {}
 
+-- Which game runs: "BedWars" (team rounds: protect your cloud bed) or
+-- "Tycoon" (the original storm-catching game).
+Config.GameMode = "BedWars"
+
+-- Bed Wars matches (the rest is in MatchData).
+Config.Match = {
+	MinPlayers = 2, -- players needed to start a match
+	StudioMinPlayers = 1, -- in Studio a match starts with just you, for testing
+	CountdownSeconds = 15,
+	EndSeconds = 10, -- the winner screen before going back to the lobby
+	RespawnSeconds = 5,
+	SpawnProtection = 3, -- seconds of safety after respawning
+	SoloUpTo = 4, -- up to this many players: everyone for themselves; more: teams of 2
+	SuddenDeathAt = 1200, -- 20 minutes in, every bed breaks
+	MaxSeconds = 1800, -- 30 minutes: the team with the most players left wins
+	-- Each team island's generator.
+	Generator = {
+		Copper = { every = 1.2, cap = 48 },
+		Silver = { every = 6, cap = 12 },
+	},
+	-- Generators on the middle island.
+	Crystals = { every = 30, cap = 4, count = 4, radius = 55 },
+	Cores = { every = 60, cap = 2, count = 2, radius = 30 },
+	TierUpAt = { 360, 720 }, -- the middle generators speed up at these times
+	-- Combat.
+	HitCooldown = 0.45,
+	SwordRange = 9,
+	Knockback = 32,
+	BowDamage = 22,
+	BowCooldown = 0.8,
+	BowRange = 140,
+	AppleHeal = 40,
+	PearlRange = 60,
+	-- Blocks.
+	BlockSize = 3,
+	BlockReach = 20,
+	MaxBlockHeight = 70,
+	BedBreakSeconds = 2.5,
+}
+
 -- One island per player. Set the place's Max Players to this number.
 Config.MaxPlots = 8
 

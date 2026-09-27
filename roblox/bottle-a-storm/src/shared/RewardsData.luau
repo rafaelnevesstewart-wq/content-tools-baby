@@ -2,12 +2,14 @@
 -- Daily login rewards and the daily quest pool. Rewards use the same format
 -- as the season pass (see SeasonData.Reward).
 
+local Config = require(script.Parent.Config)
 local SeasonData = require(script.Parent.SeasonData)
 
 export type Quest = {
 	id: string,
 	text: string, -- "%s" is replaced with the target
 	kind: string, -- what counts: catch, catchRare, steal, mix, pet, collect, raid, grump
+	-- (Bed Wars: kill, finalKill, bed, win, play)
 	targets: { number }, -- one is picked at random; collect is scaled to income instead
 }
 
@@ -34,6 +36,26 @@ RewardsData.Quests = {
 	{ id = "raid", text = "Fight in a Mega-Storm", kind = "raid", targets = { 1 } },
 	{ id = "grump", text = "Pop %s grumpy clouds", kind = "grump", targets = { 5, 8, 12 } },
 } :: { Quest }
+
+-- Bed Wars has its own login rewards and quests.
+if Config.GameMode == "BedWars" then
+	RewardsData.Daily = {
+		{ kind = "sparks", minutes = 0, min = 500 },
+		{ kind = "sparks", minutes = 0, min = 1000 },
+		{ kind = "storm", rarity = 2 },
+		{ kind = "sparks", minutes = 0, min = 2000 },
+		{ kind = "sparks", minutes = 0, min = 4000 },
+		{ kind = "storm", rarity = 3 },
+		{ kind = "storm", rarity = 4 },
+	} :: { SeasonData.Reward }
+	RewardsData.Quests = {
+		{ id = "bwKill", text = "Knock out %s players", kind = "kill", targets = { 3, 5, 8 } },
+		{ id = "bwFinal", text = "Get %s final kills", kind = "finalKill", targets = { 1, 2, 3 } },
+		{ id = "bwBed", text = "Break %s cloud beds", kind = "bed", targets = { 1, 2 } },
+		{ id = "bwWin", text = "Win %s matches", kind = "win", targets = { 1, 2 } },
+		{ id = "bwPlay", text = "Play %s matches", kind = "play", targets = { 2, 3, 5 } },
+	} :: { Quest }
+end
 
 function RewardsData.quest(id: string): Quest?
 	for _, quest in RewardsData.Quests do

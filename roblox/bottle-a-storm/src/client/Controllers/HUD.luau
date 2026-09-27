@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
@@ -17,6 +18,7 @@ local WeatherEvents = require(Shared.WeatherEvents)
 
 local Climate = require(script.Parent.Climate)
 local AdminPanel = require(script.Parent.AdminPanel)
+local Kits = require(script.Parent.Kits)
 local Battle = require(script.Parent.Battle)
 local Market = require(script.Parent.Market)
 local Rewards = require(script.Parent.Rewards)
@@ -30,6 +32,10 @@ local UI = require(script.Parent.UI)
 local player = Players.LocalPlayer
 
 local HUD = {}
+
+-- In Bed Wars there's no island income, stealing, locks or Mega-Storms, so
+-- those buttons and chips are hidden (MatchHUD shows the match instead).
+local BED_WARS = Config.GameMode == "BedWars"
 
 local sparksLabel: TextLabel
 local incomeLabel: TextLabel
@@ -178,7 +184,8 @@ local function refreshStats()
 	incomeLabel.Text = "+" .. Format.number(player:GetAttribute("IncomePerSec") or 0) .. "/s"
 	local unclaimed = player:GetAttribute("Unclaimed") or 0
 	local auto = player:GetAttribute(Products.passAttribute("AutoCollect")) == true
-	unclaimedChip.Visible = unclaimed >= 1 and not auto
+	unclaimedChip.Visible = unclaimed >= 1 and not auto and not BED_WARS
+	incomeLabel.Visible = not BED_WARS
 	unclaimedChip.Text = "💰 " .. Format.number(unclaimed)
 	local carrying = player:GetAttribute("Carrying")
 	carryBanner.Visible = carrying ~= nil
@@ -375,15 +382,23 @@ function HUD.start()
 	end
 	player:GetAttributeChangedSignal("SeasonClaimable"):Connect(refreshSeasonBadge)
 	refreshSeasonBadge()
-	iconButton(bar, 6, "🤝", "Trade", Color3.fromRGB(255, 180, 140)).Activated:Connect(function()
-		Trade.openMenu()
-	end)
+	if BED_WARS then
+		iconButton(bar, 6, "🌪️", "Kits", Color3.fromRGB(150, 200, 255)).Activated:Connect(function()
+			Kits.toggle()
+		end)
+	else
+		iconButton(bar, 6, "🤝", "Trade", Color3.fromRGB(255, 180, 140)).Activated:Connect(function()
+			Trade.openMenu()
+		end)
+	end
 	iconButton(bar, 7, "⚔️", "Battle", Color3.fromRGB(255, 150, 150)).Activated:Connect(function()
 		Battle.openMenu()
 	end)
-	iconButton(bar, 8, "🌍", "Climate", Color3.fromRGB(140, 195, 255)).Activated:Connect(function()
-		Climate.toggle()
-	end)
+	if not BED_WARS then
+		iconButton(bar, 8, "🌍", "Climate", Color3.fromRGB(140, 195, 255)).Activated:Connect(function()
+			Climate.toggle()
+		end)
+	end
 	local adminButton = iconButton(bar, 20, "👑", "Admin", UI.Colors.Spark)
 	adminButton.Activated:Connect(AdminPanel.toggle)
 	local function refreshAdmin()
@@ -392,7 +407,7 @@ function HUD.start()
 	player:GetAttributeChangedSignal("IsAdmin"):Connect(refreshAdmin)
 	refreshAdmin()
 	local lockItem = Products.get("EmergencyLock")
-	if lockItem then
+	if lockItem and not BED_WARS then
 		iconButton(bar, 9, "🔒", "R$" .. lockItem.price, Color3.fromRGB(255, 160, 190)).Activated:Connect(
 			buyEmergencyLock
 		)
@@ -428,6 +443,7 @@ function HUD.start()
 			local text, color = lockText(now)
 			lockChip.Text = text
 			lockChip.TextColor3 = color
+			lockChip.Visible = not BED_WARS
 			-- Admin Abuse / luck / holiday event chip.
 			local abuseUntil = workspace:GetAttribute("AbuseUntil")
 			local luckUntil = workspace:GetAttribute("LuckUntil")
@@ -449,7 +465,11 @@ function HUD.start()
 			if boostChip.Visible then
 				boostChip.Text = "🚀 x2 Beginner Boost " .. Format.time(boostEndsAt - now)
 			end
-			refreshRaid(now)
+			if BED_WARS then
+				raidChip.Visible = false
+			else
+				refreshRaid(now)
+			end
 			task.wait(0.25)
 		end
 	end)

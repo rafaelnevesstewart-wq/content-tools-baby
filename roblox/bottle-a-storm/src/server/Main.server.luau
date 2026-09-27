@@ -2,7 +2,9 @@
 
 local Services = script.Parent.Services
 
-local order = {
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared").Config)
+
+local TYCOON = {
 	"DataService",
 	"PlotService", -- builds the world, so it runs before anything that needs it
 	"StormSpawner",
@@ -46,6 +48,39 @@ local order = {
 	"MonetizationService",
 }
 
+-- Bed Wars rounds. The storm-catching tycoon services are switched off (not
+-- deleted): set Config.GameMode = "Tycoon" to bring them back.
+local BED_WARS = {
+	"DataService",
+	"MatchService", -- builds the world, so it runs before anything that needs it
+	"WeatherService",
+	"MovementService",
+	"IncomeService",
+	"IndexService",
+	"SeasonService",
+	"RewardService",
+	"BlockService",
+	"CombatService",
+	"ItemShopService",
+	"KitService",
+	"ObbyService",
+	"FlightService",
+	"MarketService",
+	"CommunityService",
+	"LeaderboardService",
+	"SpinService",
+	"AdminService",
+	"HolidayService",
+	"DailyService",
+	"BattleService",
+	"TitleService",
+	"CosmeticService",
+	"ShopService",
+	"MonetizationService",
+}
+
+local order = if Config.GameMode == "BedWars" then BED_WARS else TYCOON
+
 local services = {}
 for _, name in order do
 	services[name] = require(Services:FindFirstChild(name))
@@ -68,4 +103,4 @@ for _, name in order do
 end
 services.DataService.start()
 
-print("[Bottle a Storm] Server ready")
+print("[Bottle a Storm] Server ready (" .. Config.GameMode .. ")")

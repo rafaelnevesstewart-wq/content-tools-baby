@@ -442,7 +442,7 @@ end
 
 -- Spawns `amount` storms right away (used when an event starts).
 function StormSpawner.burst(amount: number)
-	if paused then
+	if paused or (wildZone :: Zone?) == nil then -- (not built in Bed Wars)
 		return
 	end
 	for _ = 1, amount do
@@ -457,7 +457,7 @@ end
 
 -- Admin "storm rain": a burst of storms on the Wild Skies, rolled with luck.
 function StormSpawner.stormRain(count: number)
-	if paused then
+	if paused or (wildZone :: Zone?) == nil then -- (not built in Bed Wars)
 		return
 	end
 	for _ = 1, count do

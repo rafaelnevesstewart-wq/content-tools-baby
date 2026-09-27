@@ -59,6 +59,10 @@ local function takeOff(player: Player)
 	if player:GetAttribute(Products.passAttribute("Flight")) ~= true then
 		return -- the client offers the pass instead
 	end
+	if player:GetAttribute("InMatch") then
+		Notify.player(player, "☁️ No flying during a Bed Wars match! Fly in the lobby.", "warn")
+		return
+	end
 	local root = rootOf(player)
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")

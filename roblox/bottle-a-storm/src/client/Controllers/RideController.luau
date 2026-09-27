@@ -1,5 +1,6 @@
 -- Riding controls. Q (or the Ride button on phones) hops on and off your
--- storm. Shift (or the power button) uses its power. Movement powers run here
+-- storm. Shift (or the power button) uses its power (in Bed Wars: your kit's
+-- power). Movement powers run here
 -- because the player's own client moves their character.
 --   Updraft    (wind storms)             launch high into the air
 --   Blink Dash (lightning storms)        teleport forward
@@ -125,13 +126,14 @@ end
 
 local function refreshLabel()
 	local riding = player:GetAttribute("Riding")
+	local kit = player:GetAttribute("KitName")
 	local ability = player:GetAttribute("RideAbility")
-	label.Visible = riding ~= nil
-	if not riding then
+	label.Visible = riding ~= nil or kit ~= nil
+	if not riding and not kit then
 		return
 	end
 	local info = ability and StormData.AbilityInfo[ability]
-	local text = "🐎 Riding " .. tostring(riding)
+	local text = if riding then "🐎 Riding " .. tostring(riding) else "🌪️ Kit: " .. tostring(kit)
 	if info then
 		local wait = (readyAt[ability] or 0) - os.clock()
 		local status = if wait > 0 then string.format("%.0fs", math.ceil(wait)) else "ready"
@@ -157,13 +159,16 @@ function RideController.start()
 	UI.corner(10).Parent = label
 	UI.new("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = label })
 
-	ContextActionService:BindAction(TOGGLE_ACTION, function(_, state)
-		if state == Enum.UserInputState.Begin then
-			Remotes.event("ToggleRide"):FireServer()
-		end
-		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.Q, Enum.KeyCode.ButtonY)
-	ContextActionService:SetTitle(TOGGLE_ACTION, "Ride")
+	-- In Bed Wars your storm is a kit instead (its power works without riding).
+	if Config.GameMode ~= "BedWars" then
+		ContextActionService:BindAction(TOGGLE_ACTION, function(_, state)
+			if state == Enum.UserInputState.Begin then
+				Remotes.event("ToggleRide"):FireServer()
+			end
+			return Enum.ContextActionResult.Sink
+		end, true, Enum.KeyCode.Q, Enum.KeyCode.ButtonY)
+		ContextActionService:SetTitle(TOGGLE_ACTION, "Ride")
+	end
 
 	player:GetAttributeChangedSignal("RideAbility"):Connect(refreshBindings)
 	refreshBindings()

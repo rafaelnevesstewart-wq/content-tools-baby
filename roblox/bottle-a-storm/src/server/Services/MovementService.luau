@@ -49,7 +49,8 @@ function MovementService.refresh(player: Player)
 	end
 
 	local data = DataService.get(player)
-	local boots = if data then data.bootsLevel else 0
+	-- Boots don't count in Bed Wars matches, so fights are fair.
+	local boots = if data and not player:GetAttribute("InMatch") then data.bootsLevel else 0
 	local speed = Config.Movement.BaseWalkSpeed
 		+ boots * Config.Boots.SpeedPerLevel
 		+ (player:GetAttribute("RideSpeed") or 0)

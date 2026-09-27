@@ -397,7 +397,12 @@ function Style.start()
 		Parent = window,
 	}, { UI.list(6) })
 	local shownIsland = false
+	-- Bed Wars has no home island or storm jars, so those looks are hidden.
+	local bedWars = Config.GameMode == "BedWars"
 	for index, category in CosmeticsData.Categories do
+		if bedWars and (category.island or category.key == "jar") then
+			continue
+		end
 		if category.island and not shownIsland then
 			shownIsland = true
 			UI.label({

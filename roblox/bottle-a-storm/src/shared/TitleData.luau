@@ -192,6 +192,43 @@ TitleData.List = {
 		target = 1,
 		progress = stat("shifts"),
 	},
+	-- Bed Wars
+	{
+		id = "FirstBlood",
+		name = "First Blood",
+		emoji = "🗡️",
+		color = rgb(230, 90, 90),
+		goal = "Knock out a player in Bed Wars",
+		target = 1,
+		progress = stat("kills"),
+	},
+	{
+		id = "BedBreaker",
+		name = "Bed Breaker",
+		emoji = "🛏️",
+		color = rgb(255, 150, 90),
+		goal = "Break 10 cloud beds",
+		target = 10,
+		progress = stat("bedsBroken"),
+	},
+	{
+		id = "Champion",
+		name = "Sky Champion",
+		emoji = "🏆",
+		color = rgb(255, 210, 60),
+		goal = "Win 10 Bed Wars matches",
+		target = 10,
+		progress = stat("wins"),
+	},
+	{
+		id = "Warlord",
+		name = "Storm Warlord",
+		emoji = "⚔️",
+		color = rgb(200, 80, 255),
+		goal = "Get 100 final kills",
+		target = 100,
+		progress = stat("finalKills"),
+	},
 } :: { Title }
 
 function TitleData.get(id: string?): Title?

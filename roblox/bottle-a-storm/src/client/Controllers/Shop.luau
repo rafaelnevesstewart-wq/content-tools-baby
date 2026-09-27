@@ -21,6 +21,16 @@ local player = Players.LocalPlayer
 
 local Shop = {}
 
+local BED_WARS = Config.GameMode == "BedWars"
+-- Robux items that only make sense in the storm-catching tycoon.
+local TYCOON_ONLY = {
+	DoubleSlots = true,
+	AutoCollect = true,
+	StormTamer = true,
+	EmergencyLock = true,
+	RaidShield = true,
+}
+
 type Card = {
 	frame: Frame,
 	title: TextLabel,
@@ -227,10 +237,14 @@ local function buildRobux()
 		run()
 	end
 	for _, pass in Products.Passes do
-		add(pass, true)
+		if not (BED_WARS and TYCOON_ONLY[pass.key]) then
+			add(pass, true)
+		end
 	end
 	for _, product in Products.DevProducts do
-		add(product, false)
+		if not (BED_WARS and TYCOON_ONLY[product.key]) then
+			add(product, false)
+		end
 	end
 end
 
@@ -303,7 +317,7 @@ end
 
 function Shop.toggle(tab: string?)
 	window.Visible = not window.Visible or tab ~= nil
-	if tab then
+	if tab and not BED_WARS then
 		showTab(tab)
 	end
 end
@@ -367,12 +381,15 @@ function Shop.start()
 		BackgroundTransparency = 1,
 		Parent = window,
 	}, { UI.list(8, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left) })
-	local tabList = {
-		{ "Upgrades", "⚡ Upgrades" },
-		{ "Themes", "🏝️ Themes" },
-		{ "Styles", "🥷 Styles" },
-		{ "Robux", "💎 Robux" },
-	}
+	-- Bed Wars has no island upgrades, themes or thief styles.
+	local tabList = if BED_WARS
+		then { { "Robux", "💎 Robux" } }
+		else {
+			{ "Upgrades", "⚡ Upgrades" },
+			{ "Themes", "🏝️ Themes" },
+			{ "Styles", "🥷 Styles" },
+			{ "Robux", "💎 Robux" },
+		}
 	for index, tab in tabList do
 		local button = UI.button({
 			LayoutOrder = index,
@@ -395,7 +412,7 @@ function Shop.start()
 	buildThemes()
 	buildRobux()
 	buildStyles()
-	showTab("Upgrades")
+	showTab(if BED_WARS then "Robux" else "Upgrades")
 
 	local function refreshAll()
 		for _, refresh in refreshers do

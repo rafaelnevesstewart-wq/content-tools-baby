@@ -18,7 +18,6 @@ local Notify = require(Modules.Notify)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
-local PlotService = require(script.Parent.PlotService)
 local RewardService = require(script.Parent.RewardService)
 
 local MarketService = {}
@@ -112,7 +111,7 @@ local function buyMarket(player: Player, slot: any): (boolean, string)
 	if offer.stock <= 0 then
 		return false, "Sold out! Wait for the next restock."
 	end
-	if not PlotService.firstFreeSlot(player) then
+	if not RewardService.hasRoom(player) then
 		return false, "Your island is full! Buy a pedestal or sell a storm first."
 	end
 	if data.sparks < offer.price then
@@ -134,7 +133,7 @@ end
 -- Hatches a jar the player has already paid for. Returns an error message
 -- if it couldn't (nothing was given).
 local function hatch(player: Player, jar: MarketData.Jar): string?
-	if not PlotService.firstFreeSlot(player) then
+	if not RewardService.hasRoom(player) then
 		return "Your island is full! Buy a pedestal or sell a storm first."
 	end
 	local options = StormData.wildOfRarity(pickRarity(jar.odds, rng))
@@ -177,7 +176,7 @@ local function openJar(player: Player, key: any): (boolean, string)
 	if data.sparks < jar.cost then
 		return false, "You need ⚡" .. Format.number(jar.cost - data.sparks) .. " more Sparks."
 	end
-	if not PlotService.firstFreeSlot(player) then
+	if not RewardService.hasRoom(player) then
 		return false, "Your island is full! Buy a pedestal or sell a storm first."
 	end
 	data.sparks -= jar.cost

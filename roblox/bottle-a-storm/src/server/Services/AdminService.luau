@@ -18,6 +18,7 @@ local Notify = require(Modules.Notify)
 
 local EventService = require(script.Parent.EventService)
 local IncomeService = require(script.Parent.IncomeService)
+local MatchService = require(script.Parent.MatchService)
 local RaidService = require(script.Parent.RaidService)
 local StormSpawner = require(script.Parent.StormSpawner)
 local WeatherService = require(script.Parent.WeatherService)
@@ -25,6 +26,7 @@ local WeatherService = require(script.Parent.WeatherService)
 local AdminService = {}
 
 local lastWeekly = -1
+local BED_WARS = Config.GameMode == "BedWars"
 
 local function now(): number
 	return workspace:GetServerTimeNow()
@@ -115,6 +117,19 @@ local commands: { [string]: (Player, any) -> (boolean, string) } = {
 		WeatherService.summon(key, player.DisplayName)
 		return true, "Weather started."
 	end,
+	startmatch = function(player)
+		if MatchService.startNow() then
+			Notify.all("⚔️ " .. player.DisplayName .. " started a Bed Wars match!", "rare")
+			return true, "Match started!"
+		end
+		return false, "A match is already on."
+	end,
+	endmatch = function()
+		if MatchService.endNow() then
+			return true, "Match ended."
+		end
+		return false, "No match is running."
+	end,
 	sparks = function(player, amount)
 		if type(amount) ~= "number" or amount <= 0 or amount > 1e9 then
 			return false, "Pick an amount."
@@ -154,7 +169,7 @@ function AdminService.start()
 		local lastRain = 0
 		while true do
 			task.wait(5)
-			if abuseOn() and os.clock() - lastRain >= Config.Admin.StormRainEvery then
+			if abuseOn() and BED_WARS == false and os.clock() - lastRain >= Config.Admin.StormRainEvery then
 				lastRain = os.clock()
 				StormSpawner.stormRain(Config.Admin.StormRainCount)
 				Notify.all("🌧️ ADMIN ABUSE storm rain on the Wild Skies!", "info")

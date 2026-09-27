@@ -103,10 +103,16 @@ function IncomeService.sync(player: Player)
 
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then
-		local sparksValue = leaderstats:FindFirstChild("Sparks") :: IntValue
-		local stormsValue = leaderstats:FindFirstChild("Storms") :: IntValue
-		sparksValue.Value = math.floor(math.min(data.sparks, 2 ^ 53))
-		stormsValue.Value = #data.storms
+		local function set(name: string, value: number)
+			local holder = leaderstats:FindFirstChild(name) :: IntValue?
+			if holder then
+				holder.Value = math.floor(math.min(value, 2 ^ 53))
+			end
+		end
+		set("Sparks", data.sparks)
+		set("Storms", #data.storms)
+		set("Wins", data.stats.wins or 0)
+		set("Kills", data.stats.kills or 0)
 	end
 
 	if hasPass(player, "AutoCollect") then
@@ -242,9 +248,17 @@ local function createLeaderstats(player: Player)
 	local sparks = Instance.new("IntValue")
 	sparks.Name = "Sparks"
 	sparks.Parent = folder
-	local stormCount = Instance.new("IntValue")
-	stormCount.Name = "Storms"
-	stormCount.Parent = folder
+	if Config.GameMode == "BedWars" then
+		for _, name in { "Wins", "Kills" } do
+			local value = Instance.new("IntValue")
+			value.Name = name
+			value.Parent = folder
+		end
+	else
+		local stormCount = Instance.new("IntValue")
+		stormCount.Name = "Storms"
+		stormCount.Parent = folder
+	end
 	folder.Parent = player
 end
 

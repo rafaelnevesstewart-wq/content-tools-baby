@@ -19,6 +19,7 @@ local WorldBuilder = require(Modules.WorldBuilder)
 local CaptureService = require(script.Parent.CaptureService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
+local MatchService = require(script.Parent.MatchService)
 local RewardService = require(script.Parent.RewardService)
 local StormSpawner = require(script.Parent.StormSpawner)
 
@@ -333,14 +334,12 @@ function HolidayService.start()
 		lastBuy[player] = nil
 	end)
 
-	CaptureService.Caught:Connect(function(player, record)
+	local function earn(player: Player, gain: number)
 		local holiday = current
 		local data = DataService.get(player)
-		local def = StormData.get(record.id)
-		if not holiday or not data or not def then
+		if not holiday or not data then
 			return
 		end
-		local gain = HolidayData.CatchPoints[def.rarity] or 1
 		pointsOf(data)
 		data.holiday.points += gain
 		sync(player)
@@ -349,6 +348,22 @@ function HolidayService.start()
 		if root then
 			Juice.float(player, "+" .. gain .. " " .. holiday.currencyEmoji, root.Position + Vector3.new(0, 4, 0))
 		end
+	end
+	CaptureService.Caught:Connect(function(player, record)
+		local def = StormData.get(record.id)
+		if def then
+			earn(player, HolidayData.CatchPoints[def.rarity] or 1)
+		end
+	end)
+	-- Bed Wars: knockouts, beds and wins earn event currency.
+	MatchService.Killed:Connect(function(killer, _victim, final)
+		earn(killer, if final then 4 else 2)
+	end)
+	MatchService.BedBroken:Connect(function(breaker)
+		earn(breaker, 5)
+	end)
+	MatchService.Won:Connect(function(player)
+		earn(player, 8)
 	end)
 
 	refresh()

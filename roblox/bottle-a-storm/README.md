@@ -4,6 +4,52 @@ The first playable version of the game in [`../BOTTLE_A_STORM_GDD.md`](../BOTTLE
 Everything is built from code, including the islands and the storm creatures, so it runs in Studio
 with no uploaded art.
 
+## Now playing: Bed Wars ⚔️🛏️
+
+The game is now a **Bed Wars**-style round game. The storm-catching tycoon is switched off,
+not deleted: set `Config.GameMode = "Tycoon"` in `src/shared/Config.luau` to bring it back.
+
+**A round:** everyone waits in the lobby on the Wild Skies. With 2+ players (1 in Studio) a
+15-second countdown starts. Teams are made automatically: everyone for themselves with up to
+4 players, teams of 2 with more (up to 8 teams). Each team gets a sky island with:
+
+- a **cloud bed** at the back. While it stands, you respawn after 5 seconds. Enemies break it
+  by holding **E** on it for 2.5 seconds, but only if they can see it, so wall it in with
+  blocks. Once it's gone, your next death knocks you out (you watch from the sky box).
+- a **generator** in the middle making 🟠 Copper (fast) and ⚪ Silver (slow). Stand on it
+  to pick them up. The Wild Skies has 💎 Storm Crystal and ⚡ Lightning Core generators that
+  speed up at 6 and 12 minutes.
+- an **Item Shop** stand: blocks (Cloud Wool, Wood Planks, Stone Bricks, Obsidian), swords
+  (Stone, Iron, Diamond), a bow and arrows, armor (Chain, Iron, Diamond; kept when you
+  respawn), Storm Apples (heal) and Wind Pearls (throw to teleport). The 💎 Team tab has team
+  upgrades bought with Crystals: Sharp Blades, Reinforced Armor, Storm Forge, Healing Aura.
+
+Everyone has 100 health and starts with a wood sword. Hits push people back. Falling off the
+islands counts as a death. The last team standing wins. At 20 minutes every bed breaks
+(Sudden Death); at 30 minutes the team with the most players left wins. Then everyone goes
+back to the lobby, and your levels, Sparks and cosmetics carry over.
+
+**Storms are kits.** Every storm you own is a kit. Pick one in 🌪️ **Kits**: in a match it
+floats beside you and gives its power on **Shift** (Updraft, Blink Dash, Surf Boost or Cloud
+Jump). New players get a Puffcloud. More storms come from Mystery Jars and the Storm Market
+(🏪 Market), the spin wheel, login rewards and the season pass.
+
+**Sparks** come from matches: a knockout, a final kill, breaking a bed, winning, and just
+playing. VIP, your Style Bonus and Admin Abuse multiply them. Spend them on cosmetics, jars
+and the rest. Leaderboards and the leaderboard columns show Wins and Kills; there are new
+daily quests and titles for Bed Wars. Cloud Flight works in the lobby, not during matches.
+
+Island cosmetics (house, pedestals, decor, pets, sign) and jar skins are hidden in Bed Wars
+because there's no home island. Beam Effects color your arrows.
+
+**Controls in a match:** click with a sword to swing (you can also hit placed blocks to break
+them), click with the bow to shoot, hold a block to see where it goes and click to place it,
+**E** to open the Item Shop or break a bed, **Shift** for your kit's power.
+
+**Testing Bed Wars in Studio:** press Play; a match starts after 15 seconds with just you.
+Use 👑 Admin → *Start match now* / *End match* to skip waiting. With **Test → Clients and
+Servers** and 2+ players you can try breaking beds and fighting.
+
 ## What's in this build
 
 These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1) and
@@ -618,9 +664,9 @@ src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (p
               Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
               SeasonData, RewardsData (daily rewards, quests), BattleData, TitleData,
               ThemeData, CosmeticsData, MarketData, SpinData, HolidayData, HouseData,
-              SkinData, Sounds,
+              SkinData, Sounds, MatchData (Bed Wars teams, shop, upgrades),
               Remotes, Format, Signal
-src/server/   Main.server.luau starts the services in order
+src/server/   Main.server.luau starts the services in order (a different list per game mode)
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, SeasonService, MixService,
               TradeService, StealService, GuardService, BuddyService, FlightService, GrumpService,
@@ -630,7 +676,9 @@ src/server/   Main.server.luau starts the services in order
               IndexService, RewardService, DailyService, EventService, BattleService,
               TitleService, AuraService, ClimateService, ThemeService,
               CosmeticService, ShopService,
-              MonetizationService
+              MonetizationService,
+              Bed Wars: MatchService (rounds, teams, beds, generators), CombatService,
+              BlockService, ItemShopService, KitService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars), Codes,
               PetModels (island pets),
               Recipes (secret mixer recipes), Notify
@@ -640,7 +688,8 @@ src/client/   Main.client.luau starts the controllers
                HolidayShop, AdminPanel, FlashyFx, PetAnimator,
                BiomeController, ThrowController, RideController, Toasts, TutorialController,
                StormAnimator, AmbientController, JuiceController, Sfx,
-               PromptController, ForecastController, UI
+               PromptController, ForecastController, UI,
+               Bed Wars: MatchHUD, ItemShop, Kits, WeaponController, BlockController
 ```
 
 ## Known limits
