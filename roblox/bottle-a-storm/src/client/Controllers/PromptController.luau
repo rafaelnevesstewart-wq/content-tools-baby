@@ -5,6 +5,10 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Config = require(Shared.Config)
+local ThiefStyles = require(Shared.ThiefStyles)
+
 local player = Players.LocalPlayer
 
 local PromptController = {}
@@ -25,6 +29,10 @@ end
 local function refresh()
 	local now = workspace:GetServerTimeNow()
 	local carrying = player:GetAttribute("Carrying") ~= nil
+	-- Quick Hands grabs faster. The server checks the hold wasn't cut short.
+	local stealHold = if player:GetAttribute("ThiefStyle") == "QuickHands"
+		then ThiefStyles.QuickHoldSeconds
+		else Config.Steal.HoldSeconds
 
 	for _, base in CollectionService:GetTagged("Pedestal") do
 		local owner = base:GetAttribute("OwnerUserId") or 0
@@ -37,6 +45,10 @@ local function refresh()
 		setEnabled(base, "SellPrompt", mine and hasStorm and not stolen)
 		setEnabled(base, "RidePrompt", mine and hasStorm and not stolen)
 		setEnabled(base, "PetPrompt", mine and hasStorm and not stolen)
+		local stealPrompt = base:FindFirstChild("StealPrompt")
+		if stealPrompt and stealPrompt:IsA("ProximityPrompt") and stealPrompt.HoldDuration ~= stealHold then
+			stealPrompt.HoldDuration = stealHold
+		end
 		setEnabled(
 			base,
 			"StealPrompt",

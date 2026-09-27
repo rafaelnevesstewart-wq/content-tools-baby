@@ -7,8 +7,8 @@ with no uploaded art.
 ## What's in this build
 
 These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1) and
-storm mixing and riding (v1.2) and trading (v1.3), plus two extras from the doc: storm moods and
-the island sky aura.
+storm mixing and riding (v1.2) and trading (v1.3), plus three extras from the doc: storm moods,
+the island sky aura and thief styles.
 
 | Feature | Where |
 |---|---|
@@ -19,15 +19,16 @@ the island sky aura.
 | Trading storms and Sparks with other players, with anti-scam checks | `TradeService`, `Trade` |
 | Storm moods: happy storms earn more, neglected ones try to escape; pet, ride or feed them | `MoodService` |
 | Island sky aura: a cloud canopy and weather over your island from your best storm | `AuraService` |
+| Thief styles: Quick Hands, Cloud Walker or Umbrella Tank, unlocked with Sparks | `ThiefStyles`, `StealService`, `Shop` |
 | 8 player Sky Islands with pedestals, jar displays and a Collect pad for passive Sparks ⚡ | `PlotService`, `IncomeService` |
 | Stealing: grab a jar, carry it home (70% speed); Zapper tool, Lightning Rod traps, 60 s base lock | `StealService`, `PlotService` |
-| Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod | `ShopService`, `Shop` |
+| Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod, Storm Snacks, thief styles | `ShopService`, `Shop` |
 | Saving with a session lock (no duplicate storms across servers), autosave, safe shutdown | `DataService` |
 | 4 game passes (VIP, Double Pedestals, Auto-Collect, Storm Tamer) and 5 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Summon Rainbow Hour) | `MonetizationService`, `Products` |
 | Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night) + forecast TV | `WeatherService`, `ForecastController` |
 | Mega-Storm raid every 45 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
-Not in this build yet: thief styles, Climate Shift rebirth and the season pass.
+Not in this build yet: Climate Shift rebirth and the season pass.
 
 ## Controls
 
@@ -116,6 +117,20 @@ lightning sparks with flashes, sand or rainbow sparkles.
 - **Label:** "✨ Legendary Sky: Hurricane Hana", readable from far away.
 - **Updates:** within about 2 seconds of your best storm changing.
 
+## Thief styles
+
+In the Shop's **🥷 Styles** tab, unlock a style with Sparks once, then equip one at a time. You
+can switch between the ones you own for free, but not while carrying a stolen storm.
+
+| Style | Cost | What it does |
+|---|---|---|
+| ⚡ Quick Hands | ⚡1,000 | Grab jars in 0.5 s instead of 1.5 s |
+| ☁️ Cloud Walker | ⚡5,000 | Almost invisible (90%) with no name tag for 5 s after grabbing a jar |
+| ☂️ Umbrella Tank | ⚡15,000 | Lightning Rod traps can't stun you; your umbrella blocks the first zap and zaps never stun you. You carry at 60% speed instead of 70% |
+
+The design doc calls the first style "Lightning Rod". It's renamed Quick Hands so it isn't
+confused with the Lightning Rod trap. The numbers are in `src/shared/ThiefStyles.luau`.
+
 ## Trading
 
 Press **🤝 Trade**, pick a player and send a request. They get an Accept/Decline pop-up, which
@@ -186,6 +201,9 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
       (or let it escape).
 - [ ] Sky aura: catch a storm and look up. Its clouds and weather appear over your island.
       A Legendary adds a light beam.
+- [ ] Thief styles (2 players): player 2 buys each style in 🥷 Styles and steals from player 1.
+      Quick Hands grabs faster. Cloud Walker turns see-through. Umbrella Tank ignores player 1's
+      Lightning Rod trap and survives the first zap.
 - [ ] Trade (2 players): player 1 presses 🤝 Trade and picks player 2, and player 2 accepts.
       Add storms, press Ready on both and watch the countdown. Change something during the
       countdown and check it stops. Try trading with a full island.
@@ -210,8 +228,9 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 ## Code map
 
 ```
-src/shared/   Config, StormData (rarities, 15 storms, mutations), Economy (prices),
-              Products (Robux IDs), WeatherEvents, RaidData (bosses), Remotes, Format, Signal
+src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
+              Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles,
+              Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, MixService,

@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local ThiefStyles = require(Shared.ThiefStyles)
 
 local DataService = require(script.Parent.DataService)
 
@@ -50,7 +51,9 @@ function MovementService.refresh(player: Player)
 		+ boots * Config.Boots.SpeedPerLevel
 		+ (player:GetAttribute("RideSpeed") or 0)
 	if player:GetAttribute("Carrying") then
-		speed *= Config.Steal.CarrySpeedMultiplier
+		speed *= if player:GetAttribute("ThiefStyle") == "UmbrellaTank"
+			then ThiefStyles.TankCarrySpeedMultiplier
+			else Config.Steal.CarrySpeedMultiplier
 	end
 	humanoid.WalkSpeed = speed
 	humanoid.JumpPower = jump.power

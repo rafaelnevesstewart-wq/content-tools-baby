@@ -59,6 +59,12 @@ function IncomeService.sync(player: Player)
 	player:SetAttribute("BootsLevel", data.bootsLevel)
 	player:SetAttribute("TrapLevel", data.trapLevel)
 	player:SetAttribute("RaidShields", data.raidShields)
+	player:SetAttribute("ThiefStyle", data.thiefStyle)
+	local unlocked = {}
+	for key in data.thiefStyles do
+		table.insert(unlocked, key)
+	end
+	player:SetAttribute("UnlockedStyles", table.concat(unlocked, ","))
 	player:SetAttribute("StormCount", #data.storms)
 	local baseIncome = 0
 	for _, record in data.storms do

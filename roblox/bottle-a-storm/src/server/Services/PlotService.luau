@@ -49,6 +49,7 @@ export type Plot = {
 }
 
 local plots: { Plot } = {}
+local stealHoldStart: { [Player]: number } = {}
 local plotByPlayer: { [Player]: Plot } = {}
 
 local COLUMNS = 5
@@ -305,6 +306,9 @@ local function buildPedestal(plot: Plot, slot: number): Model
 		end
 	end)
 	local steal = prompt(base, "StealPrompt", "Steal", Config.Steal.HoldSeconds, Enum.KeyCode.E)
+	steal.PromptButtonHoldBegan:Connect(function(player)
+		stealHoldStart[player] = os.clock()
+	end)
 	steal.Triggered:Connect(function(player)
 		if plot.owner and player ~= plot.owner then
 			PlotService.StealRequested:Fire(player, plot.owner, slot)
@@ -580,6 +584,11 @@ function PlotService.slotPosition(owner: Player, slot: number): Vector3?
 	return if pedestal and pedestal.PrimaryPart then pedestal.PrimaryPart.Position else nil
 end
 
+-- When the player started holding a Steal prompt (to check the hold wasn't faked).
+function PlotService.stealHoldStartedAt(player: Player): number?
+	return stealHoldStart[player]
+end
+
 -- Updates just the mood/income line on a pedestal's label (no rebuild).
 function PlotService.updateSlotLabel(owner: Player, slot: number)
 	local plot = plotByPlayer[owner]
@@ -721,7 +730,10 @@ function PlotService.start()
 	DataService.onRelease(function(player)
 		clearPlot(player)
 	end)
-	Players.PlayerRemoving:Connect(clearPlot)
+	Players.PlayerRemoving:Connect(function(player)
+		clearPlot(player)
+		stealHoldStart[player] = nil
+	end)
 
 	local function onCharacter(player: Player, character: Model)
 		character:WaitForChild("HumanoidRootPart", 10)

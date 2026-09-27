@@ -9,6 +9,7 @@ local Debris = game:GetService("Debris")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local StormData = require(Shared.StormData)
+local ThiefStyles = require(Shared.ThiefStyles)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
@@ -28,6 +29,7 @@ type Carry = {
 	uid: string,
 	name: string,
 	visual: Model?,
+	umbrellaUsed: boolean, -- Umbrella Tank blocks the first zap
 }
 
 local carries: { [Player]: Carry } = {}
@@ -141,6 +143,40 @@ local function bank(thief: Player)
 	Notify.player(carry.owner, "💔 " .. thief.DisplayName .. " stole your " .. carry.name .. "!", "warn")
 end
 
+local function styleOf(player: Player): string?
+	local style = player:GetAttribute("ThiefStyle")
+	return if type(style) == "string" then style else nil
+end
+
+-- Cloud Walker: nearly invisible (and no name tag) for a few seconds.
+local function vanish(thief: Player)
+	local character = thief.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not character or not humanoid then
+		return
+	end
+	local changed: { [Instance]: number } = {}
+	for _, item in character:GetDescendants() do
+		if (item:IsA("BasePart") and item.Name ~= "HumanoidRootPart") or item:IsA("Decal") then
+			changed[item] = item.Transparency
+			item.Transparency = math.max(item.Transparency, ThiefStyles.InvisibleTransparency)
+		end
+	end
+	local nameDisplay = humanoid.DisplayDistanceType
+	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	Notify.player(thief, "☁️ You're invisible for " .. ThiefStyles.InvisibleSeconds .. "s. Sneak away!", "info")
+	task.delay(ThiefStyles.InvisibleSeconds, function()
+		for item, transparency in changed do
+			if item.Parent then
+				(item :: any).Transparency = transparency
+			end
+		end
+		if humanoid.Parent then
+			humanoid.DisplayDistanceType = nameDisplay
+		end
+	end)
+end
+
 local function begin(thief: Player, owner: Player, slot: number)
 	if thief == owner or carries[thief] or not DataService.get(thief) then
 		return
@@ -170,6 +206,13 @@ local function begin(thief: Player, owner: Player, slot: number)
 		Notify.player(thief, "Your island is full! Make room before you steal.", "warn")
 		return
 	end
+	-- The hold time is set on the thief's own screen, so check it wasn't cut short.
+	local style = styleOf(thief)
+	local holdNeeded = if style == "QuickHands" then ThiefStyles.QuickHoldSeconds else Config.Steal.HoldSeconds
+	local heldSince = PlotService.stealHoldStartedAt(thief)
+	if heldSince and os.clock() - heldSince < holdNeeded * 0.6 then
+		return
+	end
 
 	local name = StormData.displayName(record)
 	carries[thief] = {
@@ -178,6 +221,7 @@ local function begin(thief: Player, owner: Player, slot: number)
 		uid = record.uid,
 		name = name,
 		visual = attachVisual(thief, record),
+		umbrellaUsed = false,
 	}
 	RideService.dismount(thief)
 	thief:SetAttribute("Carrying", name)
@@ -189,8 +233,15 @@ local function begin(thief: Player, owner: Player, slot: number)
 	Notify.player(owner, "🚨 " .. thief.DisplayName .. " is stealing your " .. name .. "! Zap them!", "warn")
 
 	if ownerData.trapLevel > 0 then
-		MovementService.stun(thief, ownerData.trapLevel * Config.Traps.StunPerLevel)
-		Notify.player(thief, "⚡ A Lightning Rod trap zapped you!", "warn")
+		if style == "UmbrellaTank" then
+			Notify.player(thief, "☂️ Your umbrella shrugged off a Lightning Rod trap!", "success")
+		else
+			MovementService.stun(thief, ownerData.trapLevel * Config.Traps.StunPerLevel)
+			Notify.player(thief, "⚡ A Lightning Rod trap zapped you!", "warn")
+		end
+	end
+	if style == "CloudWalker" then
+		vanish(thief)
 	end
 end
 
@@ -239,8 +290,21 @@ local function zap(player: Player)
 	if targetRoot then
 		beam(root.Position, targetRoot.Position)
 	end
+	local carry = carries[target]
+	if carry and styleOf(target) == "UmbrellaTank" and not carry.umbrellaUsed then
+		carry.umbrellaUsed = true
+		Notify.player(
+			target,
+			"☂️ Your umbrella blocked " .. player.DisplayName .. "'s zap! The next one gets through.",
+			"success"
+		)
+		Notify.player(player, "☂️ " .. target.DisplayName .. "'s umbrella blocked your zap! Zap again!", "warn")
+		return
+	end
 	cancel(target, "⚡ " .. player.DisplayName .. " zapped you! The storm flew back.")
-	MovementService.stun(target, Config.Zapper.StunSeconds)
+	if styleOf(target) ~= "UmbrellaTank" then
+		MovementService.stun(target, Config.Zapper.StunSeconds)
+	end
 	Notify.player(player, "⚡ Zap! You stopped " .. target.DisplayName .. ".", "success")
 end
 

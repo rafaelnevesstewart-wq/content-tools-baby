@@ -7,6 +7,7 @@ local Economy = require(Shared.Economy)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 local StormData = require(Shared.StormData)
+local ThiefStyles = require(Shared.ThiefStyles)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
@@ -108,13 +109,43 @@ local handlers: { [string]: (Player, any) -> (boolean, string) } = {
 	end,
 }
 
+-- "Style:QuickHands": unlock it (Sparks) or equip/unequip it if you own it.
+local function onStyle(player: Player, data: any, key: string): (boolean, string)
+	local style = ThiefStyles.get(key)
+	if not style then
+		return false, "Unknown style."
+	end
+	if player:GetAttribute("Carrying") then
+		return false, "You can't change style while carrying a stolen storm!"
+	end
+	if data.thiefStyle == key then
+		data.thiefStyle = nil
+		return true, "You unequipped " .. style.name .. "."
+	end
+	if not data.thiefStyles[key] then
+		local ok, err = spend(data, style.cost)
+		if not ok then
+			return false, err :: string
+		end
+		data.thiefStyles[key] = true
+	end
+	data.thiefStyle = key
+	return true, style.emoji .. " " .. style.name .. " equipped! " .. style.description
+end
+
 local function onBuy(player: Player, itemKey: any): (boolean, string)
 	if os.clock() - (lastRequest[player] or 0) < 0.25 then
 		return false, "Slow down!"
 	end
 	lastRequest[player] = os.clock()
-	local handler = type(itemKey) == "string" and handlers[itemKey]
 	local data = DataService.get(player)
+	if type(itemKey) == "string" and data and string.sub(itemKey, 1, 6) == "Style:" then
+		local ok, message = onStyle(player, data, string.sub(itemKey, 7))
+		IncomeService.sync(player)
+		MovementService.refresh(player)
+		return ok, message
+	end
+	local handler = type(itemKey) == "string" and handlers[itemKey]
 	if not handler or not data then
 		return false, "Can't buy that right now."
 	end

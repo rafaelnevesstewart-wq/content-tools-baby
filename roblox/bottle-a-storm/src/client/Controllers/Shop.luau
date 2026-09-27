@@ -11,6 +11,7 @@ local Format = require(Shared.Format)
 local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
 local StormData = require(Shared.StormData)
+local ThiefStyles = require(Shared.ThiefStyles)
 
 local Toasts = require(script.Parent.Toasts)
 local UI = require(script.Parent.UI)
@@ -29,6 +30,7 @@ type Card = {
 local window: Frame
 local upgradeList: ScrollingFrame
 local robuxList: ScrollingFrame
+local styleList: ScrollingFrame
 local tabButtons: { [string]: TextButton } = {}
 local refreshers: { () -> () } = {}
 
@@ -214,9 +216,36 @@ local function buildRobux()
 	end
 end
 
+local function buildStyles()
+	for order, style in ThiefStyles.List do
+		local card = makeCard(styleList, order)
+		card.title.Text = style.emoji .. " " .. style.name
+		card.body.Text = style.description
+		card.button.Activated:Connect(function()
+			if card.button.Active then
+				buySparks("Style:" .. style.key)
+			end
+		end)
+		local function run()
+			local unlocked = table.find(string.split(player:GetAttribute("UnlockedStyles") or "", ","), style.key)
+			if player:GetAttribute("ThiefStyle") == style.key then
+				setBuyable(card, "✓ Equipped", true, UI.Colors.Good)
+			elseif unlocked then
+				setBuyable(card, "Equip", true, UI.Colors.Stroke)
+			else
+				local text, can = sparksPrice(style.cost)
+				setBuyable(card, text, can)
+			end
+		end
+		table.insert(refreshers, run)
+		run()
+	end
+end
+
 local function showTab(name: string)
 	upgradeList.Visible = name == "Upgrades"
 	robuxList.Visible = name == "Robux"
+	styleList.Visible = name == "Styles"
 	for tab, button in tabButtons do
 		button.BackgroundColor3 = if tab == name then UI.Colors.Stroke else UI.Colors.PanelLight
 	end
@@ -288,10 +317,11 @@ function Shop.start()
 		BackgroundTransparency = 1,
 		Parent = window,
 	}, { UI.list(8, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left) })
-	for index, tab in { { "Upgrades", "⚡ Upgrades" }, { "Robux", "💎 Robux" } } do
+	local tabList = { { "Upgrades", "⚡ Upgrades" }, { "Styles", "🥷 Styles" }, { "Robux", "💎 Robux" } }
+	for index, tab in tabList do
 		local button = UI.button({
 			LayoutOrder = index,
-			Size = UDim2.new(0.5, -4, 1, 0),
+			Size = UDim2.new(1 / #tabList, -6, 1, 0),
 			Text = tab[2],
 			TextSize = 20,
 			Parent = tabs,
@@ -304,8 +334,10 @@ function Shop.start()
 
 	upgradeList = makeList("Upgrades")
 	robuxList = makeList("Robux")
+	styleList = makeList("Styles")
 	buildUpgrades()
 	buildRobux()
+	buildStyles()
 	showTab("Upgrades")
 
 	local function refreshAll()

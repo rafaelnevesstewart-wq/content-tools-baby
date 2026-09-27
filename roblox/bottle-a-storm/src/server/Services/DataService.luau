@@ -47,6 +47,7 @@ local function defaultData()
 		bootsLevel = 0,
 		trapLevel = 0,
 		raidShields = 0,
+		thiefStyles = {}, -- unlocked style key -> true; data.thiefStyle is the equipped one
 		storms = {}, -- { StormRecord }
 		discovered = {}, -- storm id -> true
 		recipes = {}, -- hybrid id -> true, the Storm Mixer recipes this player found
