@@ -60,7 +60,9 @@ local function open(base: BasePart)
 	currentBase = base
 	sellArmed = false
 
+	local weather = base:GetAttribute("StormWeather")
 	title.Text = StormData.displayName(record)
+		.. (if type(weather) == "string" and weather ~= "" then " " .. weather else "")
 	title.TextColor3 = UI.ink(StormData.rarityOf(def).color)
 	local level = base:GetAttribute("StormLevel")
 	info.Text = "Lv "

@@ -363,6 +363,28 @@ Config.Balloon = {
 	SoakSpeedMultiplier = 0.6,
 }
 
+-- Storm Parade: storms float along a sky river across the Wild Skies. Buy one
+-- before it drifts away. The river runs along X at Z = Config.Parade.Z.
+Config.Parade = {
+	Z = 20,
+	HalfLength = 125, -- the river runs from X = -125 to X = 125
+	Height = 5, -- storms float this high above the river
+	Speed = 6, -- studs per second (about 40 seconds to cross)
+	SpawnEvery = 4,
+	MaxStorms = 14,
+	PriceSeconds = 90, -- price = this many seconds of the storm's base income...
+	MinPrice = 50, -- ...or at least this
+	RarityWeights = { 58, 27, 11, 3.4, 0.6 }, -- Common .. Legendary
+	MutationChance = 0.06,
+}
+
+-- Weather mutations (StormData.WeatherMutations): during a weather event, each
+-- storm on a pedestal rolls this chance every minute to pick one up.
+Config.WeatherMutations = {
+	ChancePerMinute = 0.1,
+	Max = 4,
+}
+
 -- Day and night: one full day in the sky takes this long.
 Config.DayNight = {
 	CycleSeconds = 720, -- 12 minutes

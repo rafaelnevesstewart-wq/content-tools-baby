@@ -175,6 +175,66 @@ local function cloudCluster(parent: Instance, center: Vector3, size: number, rng
 	puffs:Emit(10)
 end
 
+-- The Storm Parade's sky river: a shallow glowing stream across the Wild Skies.
+local function paradeRiver(parent: Instance)
+	local model = Instance.new("Model")
+	model.Name = "ParadeRiver"
+	local length = Config.Parade.HalfLength * 2
+	local z = Config.Parade.Z
+	part({
+		Name = "Bed",
+		Size = Vector3.new(length, 0.6, 12),
+		CFrame = CFrame.new(0, 0.1, z),
+		Color = Color3.fromRGB(92, 84, 76),
+		Material = Enum.Material.Pebble,
+		Parent = model,
+	})
+	local water = part({
+		Name = "Water",
+		Size = Vector3.new(length, 0.3, 10),
+		CFrame = CFrame.new(0, 0.5, z),
+		Color = Color3.fromRGB(90, 160, 210),
+		Material = Enum.Material.Glass,
+		Transparency = 0.35,
+		CanCollide = false,
+		Parent = model,
+	})
+	water.Reflectance = 0.15
+	for _, side in { -1, 1 } do
+		part({
+			Name = "Bank",
+			Size = Vector3.new(length, 0.8, 1.2),
+			CFrame = CFrame.new(0, 0.4, z + side * 5.6),
+			Color = Color3.fromRGB(118, 110, 100),
+			Material = Enum.Material.Cobblestone,
+			Parent = model,
+		})
+	end
+	local signPost = part({
+		Name = "ParadeSign",
+		Size = Vector3.new(8, 3, 0.6),
+		CFrame = CFrame.new(-Config.Parade.HalfLength + 4, 6, z - 7),
+		Color = Color3.fromRGB(96, 70, 48),
+		Material = Enum.Material.Wood,
+		Parent = model,
+	})
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = face
+		gui.CanvasSize = Vector2.new(400, 150)
+		gui.Parent = signPost
+		local text = Instance.new("TextLabel")
+		text.BackgroundTransparency = 1
+		text.Size = UDim2.fromScale(1, 1)
+		text.Font = Enum.Font.GothamBold
+		text.TextScaled = true
+		text.TextColor3 = Color3.fromRGB(245, 240, 225)
+		text.Text = "🌊 Storm Parade\nBuy storms as they float by!"
+		text.Parent = gui
+	end
+	model.Parent = parent
+end
+
 local function label(
 	parent: Instance,
 	name: string,
@@ -636,6 +696,12 @@ local function wildBlocked(p: Vector3): boolean
 	if p.X > -55 and p.X < 55 and p.Z > 58 and p.Z < 90 then
 		return true -- portal row
 	end
+	if math.abs(p.Z - Config.Parade.Z) < 10 and math.abs(p.X) < Config.Parade.HalfLength + 6 then
+		return true -- Storm Parade river
+	end
+	if p.Z > -128 and p.Z < -76 and math.abs(p.X) < 78 then
+		return true -- leaderboards and the winners' podium
+	end
 	local angle = math.atan2(p.Z, p.X)
 	for index = 1, Config.MaxPlots do
 		local bridgeAngle = (index - 1) / Config.MaxPlots * math.pi * 2
@@ -758,6 +824,7 @@ function WorldBuilder.build(): { PlotInfo }
 	spawn.Parent = world
 
 	forecastTV(world, Vector3.new(0, 0, -30), Vector3.new(0, 0, -100))
+	paradeRiver(world)
 	buildBiomes(world, rng)
 
 	local plotsFolder = Instance.new("Folder")

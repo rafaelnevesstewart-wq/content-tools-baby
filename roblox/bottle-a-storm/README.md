@@ -170,6 +170,31 @@ Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Go
   - Hitting players counts toward the "Splash Champ" title.
 - Numbers are in `Config.Grumps`, `Config.Blaster` and `Config.Balloon`.
 
+## Trending update
+
+**Collecting**
+- **🌊 Storm Parade** (`ParadeService`):
+  - Storms float along a sky river across the Wild Skies, each with a price. Walk up and
+    press `E` to buy one before it drifts away. First come, first served.
+  - Rare ones are announced to the server.
+  - Settings are in `Config.Parade`.
+- **🫙 Mystery Jars** (🏪 Market → Mystery Jars, `MarketService`):
+  - Cloud Jar ⚡1,000, Thunder Jar ⚡25,000 and Cosmic Jar ⚡750,000, each with its odds
+    shown.
+  - The Robux **Golden Jar** (99 R$) is always Epic or Legendary and always mutated.
+  - The jar shakes, flashes and reveals your storm.
+  - Odds are in `src/shared/MarketData.luau`.
+- **🏪 Storm Market** (restocking):
+  - 6 storms with limited stock, shared by everyone in the server. It restocks every
+    5 minutes with a countdown.
+  - Every server gets the same stock at the same time. A Legendary in stock is announced.
+- **Stacking weather mutations** (`WeatherMutationService`):
+  - During weather events, each storm on a pedestal has a 10% chance per minute to pick up
+    a weather mutation: 💧 Wet x1.25, 🌫️ Misty x1.5, ☀️ Sunkissed x1.5, ⚡ Shocked x2,
+    🌈 Rainbowed x2.5, 🌠 Starstruck x3 or 🌀 Chaotic x4.
+  - Which ones depends on the event. They stack (up to 4) and multiply together.
+  - They show on the pedestal label and count toward income, selling and trading.
+
 ## Cosmetics (🎨 Style)
 
 Bought in the 🎨 Style window, mostly with Sparks. A few special ones are Robux Developer
@@ -498,13 +523,13 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
               Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
               SeasonData, RewardsData (daily rewards, quests), BattleData, TitleData,
-              ThemeData, CosmeticsData, Sounds,
+              ThemeData, CosmeticsData, MarketData, Sounds,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, SeasonService, MixService,
               TradeService, StealService, GuardService, BuddyService, FlightService, GrumpService,
-              BalloonService, RaidService,
+              BalloonService, WeatherMutationService, ParadeService, MarketService, RaidService,
               IndexService, RewardService, DailyService, EventService, BattleService,
               TitleService, AuraService, ClimateService, ThemeService,
               CosmeticService, ShopService,
@@ -513,7 +538,7 @@ src/server/   Main.server.luau starts the services in order
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, Rewards, PedestalMenu, Battle,
-               BuddyController, FlightController, CombatController, Aim, Style,
+               BuddyController, FlightController, CombatController, Aim, Style, Market,
                BiomeController, ThrowController, RideController, Toasts, TutorialController,
                StormAnimator, AmbientController, JuiceController, Sfx,
                PromptController, ForecastController, UI

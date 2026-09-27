@@ -81,6 +81,13 @@ Products.DevProducts = {
 		description = "If the next Mega-Storm wins, your storms stay safe.",
 	},
 	{
+		key = "MysteryGoldenJar",
+		id = 0,
+		price = 99,
+		name = "Golden Mystery Jar",
+		description = "Hatch an Epic or Legendary storm, always mutated.",
+	},
+	{
 		key = "SeasonPremium",
 		id = 0,
 		price = 299,

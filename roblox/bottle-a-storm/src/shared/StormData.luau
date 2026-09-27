@@ -42,6 +42,7 @@ export type StormRecord = {
 	at: number,
 	mood: number?, -- 0-100; nil on storms saved before moods existed
 	xp: number?, -- seconds owned while online; sets the storm's level
+	wm: { string }?, -- weather mutations picked up during weather events (they stack)
 }
 
 export type MoodTier = {
@@ -686,18 +687,78 @@ function StormData.rarityOf(def: StormDef): Rarity
 	return StormData.Rarities[def.rarity]
 end
 
+-- Weather mutations: storms on your island can pick these up during weather
+-- events. They stack (up to 4, no repeats) and multiply together.
+export type WeatherMutation = {
+	id: string,
+	name: string,
+	emoji: string,
+	multiplier: number,
+	events: { string }, -- WeatherEvents keys that can give it
+}
+
+StormData.WeatherMutations = {
+	{
+		id = "Wet",
+		name = "Wet",
+		emoji = "💧",
+		multiplier = 1.25,
+		events = { "RainbowHour", "ThunderFrenzy", "FogNight" },
+	},
+	{ id = "Misty", name = "Misty", emoji = "🌫️", multiplier = 1.5, events = { "FogNight" } },
+	{ id = "Sunkissed", name = "Sunkissed", emoji = "☀️", multiplier = 1.5, events = { "DoubleSparks" } },
+	{ id = "Shocked", name = "Shocked", emoji = "⚡", multiplier = 2, events = { "ThunderFrenzy" } },
+	{ id = "Rainbowed", name = "Rainbowed", emoji = "🌈", multiplier = 2.5, events = { "RainbowHour" } },
+	{ id = "Starstruck", name = "Starstruck", emoji = "🌠", multiplier = 3, events = { "MeteorNight" } },
+	{ id = "Chaotic", name = "Chaotic", emoji = "🌀", multiplier = 4, events = { "MutationStorm" } },
+} :: { WeatherMutation }
+
+function StormData.getWeatherMutation(id: string): WeatherMutation?
+	for _, mutation in StormData.WeatherMutations do
+		if mutation.id == id then
+			return mutation
+		end
+	end
+	return nil
+end
+
+function StormData.weatherMultiplier(record: { wm: { string }? }): number
+	local total = 1
+	local list: { string } = record.wm or {}
+	for _, id in list do
+		local mutation = StormData.getWeatherMutation(id)
+		if mutation then
+			total *= mutation.multiplier
+		end
+	end
+	return total
+end
+
+-- "💧⚡" (empty when the storm has none)
+function StormData.weatherEmojis(record: { wm: { string }? }): string
+	local text = ""
+	local list: { string } = record.wm or {}
+	for _, id in list do
+		local mutation = StormData.getWeatherMutation(id)
+		if mutation then
+			text ..= mutation.emoji
+		end
+	end
+	return text
+end
+
 -- Sparks per second for one owned storm, before player-wide bonuses like VIP.
-function StormData.incomeOf(record: { id: string, mut: string? }): number
+function StormData.incomeOf(record: { id: string, mut: string?, wm: { string }? }): number
 	local def = stormsById[record.id]
 	if not def then
 		return 0
 	end
 	local mutation = StormData.getMutation(record.mut)
-	return def.income * (if mutation then mutation.multiplier else 1)
+	return def.income * (if mutation then mutation.multiplier else 1) * StormData.weatherMultiplier(record)
 end
 
 -- What the storm earns right now, mood and level included (before VIP).
-function StormData.earningOf(record: { id: string, mut: string?, mood: number?, xp: number? }): number
+function StormData.earningOf(record: { id: string, mut: string?, mood: number?, xp: number?, wm: { string }? }): number
 	return StormData.incomeOf(record) * StormData.moodOf(record).multiplier * StormData.levelMultiplier(record)
 end
 

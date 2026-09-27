@@ -15,6 +15,7 @@ local EVENTS = {
 	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake, pop-ups
 	"PedestalAction", -- client -> server: (slot, "ride" | "guard" | "buddy" | "sell")
 	"Fly", -- client -> server: (wantsToFly: boolean)
+	"JarHatched", -- server -> client: (result) a Mystery Jar opened, for the hatch animation
 	"BlastCloud", -- client -> server: (targetPosition) Cloud Blaster shot
 	"ThrowBalloon", -- client -> server: (targetPosition) water balloon throw
 	"BattleAction", -- client -> server: ("request", userId) | ("respond", fromUserId, accept)
@@ -35,6 +36,9 @@ local FUNCTIONS = {
 	"GetTitles", -- client -> server: () -> titles and progress
 	"SetTitle", -- client -> server: (titleId or nil) -> (ok, message)
 	"Cosmetic", -- client -> server: (action, idOrValue) -> (ok, message)
+	"GetMarket", -- client -> server: () -> market stock
+	"BuyMarket", -- client -> server: (slot) -> (ok, message)
+	"OpenJar", -- client -> server: (jarKey) -> (ok, message)
 }
 
 local folder: Instance

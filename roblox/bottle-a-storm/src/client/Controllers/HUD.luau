@@ -17,6 +17,7 @@ local WeatherEvents = require(Shared.WeatherEvents)
 
 local Climate = require(script.Parent.Climate)
 local Battle = require(script.Parent.Battle)
+local Market = require(script.Parent.Market)
 local Rewards = require(script.Parent.Rewards)
 local Season = require(script.Parent.Season)
 local Style = require(script.Parent.Style)
@@ -305,21 +306,28 @@ function HUD.start()
 	boostChip.Visible = false
 	buildBossBar(top)
 
-	-- Left: the icon bar. It shrinks on short (phone) screens.
+	-- Left: the icon bar, two buttons wide. It shrinks on short (phone) screens.
 	local bar = UI.new("Frame", {
 		Name = "IconBar",
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 10, 0.5, 0),
-		Size = UDim2.fromOffset(64, 0),
+		Size = UDim2.fromOffset(136, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		Parent = screen,
-	}, { UI.list(8) })
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(64, 64),
+			CellPadding = UDim2.fromOffset(8, 8),
+			FillDirectionMaxCells = 2,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
 	local barScale = UI.new("UIScale", { Parent = bar })
 	local function fitBar()
 		local camera = workspace.CurrentCamera
 		local height = if camera then camera.ViewportSize.Y else 800
-		barScale.Scale = math.clamp((height - 140) / 740, 0.45, 1)
+		barScale.Scale = math.clamp((height - 140) / 440, 0.55, 1)
 	end
 	fitBar()
 	if workspace.CurrentCamera then
@@ -341,13 +349,16 @@ function HUD.start()
 	iconButton(bar, 1, "🛒", "Shop", UI.Colors.PanelLight).Activated:Connect(function()
 		Shop.toggle(nil)
 	end)
-	iconButton(bar, 2, "🎨", "Style", Color3.fromRGB(255, 170, 220)).Activated:Connect(function()
+	iconButton(bar, 2, "🏪", "Market", Color3.fromRGB(96, 170, 210)).Activated:Connect(function()
+		Market.toggle()
+	end)
+	iconButton(bar, 3, "🎨", "Style", Color3.fromRGB(255, 170, 220)).Activated:Connect(function()
 		Style.toggle()
 	end)
-	iconButton(bar, 3, "💎", "Robux", UI.Colors.Robux).Activated:Connect(function()
+	iconButton(bar, 4, "💎", "Robux", UI.Colors.Robux).Activated:Connect(function()
 		Shop.toggle("Robux")
 	end)
-	local seasonButton = iconButton(bar, 4, "🎟️", "Season", Color3.fromRGB(255, 205, 90))
+	local seasonButton = iconButton(bar, 5, "🎟️", "Season", Color3.fromRGB(255, 205, 90))
 	seasonButton.Activated:Connect(function()
 		Season.toggle()
 	end)
@@ -359,18 +370,18 @@ function HUD.start()
 	end
 	player:GetAttributeChangedSignal("SeasonClaimable"):Connect(refreshSeasonBadge)
 	refreshSeasonBadge()
-	iconButton(bar, 5, "🤝", "Trade", Color3.fromRGB(255, 180, 140)).Activated:Connect(function()
+	iconButton(bar, 6, "🤝", "Trade", Color3.fromRGB(255, 180, 140)).Activated:Connect(function()
 		Trade.openMenu()
 	end)
-	iconButton(bar, 6, "⚔️", "Battle", Color3.fromRGB(255, 150, 150)).Activated:Connect(function()
+	iconButton(bar, 7, "⚔️", "Battle", Color3.fromRGB(255, 150, 150)).Activated:Connect(function()
 		Battle.openMenu()
 	end)
-	iconButton(bar, 7, "🌍", "Climate", Color3.fromRGB(140, 195, 255)).Activated:Connect(function()
+	iconButton(bar, 8, "🌍", "Climate", Color3.fromRGB(140, 195, 255)).Activated:Connect(function()
 		Climate.toggle()
 	end)
 	local lockItem = Products.get("EmergencyLock")
 	if lockItem then
-		iconButton(bar, 8, "🔒", "R$" .. lockItem.price, Color3.fromRGB(255, 160, 190)).Activated:Connect(
+		iconButton(bar, 9, "🔒", "R$" .. lockItem.price, Color3.fromRGB(255, 160, 190)).Activated:Connect(
 			buyEmergencyLock
 		)
 	end

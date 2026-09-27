@@ -331,7 +331,9 @@ end
 -- "Lv 3 · 😄 Happy · +125 ⚡/s"
 local function moodSubtitle(record: StormData.StormRecord): string
 	local tier = StormData.moodOf(record)
-	return "Lv "
+	local weather = StormData.weatherEmojis(record)
+	return (if weather ~= "" then weather .. " · " else "")
+		.. "Lv "
 		.. StormData.levelOf(record)
 		.. " · "
 		.. tier.emoji
@@ -369,6 +371,7 @@ local function refreshSlot(plot: Plot, slot: number)
 	base:SetAttribute("StormMut", if record then record.mut else nil)
 	base:SetAttribute("StormUid", if record then record.uid else nil)
 	base:SetAttribute("StormLevel", if record then StormData.levelOf(record) else nil)
+	base:SetAttribute("StormWeather", if record then StormData.weatherEmojis(record) else nil)
 	base:SetAttribute("BeingStolen", beingStolen)
 
 	local options = base:FindFirstChild("OptionsPrompt") :: ProximityPrompt?

@@ -17,6 +17,7 @@ local Notify = require(Modules.Notify)
 
 local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
+local MarketService = require(script.Parent.MarketService)
 local IncomeService = require(script.Parent.IncomeService)
 local PlotService = require(script.Parent.PlotService)
 local SeasonService = require(script.Parent.SeasonService)
@@ -63,6 +64,9 @@ local productHandlers: { [string]: (Player, any) -> boolean } = {
 		SeasonService.addXp(player, Config.Season.SkipTierXp)
 		Notify.player(player, "⏭️ Skipped a season tier!", "success")
 		return true
+	end,
+	MysteryGoldenJar = function(player)
+		return MarketService.openGoldenJar(player)
 	end,
 	SummonWeather = function(player)
 		WeatherService.summon("RainbowHour", player.DisplayName)
