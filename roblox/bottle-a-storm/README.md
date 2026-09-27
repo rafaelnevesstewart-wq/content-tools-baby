@@ -243,24 +243,61 @@ Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Go
     shrine, once a day (and earn the "Sky Climber" title).
   - Cloud Flight switches off near the path, so you have to climb it.
 
+## Flashy storms
+
+Storms get special looks from their weather type and mutation (`StormModel`), animated on each
+player's screen (`FlashyFx`):
+- 🔥 **Fire storms and Molten:** real flames, rising embers and an orange glow.
+- ⚡ **Lightning storms and Charged:** lightning bolts crackle around them.
+- 🌈 **Rainbow storms and Prismatic:** colors flow through the puffs.
+- 🌪️ **Wind storms:** a swirling ring of mist.
+- ❄️ **Snow, hail and Frozen:** ice shards orbit them; Frozen storms turn to ice.
+- 🌑 **Void:** dark puffs pulled inward with a throbbing purple glow.
+- ✨ **Golden:** shiny gold foil.
+- **Rarity orbs:** Epic and rarer storms have glowing orbs orbiting them (3 up to 8).
+
+## Island floors and the house
+
+- **Floors:** in 🛒 Shop → Island Floors, build floor 2 (⚡75K) and floor 3 (⚡2.5M) over your
+  pedestals.
+  - Each floor holds 10 more pedestals (20 with Double Pedestals).
+  - Glowing 🛗 lift pads move you between floors: `E` goes up, `R` goes down.
+  - Thieves can use them too.
+- **The house** (`HouseService`): pillars, floors, railings, ceiling lamps and a roof. With one
+  floor it's an open pavilion over your pedestals.
+- Settings are in `Config.Floors`; styles are in `src/shared/HouseData.luau`.
+
 ## Cosmetics (🎨 Style)
 
-Bought in the 🎨 Style window, mostly with Sparks. A few special ones are Robux Developer
-Products (`Products.Cosmetics`). Buying something puts it on right away. Tap it again later
-to swap. Everything is built from parts on the server, so everyone sees it
-(`CosmeticService`, `CosmeticsData`, `Style`).
+Bought in the 🎨 Style window, mostly with Sparks; special ones are Robux Developer Products
+(`Products.Cosmetics`). There are 103 cosmetics in 13 categories (`CosmeticService`,
+`CosmeticsData`, `Style`).
 
-| For | What | Sparks | Robux |
-|---|---|---|---|
-| You | 🎩 **Hats**: Rain Cloud Hat (drizzles), Lightning Crown, Rainbow Cap, Snowflake Beanie, Tornado Top Hat | ⚡2K–400K | 👑 Golden Storm Crown 49 R$ |
-| You | ✨ **Trails** (a bright core, a soft glow and particles like flames, petals or stars): Rainbow, Sparkle, Snowflake, Fire, Cherry Blossom, Tornado, Aurora, Shadow, Lightning, Plasma, Bubble, Starfall | ⚡5K–1M | 🌌 Galaxy 49 R$, ⛈️ Thunderstorm 49 R$, 🐦‍🔥 Phoenix 79 R$ |
-| You | ☁️ **Flight clouds** (skins for Cloud Flight): Cumulus (free), Storm (drizzles), Sunset, Snow, Rainbow, Golden | ⚡5K–400K | ⚡ Thunder Cloud 49 R$ (flashes with lightning), 🌌 Aurora Cloud 79 R$ |
-| You | 🪽 **Backs**: Storm Jar Backpack, Cloud Wings, Butterfly Wings, Mini Tornado | ⚡3K–500K | 🌈 Rainbow Wings 79 R$ |
-| You | 💫 **Auras**: Sparkle, Rain Halo, Lightning Orbit | ⚡8K–300K | 💕 Love Aura 39 R$ |
-| Island | 🏛️ **Pedestal styles**: Marble (free), Candy, Gold, Cloud, Crystal | ⚡10K–150K | 🌈 Rainbow Pedestals 49 R$ |
-| Island | ⛲ **Decorations** (use as many as you like): Lamp Posts, Fountain, Rainbow Arch, Golden Storm Statue (of your best storm), Fireworks (at night) | ⚡5K–500K | |
-| Island | 🚩 **Sign and flag**: sign color and emoji (free); flags: Storm, Lightning, Rainbow, Sky Pirate | ⚡2K–80K | ✨ Golden Flag 29 R$ |
-| Island | 🐤 **Island pets** (up to 3 kinds, 2 of each; real animals with legs and feather, fur, wool or scale textures): Mallard Ducks, Rabbits (they hop), Sheep | ⚡10K–90K | 🐉 Baby Storm Dragon 79 R$ (flies) |
+**Why buy them: the ✨ Style Bonus.**
+- Every cosmetic has a rarity tier by price. Each one you wear or place adds its tier's bonus
+  to all your Sparks:
+  - Common (under ⚡10K): +1%
+  - Rare (under ⚡100K): +2%
+  - Epic (under ⚡1M): +4%
+  - Legendary (⚡1M+): +6%
+  - Mythic (Robux): +8%
+- The total can reach +50% (`Config.Style.MaxBonus`), shown at the top of the Style window.
+- Cards glow in their tier's color, and Legendary and Mythic cards shimmer.
+
+| For | What |
+|---|---|
+| You | 🎩 **Hats**, including 🔥 Inferno Crown (real flames) and 🌩️ Storm Halo (a spinning ring with lightning, Robux) |
+| You | ✨ **Trails**: 15, from Rainbow to Phoenix, each with a core, a glow and particles |
+| You | 🪽 **Backs**, including 🐦‍🔥 Phoenix Wings (fire) and ⚡ Lightning Wings (bolts, Robux) |
+| You | 💫 **Auras**, including 🌈 Rainbow, 🔥 Inferno (real fire) and ⚡ Thunder God (bolts all around) |
+| You | ☁️ **Flight clouds**: 13, including 🔥 Inferno, 🌩️ Thunderbolt, 💎 Prism (color-shifting, Robux), 🌌 Galaxy and 🕳️ Void (Robux) |
+| You | 🫙 **Jar skins** on your Storm Jar, the thrown jar and every jar on your pedestals: Crystal, Frost, Golden, 🌋 Lava (real fire), and 🌌 Galaxy and 💠 Diamond (Robux) |
+| You | 💥 **Beam effects** for the Zapper, Cloud Blaster and water balloons: Fire, Frost, Rainbow, Void, and Golden (Robux) |
+| Island | 🏠 **House styles**: Classic Villa (free), Log Cabin, Candy House, Stone Castle, Modern Glass, 🌋 Lava Fortress, and 💎 Crystal Palace and 🏛️ Golden Sky Temple (Robux) |
+| Island | 🏛️ **Pedestal styles**: Marble (free), Candy, Gold, Cloud, Crystal, and Rainbow (Robux) |
+| Island | ⛲ **Decorations** (use as many as you like): lamp posts, fountain, rainbow arch, golden storm statue, fireworks, flower gardens, picnic spot, palm trees, fairy lights along the roof, hot tub, turning windmill, waterfall, crystal garden |
+| Island | 🚩 **Sign and flag**: free sign color and emoji; flags: Storm, Lightning, Rainbow, Sky Pirate, and Golden (Robux) |
+| Island | 🐤 **Island pets** (up to 3 kinds, 2 of each): real animals that walk with moving legs, wag their tails, and graze or peck (`PetModels`, `PetAnimator`): mallard ducks, wild rabbits, woolly sheep, tabby cats, corgis, red foxes, spotted deer, and a flying 🐉 baby storm dragon (Robux) |
 
 ## Cloud Flight (game pass, 199 R$)
 
@@ -526,6 +563,10 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
       wait for weather mutations, or start Admin Abuse. Try a code (`RELEASE`), spin the wheel,
       check the leaderboards near the spawn, visit the 🎉 Event tab (Halloween in Studio), and
       climb the secret sky path.
+- [ ] Floors and style: buy Island Floors in the Shop and ride the lift pad (E up, R down).
+      In 🎨 Style, try house styles, jar skins, beam effects and the new pets. Check the Style
+      Bonus at the top grows. Catch or buy Molten, Charged and Prismatic storms to see their
+      looks.
 - [ ] Cloud Flight: press **G**. In Studio it grants the pass for free. Press **G** again to
       fly, try Space and Ctrl, then steal a storm while flying (you should land).
 - [ ] Offline earnings: play, leave, and join again after 2+ minutes. (In Studio, turn on
@@ -576,7 +617,8 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
               Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
               SeasonData, RewardsData (daily rewards, quests), BattleData, TitleData,
-              ThemeData, CosmeticsData, MarketData, SpinData, HolidayData, Sounds,
+              ThemeData, CosmeticsData, MarketData, SpinData, HolidayData, HouseData,
+              SkinData, Sounds,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
@@ -584,17 +626,18 @@ src/server/   Main.server.luau starts the services in order
               TradeService, StealService, GuardService, BuddyService, FlightService, GrumpService,
               BalloonService, WeatherMutationService, ParadeService, MarketService,
               CommunityService, LeaderboardService, SpinService, AdminService,
-              HolidayService, ObbyService, RaidService,
+              HolidayService, ObbyService, HouseService, RaidService,
               IndexService, RewardService, DailyService, EventService, BattleService,
               TitleService, AuraService, ClimateService, ThemeService,
               CosmeticService, ShopService,
               MonetizationService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars), Codes,
+              PetModels (island pets),
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, Rewards, PedestalMenu, Battle,
                BuddyController, FlightController, CombatController, Aim, Style, Market,
-               HolidayShop, AdminPanel,
+               HolidayShop, AdminPanel, FlashyFx, PetAnimator,
                BiomeController, ThrowController, RideController, Toasts, TutorialController,
                StormAnimator, AmbientController, JuiceController, Sfx,
                PromptController, ForecastController, UI

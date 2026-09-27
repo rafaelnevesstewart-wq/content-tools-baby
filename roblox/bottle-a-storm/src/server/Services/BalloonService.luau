@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Remotes = require(Shared.Remotes)
+local SkinData = require(Shared.SkinData)
 
 local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
@@ -99,7 +100,11 @@ local function onThrow(player: Player, target: any)
 	if aim.Magnitude > Config.Balloon.Range then
 		target = origin + aim.Unit * Config.Balloon.Range
 	end
-	local color = COLORS[rng:NextInteger(1, #COLORS)]
+	local data = DataService.get(player)
+	local fx = data and data.cosmetics.fx
+	local color = if fx and fx ~= SkinData.DefaultBeam
+		then SkinData.beam(fx).glow
+		else COLORS[rng:NextInteger(1, #COLORS)]
 	local balloon = Instance.new("Part")
 	balloon.Name = "WaterBalloon"
 	balloon.Shape = Enum.PartType.Ball

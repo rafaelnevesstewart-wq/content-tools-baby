@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local CosmeticsData = require(Shared.CosmeticsData)
+local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
@@ -39,6 +40,8 @@ local content: ScrollingFrame
 local tabButtons: { [string]: TextButton } = {}
 local currentTab = "hat"
 local refreshers: { () -> () } = {}
+local shimmers: { UIGradient } = {}
+local bonusLabel: TextLabel
 local busy = false
 
 local function state(): State
@@ -80,6 +83,7 @@ end
 
 local function clear()
 	refreshers = {}
+	shimmers = {}
 	for _, child in content:GetChildren() do
 		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
 			child:Destroy()
@@ -104,7 +108,7 @@ local function section(order: number, title: string): Frame
 		Parent = content,
 	}, {
 		UI.new("UIGridLayout", {
-			CellSize = UDim2.fromOffset(150, 150),
+			CellSize = UDim2.fromOffset(150, 172),
 			CellPadding = UDim2.fromOffset(8, 8),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
@@ -114,16 +118,36 @@ end
 local function card(grid: Frame, order: number, item: CosmeticsData.Item)
 	local category = CosmeticsData.category(item.category)
 	local multi = category ~= nil and category.multi == true
+	local tier = CosmeticsData.tierOf(item)
 	local frame = UI.new("Frame", {
 		LayoutOrder = order,
-		BackgroundColor3 = UI.Colors.PanelLight,
+		BackgroundColor3 = Color3.new(1, 1, 1),
 		Parent = grid,
 	}, { UI.corner(12), UI.padding(6) })
-	local stroke = UI.stroke(UI.Colors.Stroke, 1.5)
+	-- A glow of the tier's color from the top of the card.
+	local gradient = UI.new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new(UI.Colors.PanelLight:Lerp(tier.color, 0.35), UI.Colors.PanelLight),
+		Parent = frame,
+	})
+	if tier.name == "Legendary" or tier.name == "Mythic" then
+		table.insert(shimmers, gradient)
+	end
+	local stroke = UI.stroke(tier.color, 1.5)
 	stroke.Parent = frame
 	UI.label({ Size = UDim2.new(1, 0, 0, 40), Text = item.emoji, TextSize = 34, Parent = frame })
-	local name = UI.label({
+	UI.label({
 		Position = UDim2.fromOffset(0, 40),
+		Size = UDim2.new(1, 0, 0, 16),
+		Text = if tier.bonus > 0
+			then tier.name .. "  ·  +" .. math.floor(tier.bonus * 100) .. "% Sparks"
+			else tier.name,
+		TextSize = 12,
+		TextColor3 = UI.ink(tier.color),
+		Parent = frame,
+	})
+	local name = UI.label({
+		Position = UDim2.fromOffset(0, 58),
 		Size = UDim2.new(1, 0, 0, 20),
 		Text = item.name,
 		TextScaled = true,
@@ -131,7 +155,7 @@ local function card(grid: Frame, order: number, item: CosmeticsData.Item)
 	})
 	UI.new("UITextSizeConstraint", { MaxTextSize = 16, Parent = name })
 	local about = UI.label({
-		Position = UDim2.fromOffset(0, 60),
+		Position = UDim2.fromOffset(0, 78),
 		Size = UDim2.new(1, 0, 0, 30),
 		Text = item.description,
 		TextScaled = true,
@@ -162,7 +186,7 @@ local function card(grid: Frame, order: number, item: CosmeticsData.Item)
 				or (item.id == default and (current :: any)[item.category] == nil)
 		end
 		stroke.Thickness = if using then 3.5 else 1.5
-		stroke.Color = if using then UI.Colors.Good else UI.Colors.Stroke
+		stroke.Color = if using then UI.Colors.Good else tier.color
 		if using then
 			local isDefault = CosmeticsData.Defaults[item.category] == item.id
 			mode = if isDefault then "none" else (if multi then "equip" else "unequip")
@@ -318,6 +342,37 @@ function Style.start()
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = window,
 	})
+	bonusLabel = UI.label({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -54, 0, 0),
+		Size = UDim2.fromOffset(330, 32),
+		TextSize = 16,
+		TextColor3 = UI.Colors.Spark,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Parent = window,
+	})
+	local function refreshBonus()
+		local bonus = player:GetAttribute("StyleBonus") or 0
+		bonusLabel.Text = "✨ Style Bonus: +"
+			.. math.floor(bonus * 100 + 0.5)
+			.. "% Sparks (max +"
+			.. math.floor(Config.Style.MaxBonus * 100)
+			.. "%)"
+	end
+	player:GetAttributeChangedSignal("StyleBonus"):Connect(refreshBonus)
+	refreshBonus()
+	-- Legendary and Mythic cards shimmer.
+	task.spawn(function()
+		while true do
+			if window.Visible then
+				local offset = (os.clock() * 0.6) % 2 - 1
+				for _, gradient in shimmers do
+					gradient.Offset = Vector2.new(0, offset * 0.3)
+				end
+			end
+			task.wait(0.05)
+		end
+	end)
 	UI.button({
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.fromScale(1, 0),

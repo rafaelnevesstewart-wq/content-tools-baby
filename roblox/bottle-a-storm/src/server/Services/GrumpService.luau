@@ -12,6 +12,7 @@ local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
+local SkinData = require(Shared.SkinData)
 local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
@@ -326,7 +327,9 @@ local function onBlast(player: Player, target: any)
 	beam.CanTouch = false
 	beam.CanQuery = false
 	beam.Material = Enum.Material.Neon
-	beam.Color = Color3.fromRGB(255, 150, 210)
+	local shooterData = DataService.get(player)
+	local skin = SkinData.beam(shooterData and shooterData.cosmetics.fx)
+	beam.Color = if shooterData and shooterData.cosmetics.fx then skin.color else Color3.fromRGB(255, 150, 210)
 	beam.Size = Vector3.new(0.35, 0.35, length)
 	beam.CFrame = CFrame.lookAt((origin + endPoint) / 2, endPoint)
 	beam.Parent = workspace

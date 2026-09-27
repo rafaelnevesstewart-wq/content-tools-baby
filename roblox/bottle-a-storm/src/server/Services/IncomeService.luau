@@ -66,6 +66,7 @@ function IncomeService.rateOf(player: Player): number
 		* beginnerBonus
 		* groupBonus
 		* abuseBonus
+		* (1 + (data.styleBonus or 0))
 end
 
 -- Pushes the profile's numbers to attributes, leaderstats and the collect pad.

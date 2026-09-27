@@ -9,6 +9,7 @@ local Debris = game:GetService("Debris")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
+local SkinData = require(Shared.SkinData)
 local StormData = require(Shared.StormData)
 local ThiefStyles = require(Shared.ThiefStyles)
 local Signal = require(Shared.Signal)
@@ -267,15 +268,15 @@ local function begin(thief: Player, owner: Player, slot: number)
 	end
 end
 
-local function beam(from: Vector3, to: Vector3)
+local function beam(from: Vector3, to: Vector3, skin: SkinData.BeamSkin?)
 	local distance = (to - from).Magnitude
 	local part = Instance.new("Part")
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanTouch = false
 	part.CanQuery = false
-	part.Material = Enum.Material.Neon
-	part.Color = Color3.fromRGB(255, 240, 90)
+	part.Color = if skin then skin.color else Color3.fromRGB(255, 240, 90)
+	part.Material = if skin then skin.material else Enum.Material.Neon
 	part.Size = Vector3.new(0.4, 0.4, distance)
 	part.CFrame = CFrame.lookAt((from + to) / 2, to)
 	part.Parent = workspace
@@ -292,7 +293,8 @@ function StealService.zapThief(target: Player, byName: string, from: Vector3, za
 	end
 	local targetRoot = rootOf(target)
 	if targetRoot and not splash then
-		beam(from, targetRoot.Position)
+		local zapperData = zapper and DataService.get(zapper)
+		beam(from, targetRoot.Position, SkinData.beam(zapperData and zapperData.cosmetics.fx))
 	end
 	local what = if splash then "splash" else "zap"
 	if styleOf(target) == "UmbrellaTank" and not carry.umbrellaUsed then

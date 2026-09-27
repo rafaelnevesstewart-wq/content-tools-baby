@@ -31,6 +31,8 @@ CosmeticsData.Categories = {
 	{ key = "back", name = "Backs", emoji = "🪽" },
 	{ key = "aura", name = "Auras", emoji = "💫" },
 	{ key = "cloud", name = "Flight Clouds", emoji = "☁️" },
+	{ key = "jar", name = "Jar Skins", emoji = "🫙" },
+	{ key = "fx", name = "Beam Effects", emoji = "💥" },
 	{ key = "house", name = "House", emoji = "🏠", island = true },
 	{ key = "pedestal", name = "Pedestals", emoji = "🏛️", island = true },
 	{ key = "decor", name = "Decor", emoji = "⛲", multi = true, island = true },
@@ -88,6 +90,24 @@ CosmeticsData.Items = {
 		cost = 0,
 		robux = true,
 		description = "A shiny golden crown with sparkles.",
+	},
+
+	{
+		id = "InfernoCrown",
+		category = "hat",
+		name = "Inferno Crown",
+		emoji = "🔥",
+		cost = 1500000,
+		description = "A black crown wreathed in real flames.",
+	},
+	{
+		id = "StormHalo",
+		category = "hat",
+		name = "Storm Halo",
+		emoji = "🌩️",
+		cost = 0,
+		robux = true,
+		description = "A spinning halo that crackles with lightning.",
 	},
 
 	-- Trails
@@ -370,6 +390,24 @@ CosmeticsData.Items = {
 		description = "Big glowing rainbow wings.",
 	},
 
+	{
+		id = "PhoenixWings",
+		category = "back",
+		name = "Phoenix Wings",
+		emoji = "🐦‍🔥",
+		cost = 2000000,
+		description = "Blazing wings of fire.",
+	},
+	{
+		id = "LightningWings",
+		category = "back",
+		name = "Lightning Wings",
+		emoji = "⚡",
+		cost = 0,
+		robux = true,
+		description = "Electric wings with crackling bolts.",
+	},
+
 	-- Auras
 	{
 		id = "SparkleAura",
@@ -403,6 +441,142 @@ CosmeticsData.Items = {
 		cost = 0,
 		robux = true,
 		description = "Soft pink sparkles and a warm glow float up around you.",
+	},
+
+	{
+		id = "RainbowAura",
+		category = "aura",
+		name = "Rainbow Aura",
+		emoji = "🌈",
+		cost = 400000,
+		description = "Every color of the rainbow swirls around you.",
+	},
+	{
+		id = "InfernoAura",
+		category = "aura",
+		name = "Inferno Aura",
+		emoji = "🔥",
+		cost = 800000,
+		description = "You're surrounded by real flames.",
+	},
+	{
+		id = "ThunderGodAura",
+		category = "aura",
+		name = "Thunder God",
+		emoji = "⚡",
+		cost = 2000000,
+		description = "Lightning bolts crackle all around you.",
+	},
+
+	-- Storm Jar skins (your jar, thrown jars and the jars on your pedestals)
+	{
+		id = "GlassJar",
+		category = "jar",
+		name = "Glass Jar",
+		emoji = "🫙",
+		cost = 0,
+		description = "The classic glass jar.",
+	},
+	{
+		id = "CrystalJar",
+		category = "jar",
+		name = "Crystal Jar",
+		emoji = "🔮",
+		cost = 15000,
+		description = "Violet crystal with a soft glow.",
+	},
+	{
+		id = "FrostJar",
+		category = "jar",
+		name = "Frost Jar",
+		emoji = "❄️",
+		cost = 60000,
+		description = "Solid ice with glittering frost.",
+	},
+	{
+		id = "GoldenJar",
+		category = "jar",
+		name = "Golden Jar",
+		emoji = "👑",
+		cost = 200000,
+		description = "Gold glass with a shining lid.",
+	},
+	{
+		id = "LavaJar",
+		category = "jar",
+		name = "Lava Jar",
+		emoji = "🌋",
+		cost = 800000,
+		description = "Cracked lava stone that burns with real fire.",
+	},
+	{
+		id = "GalaxyJar",
+		category = "jar",
+		name = "Galaxy Jar",
+		emoji = "🌌",
+		cost = 0,
+		robux = true,
+		description = "A glowing jar full of stars.",
+	},
+	{
+		id = "DiamondJar",
+		category = "jar",
+		name = "Diamond Jar",
+		emoji = "💠",
+		cost = 0,
+		robux = true,
+		description = "Flawless diamond that sparkles.",
+	},
+
+	-- Beam effects (Zapper, Cloud Blaster, water balloons)
+	{
+		id = "ClassicZap",
+		category = "fx",
+		name = "Classic Zap",
+		emoji = "⚡",
+		cost = 0,
+		description = "Bright yellow lightning.",
+	},
+	{
+		id = "FireBlast",
+		category = "fx",
+		name = "Fire Blast",
+		emoji = "🔥",
+		cost = 20000,
+		description = "Zap and blast with fire.",
+	},
+	{
+		id = "FrostBeam",
+		category = "fx",
+		name = "Frost Beam",
+		emoji = "❄️",
+		cost = 60000,
+		description = "Icy blue beams and frozen balloons.",
+	},
+	{
+		id = "RainbowBeam",
+		category = "fx",
+		name = "Rainbow Beam",
+		emoji = "🌈",
+		cost = 150000,
+		description = "Candy pink beams.",
+	},
+	{
+		id = "VoidRay",
+		category = "fx",
+		name = "Void Ray",
+		emoji = "🕳️",
+		cost = 500000,
+		description = "Deep purple rays from the void.",
+	},
+	{
+		id = "GoldenRay",
+		category = "fx",
+		name = "Golden Ray",
+		emoji = "✨",
+		cost = 0,
+		robux = true,
+		description = "Shining golden beams.",
 	},
 
 	-- Pedestal styles
@@ -743,10 +917,41 @@ CosmeticsData.Items = {
 
 -- What you have when nothing else is picked (free, always owned).
 CosmeticsData.Defaults = {
+	jar = "GlassJar",
+	fx = "ClassicZap",
 	house = "ClassicHouse",
 	pedestal = "Marble",
 	cloud = "Cumulus",
 } :: { [string]: string }
+
+-- Rarity tiers. Every cosmetic you wear or place adds its tier's bonus to
+-- your Style Bonus: extra Sparks from all your storms (see Config.Style).
+export type Tier = { name: string, color: Color3, bonus: number }
+
+CosmeticsData.Tiers = {
+	Basic = { name = "Basic", color = Color3.fromRGB(150, 160, 182), bonus = 0 },
+	Common = { name = "Common", color = Color3.fromRGB(200, 205, 215), bonus = 0.01 },
+	Rare = { name = "Rare", color = Color3.fromRGB(80, 160, 255), bonus = 0.02 },
+	Epic = { name = "Epic", color = Color3.fromRGB(190, 90, 255), bonus = 0.04 },
+	Legendary = { name = "Legendary", color = Color3.fromRGB(255, 190, 40), bonus = 0.06 },
+	Mythic = { name = "Mythic", color = Color3.fromRGB(255, 80, 140), bonus = 0.08 },
+} :: { [string]: Tier }
+
+function CosmeticsData.tierOf(item: Item): Tier
+	local tiers = CosmeticsData.Tiers
+	if item.robux then
+		return tiers.Mythic
+	elseif item.cost <= 0 then
+		return tiers.Basic
+	elseif item.cost < 10000 then
+		return tiers.Common
+	elseif item.cost < 100000 then
+		return tiers.Rare
+	elseif item.cost < 1000000 then
+		return tiers.Epic
+	end
+	return tiers.Legendary
+end
 
 -- The island sign's colors and emoji (free).
 CosmeticsData.SignColors = {

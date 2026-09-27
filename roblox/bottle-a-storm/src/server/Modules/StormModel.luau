@@ -5,6 +5,7 @@
 local CollectionService = game:GetService("CollectionService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local SkinData = require(Shared.SkinData)
 local StormData = require(Shared.StormData)
 
 local StormModel = {}
@@ -611,7 +612,7 @@ end
 
 -- A glass jar with a lid, sized around a storm of the given rarity. The jar's
 -- base sits at the pivot, so place it on top of a pedestal.
-function StormModel.buildJar(scale: number, anchored: boolean): Model
+function StormModel.buildJar(scale: number, anchored: boolean, skin: string?): Model
 	local jar = Instance.new("Model")
 	jar.Name = "Jar"
 
@@ -650,6 +651,10 @@ function StormModel.buildJar(scale: number, anchored: boolean): Model
 	lid.Parent = jar
 	if not anchored then
 		weld(glass, lid)
+	end
+	if skin and skin ~= SkinData.DefaultJar then
+		SkinData.applyJar(glass, lid, skin)
+		glass.Transparency = math.max(glass.Transparency, 0.5) -- keep the storm inside visible
 	end
 
 	return jar

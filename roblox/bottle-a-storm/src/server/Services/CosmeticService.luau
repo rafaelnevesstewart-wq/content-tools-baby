@@ -12,6 +12,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Config = require(Shared.Config)
 local CosmeticsData = require(Shared.CosmeticsData)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
@@ -22,6 +23,7 @@ local Effects = require(Modules.Effects)
 local PetModels = require(Modules.PetModels)
 local StormModel = require(Modules.StormModel)
 
+local CaptureService = require(script.Parent.CaptureService)
 local DataService = require(script.Parent.DataService)
 local HouseService = require(script.Parent.HouseService)
 local IncomeService = require(script.Parent.IncomeService)
@@ -235,6 +237,59 @@ local HATS: { [string]: (Model, CFrame) -> () } = {
 	end,
 }
 
+-- Flashy hats (added to HATS below).
+HATS.InfernoCrown = function(model, top)
+	local band = cylinder(model, 0.45, 1.4, rgb(30, 26, 30), top * CFrame.new(0, 0.2, 0))
+	band.Material = Enum.Material.Basalt
+	for i = 1, 6 do
+		local angle = i / 6 * math.pi * 2
+		local spike = part(model, {
+			Size = Vector3.new(0.2, 0.7, 0.2),
+			Color = rgb(255, 120, 40),
+			Material = Enum.Material.Neon,
+			CFrame = top * CFrame.new(math.cos(angle) * 0.62, 0.65, math.sin(angle) * 0.62),
+		})
+		spike.Name = "Spike"
+	end
+	local fire = Instance.new("Fire")
+	fire.Size = 3
+	fire.Heat = 8
+	fire.Color = rgb(255, 150, 50)
+	fire.SecondaryColor = rgb(255, 60, 20)
+	fire.Parent = band
+	local light = Instance.new("PointLight")
+	light.Color = rgb(255, 140, 60)
+	light.Range = 10
+	light.Brightness = 1.5
+	light.Parent = band
+end
+
+HATS.StormHalo = function(model, top)
+	local ring = part(model, {
+		Size = Vector3.one * 0.2,
+		Transparency = 1,
+		CFrame = top * CFrame.new(0, 1.3, 0),
+	})
+	ring:SetAttribute("SpinRing", 2.5)
+	for i = 1, 12 do
+		local angle = i / 12 * math.pi * 2
+		local orb = ball(
+			model,
+			Vector3.one * 0.32,
+			rgb(170, 220, 255),
+			top * CFrame.new(math.cos(angle) * 1, 1.3, math.sin(angle) * 1),
+			Enum.Material.Neon
+		)
+		orb:SetAttribute("OnRing", true)
+	end
+	local light = Instance.new("PointLight")
+	light.Color = rgb(170, 220, 255)
+	light.Range = 10
+	light.Brightness = 1.5
+	light.Parent = ring
+	model:SetAttribute("Bolts", rgb(190, 230, 255))
+end
+
 local BACKS: { [string]: (Model, CFrame) -> () } = {
 	JarPack = function(model, back)
 		local jar = cylinder(model, 1.6, 1.2, rgb(200, 235, 255), back * CFrame.new(0, 0, 0.7))
@@ -314,6 +369,48 @@ local BACKS: { [string]: (Model, CFrame) -> () } = {
 
 -- Trails have a bright core, an optional wide soft glow behind it, and
 -- optional particles (flames, petals, stars...) that fall off as you move.
+-- Flashy backs.
+BACKS.PhoenixWings = function(model, back)
+	for _, side in { -1, 1 } do
+		for index = 1, 3 do
+			local feather = ball(
+				model,
+				Vector3.new(3 - index * 0.5, 0.45, 0.2),
+				({ rgb(255, 200, 70), rgb(255, 130, 40), rgb(220, 50, 20) })[index],
+				back
+					* CFrame.new(side * (1.5 + index * 0.1), 1 - index * 0.4, 0.6)
+					* CFrame.Angles(0, side * 0.3, side * (0.45 - index * 0.15))
+			)
+			feather.Material = Enum.Material.Neon
+			if index == 1 then
+				local fire = Instance.new("Fire")
+				fire.Size = 3
+				fire.Heat = 6
+				fire.Color = rgb(255, 170, 60)
+				fire.SecondaryColor = rgb(255, 70, 20)
+				fire.Parent = feather
+			end
+		end
+	end
+end
+
+BACKS.LightningWings = function(model, back)
+	for _, side in { -1, 1 } do
+		for index = 1, 3 do
+			local bolt = part(model, {
+				Size = Vector3.new(2.6 - index * 0.4, 0.25, 0.15),
+				Color = rgb(170, 220, 255),
+				Material = Enum.Material.Neon,
+				CFrame = back
+					* CFrame.new(side * (1.4 + index * 0.1), 1 - index * 0.45, 0.6)
+					* CFrame.Angles(0, side * 0.3, side * (0.5 - index * 0.2)),
+			})
+			bolt.Name = "WingBolt"
+		end
+	end
+	model:SetAttribute("Bolts", rgb(170, 220, 255))
+end
+
 type ParticleStyle = {
 	texture: string,
 	colors: { Color3 },
@@ -654,6 +751,90 @@ local AURAS: { [string]: (BasePart) -> () } = {
 	end,
 }
 
+-- Flashy auras.
+AURAS.RainbowAura = function(root)
+	emitter(root, {
+		Name = "CosmeticAura",
+		Color = colorSequence(RAINBOW),
+		Size = NumberSequence.new(0.45, 0),
+		Speed = NumberRange.new(1, 2),
+		SpreadAngle = Vector2.new(180, 180),
+		Lifetime = NumberRange.new(1, 1.6),
+		Rate = 30,
+		LightEmission = 1,
+	})
+	local light = Instance.new("PointLight")
+	light.Name = "CosmeticAuraLight"
+	light.Range = 10
+	light.Brightness = 1.2
+	light.Color = rgb(255, 180, 230)
+	light.Parent = root
+end
+
+AURAS.InfernoAura = function(root)
+	local fire = Instance.new("Fire")
+	fire.Name = "CosmeticAuraFire"
+	fire.Size = 7
+	fire.Heat = 10
+	fire.Color = rgb(255, 150, 50)
+	fire.SecondaryColor = rgb(255, 60, 20)
+	fire.Parent = root
+	local light = Instance.new("PointLight")
+	light.Name = "CosmeticAuraLight"
+	light.Color = rgb(255, 130, 50)
+	light.Range = 12
+	light.Brightness = 2
+	light.Parent = root
+end
+
+AURAS.ThunderGodAura = function(root)
+	emitter(root, {
+		Name = "CosmeticAura",
+		Color = ColorSequence.new(rgb(255, 250, 170), rgb(150, 210, 255)),
+		Size = NumberSequence.new(0.35, 0),
+		Speed = NumberRange.new(4, 8),
+		SpreadAngle = Vector2.new(180, 180),
+		Lifetime = NumberRange.new(0.15, 0.3),
+		Rate = 30,
+		LightEmission = 1,
+	})
+	-- Its bolts and throbbing light live in an "AuraFx" model (see applyCharacter).
+end
+
+-- Hats and backs can have a ring that spins (parts marked "SpinRing", with
+-- pieces marked "OnRing"). After welding, the ring gets a SpinWeld the
+-- client's FlashyFx turns. Anything flashy gets the "FlashyFx" tag.
+local function finishFlashy(model: Model, anchor: BasePart)
+	for _, ring in model:GetDescendants() do
+		if ring:IsA("BasePart") and ring:GetAttribute("SpinRing") then
+			for _, child in ring:GetChildren() do
+				if child:IsA("WeldConstraint") then
+					child:Destroy()
+				end
+			end
+			local spin = Instance.new("Weld")
+			spin.Name = "SpinWeld"
+			spin.Part0 = anchor
+			spin.Part1 = ring
+			spin.C0 = anchor.CFrame:ToObjectSpace(ring.CFrame)
+			spin:SetAttribute("Speed", ring:GetAttribute("SpinRing"))
+			spin.Parent = ring
+			for _, other in model:GetDescendants() do
+				if other:IsA("BasePart") and other:GetAttribute("OnRing") then
+					local weld = other:FindFirstChildOfClass("WeldConstraint")
+					if weld then
+						weld.Part0 = ring
+					end
+				end
+			end
+			CollectionService:AddTag(model, "FlashyFx")
+		end
+	end
+	if model:GetAttribute("Bolts") or model:GetAttribute("Rainbow") then
+		CollectionService:AddTag(model, "FlashyFx")
+	end
+end
+
 local function clearCharacter(character: Model)
 	local folder = character:FindFirstChild("Cosmetics")
 	if folder then
@@ -690,6 +871,7 @@ local function applyCharacter(player: Player)
 		model.Name = "Hat"
 		hat(model, head.CFrame * CFrame.new(0, head.Size.Y / 2, 0))
 		weldAll(model, head)
+		finishFlashy(model, head)
 		model.Parent = folder
 	end
 
@@ -699,6 +881,7 @@ local function applyCharacter(player: Player)
 		model.Name = "Back"
 		back(model, torso.CFrame * CFrame.new(0, 0.1, torso.Size.Z / 2))
 		weldAll(model, torso)
+		finishFlashy(model, torso)
 		model.Parent = folder
 	end
 
@@ -773,6 +956,25 @@ local function applyCharacter(player: Player)
 	local aura = cosmetics.aura and AURAS[cosmetics.aura]
 	if aura and root then
 		aura(root)
+		if cosmetics.aura == "ThunderGodAura" then
+			-- Bolts crackle around you and a light throbs.
+			local fx = Instance.new("Model")
+			fx.Name = "AuraFx"
+			local core = part(fx, { Size = Vector3.one * 0.2, Transparency = 1, CFrame = root.CFrame })
+			fx.PrimaryPart = core
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = root
+			weld.Part1 = core
+			weld.Parent = core
+			local light = Instance.new("PointLight")
+			light.Name = "PulseLight"
+			light.Color = rgb(200, 225, 255)
+			light.Range = 12
+			light.Parent = core
+			fx:SetAttribute("Bolts", rgb(200, 225, 255))
+			fx.Parent = folder
+			CollectionService:AddTag(fx, "FlashyFx")
+		end
 	end
 end
 
@@ -1609,8 +1811,34 @@ end
 -- Buying and equipping
 ---------------------------------------------------------------------------
 
+-- The Style Bonus: every cosmetic you wear or place adds its tier's bonus.
+local SINGLE = { "hat", "trail", "back", "aura", "cloud", "jar", "fx", "house", "pedestal", "flag" }
+
+local function styleBonus(cosmetics: any): number
+	local total = 0
+	local function add(id: string?)
+		local item = CosmeticsData.get(id)
+		if item and (cosmetics.owned[item.id] or (item.cost <= 0 and not item.robux)) then
+			total += CosmeticsData.tierOf(item).bonus
+		end
+	end
+	for _, key in SINGLE do
+		add(cosmetics[key])
+	end
+	for id in cosmetics.decor do
+		add(id)
+	end
+	for id in cosmetics.pets do
+		add(id)
+	end
+	return math.min(total, Config.Style.MaxBonus)
+end
+
 local function publish(player: Player, data: any)
 	local cosmetics = data.cosmetics
+	data.styleBonus = styleBonus(cosmetics)
+	player:SetAttribute("StyleBonus", data.styleBonus)
+	IncomeService.sync(player)
 	local owned, decor, pets = {}, {}, {}
 	for id in cosmetics.owned do
 		table.insert(owned, id)
@@ -1642,7 +1870,10 @@ end
 local function refreshFor(player: Player, data: any, category: string)
 	publish(player, data)
 	local info = CosmeticsData.category(category)
-	if info and info.island then
+	if category == "jar" then
+		CaptureService.skinTool(player, nil)
+		PlotService.refreshAll(player) -- the jars on your pedestals
+	elseif info and info.island then
 		applyIsland(player)
 	else
 		applyCharacter(player)
@@ -1720,7 +1951,7 @@ local function onAction(player: Player, action: any, a: any): (boolean, string)
 		elseif a == "house" then
 			cosmetics.house = nil
 		elseif a ~= "decor" and a ~= "pet" then
-			cosmetics[a] = nil
+			cosmetics[a] = nil -- back to the free default
 		end
 		refreshFor(player, data, a)
 		return true, "Taken off."

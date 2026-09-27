@@ -409,7 +409,7 @@ local function refreshSlot(plot: Plot, slot: number)
 	local facing = CFrame.lookAt(top, top + plot.cframe.LookVector)
 
 	local jarScale = rarity.scale * 0.55
-	local jar = StormModel.buildJar(jarScale, true)
+	local jar = StormModel.buildJar(jarScale, true, if data then data.cosmetics.jar else nil)
 	jar:PivotTo(facing)
 	jar.Parent = display
 

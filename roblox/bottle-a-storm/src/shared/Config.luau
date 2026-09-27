@@ -437,6 +437,12 @@ Config.Obby = {
 	Checkpoints = { 10, 20 }, -- platforms that must be touched on the way up
 }
 
+-- Style Bonus: every cosmetic you wear or place adds its rarity tier's bonus
+-- (CosmeticsData.Tiers) to your Sparks, up to this much in total.
+Config.Style = {
+	MaxBonus = 0.5, -- +50%
+}
+
 -- Weather mutations (StormData.WeatherMutations): during a weather event, each
 -- storm on a pedestal rolls this chance every minute to pick one up.
 Config.WeatherMutations = {

@@ -15,6 +15,7 @@ local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
+local SkinData = require(Shared.SkinData)
 local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
@@ -84,7 +85,7 @@ end
 CaptureService.rollMutation = rollMutation
 
 -- A little glass jar flying in an arc from `from` to `to`.
-local function flyJar(from: Vector3, to: Vector3, onLanded: (() -> ())?)
+local function flyJar(from: Vector3, to: Vector3, onLanded: (() -> ())?, skin: string?)
 	local jar = Instance.new("Part")
 	jar.Name = "ThrownJar"
 	jar.Size = Vector3.new(1, 1.3, 1)
@@ -96,6 +97,9 @@ local function flyJar(from: Vector3, to: Vector3, onLanded: (() -> ())?)
 	jar.CanTouch = false
 	jar.CanQuery = false
 	jar.CFrame = CFrame.new(from)
+	if skin then
+		SkinData.applyJar(jar, nil, skin)
+	end
 	jar.Parent = workspace
 
 	local distance = (to - from).Magnitude
@@ -280,7 +284,7 @@ local function onThrow(player: Player, target: any)
 
 	local storm = StormSpawner.findNear(target, Config.Throw.AimRadius)
 	if not storm then
-		flyJar(origin, target, nil)
+		flyJar(origin, target, nil, data.cosmetics.jar)
 		return
 	end
 	if not PlotService.firstFreeSlot(player) then
@@ -290,7 +294,7 @@ local function onThrow(player: Player, target: any)
 	local uid = storm.uid
 	flyJar(origin, storm.root.Position, function()
 		resolveHit(player, uid, origin)
-	end)
+	end, data.cosmetics.jar)
 end
 
 local function makeJarTool(): Tool
@@ -326,13 +330,32 @@ local function makeJarTool(): Tool
 	return tool
 end
 
+-- Dresses a Storm Jar tool in the player's jar skin (a cosmetic).
+function CaptureService.skinTool(player: Player, tool: Instance?)
+	local data = DataService.get(player)
+	if not tool then
+		local character = player.Character
+		local backpack = player:FindFirstChildOfClass("Backpack")
+		tool = (character and character:FindFirstChild(JAR_NAME)) or (backpack and backpack:FindFirstChild(JAR_NAME))
+	end
+	if not tool then
+		return
+	end
+	local handle = tool:FindFirstChild("Handle")
+	if handle and handle:IsA("BasePart") then
+		SkinData.applyJar(handle, tool:FindFirstChild("Lid") :: BasePart?, data and data.cosmetics.jar)
+	end
+end
+
 local function giveJar(player: Player)
 	local backpack = player:WaitForChild("Backpack", 10)
 	local character = player.Character
 	if not backpack or backpack:FindFirstChild(JAR_NAME) or (character and character:FindFirstChild(JAR_NAME)) then
 		return
 	end
-	jarTemplate:Clone().Parent = backpack
+	local tool = jarTemplate:Clone()
+	CaptureService.skinTool(player, tool)
+	tool.Parent = backpack
 	if not tipShown[player] then
 		tipShown[player] = true
 		Notify.player(player, "🫙 Hold your Storm Jar (press 1), then click or tap a storm to throw it!", "info")
