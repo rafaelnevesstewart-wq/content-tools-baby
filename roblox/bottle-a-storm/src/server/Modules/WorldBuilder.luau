@@ -6,6 +6,7 @@
 local Lighting = game:GetService("Lighting")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local ClimateData = require(Shared.ClimateData)
 local Config = require(Shared.Config)
 
 local WorldBuilder = {}
@@ -53,16 +54,24 @@ local function disc(
 end
 
 -- Grass top with shrinking layers of dirt and rock underneath.
-local function floatingIsland(parent: Instance, name: string, center: Vector3, radius: number, grass: Color3): Model
+local function floatingIsland(
+	parent: Instance,
+	name: string,
+	center: Vector3,
+	radius: number,
+	grass: Color3,
+	groundMaterial: Enum.Material?,
+	rock: Color3?
+): Model
 	local model = Instance.new("Model")
 	model.Name = name
-	local top = disc(model, "Ground", center, radius, 4, grass, Enum.Material.Grass)
+	local top = disc(model, "Ground", center, radius, 4, grass, groundMaterial or Enum.Material.Grass)
 	model.PrimaryPart = top
 	local layers = {
-		{ scale = 0.92, depth = 4, thickness = 7, color = DIRT },
-		{ scale = 0.7, depth = 11, thickness = 8, color = ROCK },
-		{ scale = 0.42, depth = 19, thickness = 9, color = ROCK },
-		{ scale = 0.18, depth = 28, thickness = 8, color = ROCK },
+		{ scale = 0.92, depth = 4, thickness = 7, color = rock or DIRT },
+		{ scale = 0.7, depth = 11, thickness = 8, color = rock or ROCK },
+		{ scale = 0.42, depth = 19, thickness = 9, color = rock or ROCK },
+		{ scale = 0.18, depth = 28, thickness = 8, color = rock or ROCK },
 	}
 	for index, layer in layers do
 		disc(
@@ -249,6 +258,202 @@ local function setupLighting()
 	end
 end
 
+-- A glowing pad that teleports you (handled by ClimateService).
+local function portalPad(
+	parent: Instance,
+	name: string,
+	position: Vector3,
+	color: Color3,
+	title: string,
+	subtitle: string
+): Part
+	local pad = part({
+		Name = name,
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(1, 12, 12),
+		CFrame = CFrame.new(position + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = color,
+		Material = Enum.Material.Neon,
+		Transparency = 0.2,
+		Parent = parent,
+	})
+	part({
+		Name = "Ring",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.4, 16, 16),
+		CFrame = CFrame.new(position + Vector3.new(0, 9, 0)) * CFrame.Angles(0, math.rad(90), 0),
+		Color = color,
+		Material = Enum.Material.ForceField,
+		CanCollide = false,
+		CanTouch = false,
+		Parent = pad,
+	})
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.fromOffset(260, 70)
+	gui.StudsOffsetWorldSpace = Vector3.new(0, 19, 0)
+	gui.MaxDistance = 250
+	gui.LightInfluence = 0
+	gui.Parent = pad
+	label(gui, "Title", title, UDim2.fromScale(1, 0.6), UDim2.fromScale(0, 0), 32, Color3.new(1, 1, 1))
+	label(gui, "Subtitle", subtitle, UDim2.fromScale(1, 0.4), UDim2.fromScale(0, 0.6), 22, color)
+	local sparkles = Instance.new("Sparkles")
+	sparkles.SparkleColor = color
+	sparkles.Parent = pad
+	return pad
+end
+
+-- Themed props for each Climate Shift island.
+local function decorateBiome(parent: Instance, climate: ClimateData.Climate, center: Vector3, rng: Random)
+	local radius = ClimateData.BiomeRadius
+	local function spot(minR: number, maxR: number): Vector3
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(minR, maxR)
+		return center + Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
+	end
+	if climate.key == "Arctic" then
+		for _ = 1, 10 do
+			local height = rng:NextNumber(8, 20)
+			part({
+				Name = "IceSpike",
+				Size = Vector3.new(3, height, 3),
+				CFrame = CFrame.new(spot(30, radius - 8) + Vector3.new(0, height / 2 - 1, 0))
+					* CFrame.Angles(rng:NextNumber(-0.25, 0.25), rng:NextNumber(0, 6), rng:NextNumber(-0.25, 0.25)),
+				Color = Color3.fromRGB(170, 220, 255),
+				Material = Enum.Material.Ice,
+				Transparency = 0.2,
+				Parent = parent,
+			})
+		end
+	elseif climate.key == "Volcano" then
+		for _ = 1, 4 do
+			local size = rng:NextNumber(10, 16)
+			part({
+				Name = "LavaPool",
+				Shape = Enum.PartType.Cylinder,
+				Size = Vector3.new(0.4, size, size),
+				CFrame = CFrame.new(spot(28, radius - 12) + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+				Color = Color3.fromRGB(255, 110, 30),
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+				Parent = parent,
+			})
+		end
+		for _ = 1, 6 do
+			local height = rng:NextNumber(12, 24)
+			local spire = part({
+				Name = "Spire",
+				Shape = Enum.PartType.Cylinder,
+				Size = Vector3.new(height, 5, 5),
+				CFrame = CFrame.new(spot(30, radius - 6) + Vector3.new(0, height / 2, 0))
+					* CFrame.Angles(0, 0, math.rad(90)),
+				Color = Color3.fromRGB(55, 40, 40),
+				Material = Enum.Material.Basalt,
+				Parent = parent,
+			})
+			local fire = Instance.new("Fire")
+			fire.Size = 6
+			fire.Heat = 12
+			fire.Parent = spire
+		end
+	elseif climate.key == "Space" then
+		for _ = 1, 10 do
+			local height = rng:NextNumber(5, 12)
+			part({
+				Name = "Crystal",
+				Size = Vector3.new(2.5, height, 2.5),
+				CFrame = CFrame.new(spot(28, radius - 6) + Vector3.new(0, height / 2 - 1, 0))
+					* CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6), rng:NextNumber(-0.4, 0.4)),
+				Color = if rng:NextNumber() < 0.5 then Color3.fromRGB(150, 110, 255) else Color3.fromRGB(90, 220, 255),
+				Material = Enum.Material.Neon,
+				Parent = parent,
+			})
+		end
+		for _ = 1, 6 do
+			local size = rng:NextNumber(2, 5)
+			part({
+				Name = "Orb",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.new(size, size, size),
+				CFrame = CFrame.new(spot(10, radius) + Vector3.new(0, rng:NextNumber(25, 45), 0)),
+				Color = Color3.fromRGB(255, 240, 200),
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+				Parent = parent,
+			})
+		end
+	end
+end
+
+export type BiomeInfo = {
+	climate: ClimateData.Climate,
+	center: Vector3, -- island top center
+	spawn: CFrame, -- where the portal drops you
+}
+
+-- Filled in by build(): the Climate Shift islands and where the Wild Skies
+-- return portal drops you.
+WorldBuilder.Biomes = {} :: { [string]: BiomeInfo }
+WorldBuilder.WildArrival = CFrame.new(0, 4, 50)
+
+-- The portal row on the Wild Skies, and one island per climate.
+local function buildBiomes(world: Instance, rng: Random)
+	local portals = Instance.new("Folder")
+	portals.Name = "Portals"
+	portals.Parent = world
+	local biomes = Instance.new("Folder")
+	biomes.Name = "Biomes"
+	biomes.Parent = world
+
+	for _, climate in ClimateData.List do
+		if climate.level > 0 then
+			local color = climate.tint or Color3.new(1, 1, 1)
+			local x = (climate.level - 2) * 36
+			local pad = portalPad(
+				portals,
+				"Portal_" .. climate.key,
+				Vector3.new(x, 0, 72),
+				color,
+				climate.emoji .. " " .. climate.name,
+				"Climate Shift " .. climate.level
+			)
+			pad:SetAttribute("Climate", climate.key)
+			pad:SetAttribute("Level", climate.level)
+
+			local center = ClimateData.center(climate)
+			local island = floatingIsland(
+				biomes,
+				climate.key,
+				center,
+				ClimateData.BiomeRadius,
+				climate.ground or GRASS,
+				climate.groundMaterial,
+				climate.rock
+			)
+			island:SetAttribute("Climate", climate.key)
+			island:SetAttribute("Center", center)
+			island:SetAttribute("Radius", ClimateData.BiomeRadius)
+			decorateBiome(island, climate, center, rng)
+
+			-- Arrive near one edge, facing the middle.
+			local arrive = center + Vector3.new(0, 4, -(ClimateData.BiomeRadius - 18))
+			local back = portalPad(
+				island,
+				"ReturnPortal",
+				center + Vector3.new(0, 0, -(ClimateData.BiomeRadius - 8)),
+				Color3.fromRGB(150, 220, 255),
+				"🌤️ Back to the Wild Skies",
+				""
+			)
+			back:SetAttribute("Destination", "Wild")
+			WorldBuilder.Biomes[climate.key] = {
+				climate = climate,
+				center = center,
+				spawn = CFrame.lookAt(arrive, center + Vector3.new(0, 4, 0)),
+			}
+		end
+	end
+end
+
 export type PlotInfo = {
 	index: number,
 	cframe: CFrame, -- island top center; LookVector points at the world center
@@ -285,6 +490,7 @@ function WorldBuilder.build(): { PlotInfo }
 	spawn.Parent = world
 
 	forecastTV(world, Vector3.new(0, 0, -30), Vector3.new(0, 0, -100))
+	buildBiomes(world, rng)
 
 	local plotsFolder = Instance.new("Folder")
 	plotsFolder.Name = "Plots"

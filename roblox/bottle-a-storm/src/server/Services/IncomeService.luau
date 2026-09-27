@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local ClimateData = require(Shared.ClimateData)
 local Config = require(Shared.Config)
 local Economy = require(Shared.Economy)
 local Format = require(Shared.Format)
@@ -41,7 +42,7 @@ function IncomeService.rateOf(player: Player): number
 	if hasPass(player, "VIP") then
 		total *= Config.Income.VIPMultiplier
 	end
-	return total
+	return total * ClimateData.at(data.climate).multiplier
 end
 
 -- Pushes the profile's numbers to attributes, leaderstats and the collect pad.
@@ -60,6 +61,7 @@ function IncomeService.sync(player: Player)
 	player:SetAttribute("TrapLevel", data.trapLevel)
 	player:SetAttribute("RaidShields", data.raidShields)
 	player:SetAttribute("ThiefStyle", data.thiefStyle)
+	player:SetAttribute("Climate", data.climate)
 	local unlocked = {}
 	for key in data.thiefStyles do
 		table.insert(unlocked, key)

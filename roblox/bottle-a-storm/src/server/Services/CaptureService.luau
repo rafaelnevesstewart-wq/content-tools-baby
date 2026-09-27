@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local ClimateData = require(Shared.ClimateData)
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
@@ -154,6 +155,17 @@ local function resolveHit(player: Player, uid: string, thrownFrom: Vector3)
 	local def = storm.def
 	local rarity = StormData.rarityOf(def)
 	local jar = Config.Jars[data.jarTier] or Config.Jars[1]
+
+	local biome = ClimateData.get(def.biome)
+	if biome and (data.climate or 0) < biome.level then
+		StormSpawner.dodge(uid, thrownFrom)
+		hint(
+			player,
+			"💥 Bounced off! You need Climate Shift " .. biome.level .. " to catch " .. biome.name .. " storms.",
+			"warn"
+		)
+		return
+	end
 
 	if def.rarity > jar.maxRarity then
 		StormSpawner.dodge(uid, thrownFrom)

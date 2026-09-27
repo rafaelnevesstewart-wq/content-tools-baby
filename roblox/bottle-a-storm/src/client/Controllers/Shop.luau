@@ -120,6 +120,11 @@ local function buildUpgrades()
 				.. StormData.Rarities[nextJar.maxRarity].name
 				.. " storms, fewer dodges and hits."
 			else "The best jar there is. Every storm fears it."
+		local needed = if nextJar then nextJar.climate or 0 else 0
+		if attr("Climate") < needed then
+			setBuyable(card, "🔒 Climate " .. needed, false)
+			return
+		end
 		local text, can = sparksPrice(Economy.jarCost(tier))
 		setBuyable(card, text, can)
 	end)

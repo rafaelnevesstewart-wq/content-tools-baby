@@ -18,6 +18,7 @@ local FUNCTIONS = {
 	"BuyItem", -- client -> server: (itemKey) -> (ok, message)
 	"GetMixer", -- client -> server: () -> mixer info
 	"MixStorms", -- client -> server: (uidA, uidB) -> (ok, message)
+	"ClimateShift", -- client -> server: () -> (ok, message)
 }
 
 local folder: Instance

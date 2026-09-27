@@ -19,6 +19,8 @@ export type StormDef = {
 	colors: { Color3 },
 	fx: string, -- particle style, see StormModel
 	hybrid: boolean?, -- only made in the Storm Mixer, never found in the wild
+	biome: string?, -- only lives on that Climate Shift island (see ClimateData)
+	weight: number?, -- spawn weight on its biome island
 }
 
 export type Mutation = {
@@ -104,6 +106,15 @@ StormData.Rarities = {
 		speed = 18,
 		pull = 1,
 		scale = 1.65,
+	},
+	{
+		index = 7,
+		name = "Cosmic",
+		color = Color3.fromRGB(110, 170, 255),
+		weight = 0, -- only on the Space island
+		speed = 20,
+		pull = 1,
+		scale = 1.8,
 	},
 } :: { Rarity }
 
@@ -301,6 +312,131 @@ StormData.Storms = {
 		fx = "hurricane",
 		hybrid = true,
 	},
+
+	-- Climate Shift biomes: each only lives on its own sky island.
+	-- Arctic Skies
+	{
+		id = "FrostbitePup",
+		name = "Frostbite Pup",
+		rarity = 3,
+		income = 200,
+		colors = { rgb(220, 240, 255), rgb(170, 210, 245) },
+		fx = "snow",
+		biome = "Arctic",
+		weight = 60,
+	},
+	{
+		id = "SnowballYeti",
+		name = "Snowball Yeti",
+		rarity = 4,
+		income = 1200,
+		colors = { rgb(250, 252, 255), rgb(190, 215, 240) },
+		fx = "snow",
+		biome = "Arctic",
+		weight = 28,
+	},
+	{
+		id = "GlacierGuardian",
+		name = "Glacier Guardian",
+		rarity = 5,
+		income = 9000,
+		colors = { rgb(140, 210, 240), rgb(90, 160, 210) },
+		fx = "hail",
+		biome = "Arctic",
+		weight = 10,
+	},
+	{
+		id = "PolarAurora",
+		name = "Polar Aurora",
+		rarity = 6,
+		income = 30000,
+		colors = { rgb(120, 255, 200), rgb(120, 170, 255), rgb(210, 130, 255) },
+		fx = "rainbow",
+		biome = "Arctic",
+		weight = 2,
+	},
+	-- Volcano Skies
+	{
+		id = "EmberPuff",
+		name = "Ember Puff",
+		rarity = 3,
+		income = 400,
+		colors = { rgb(255, 150, 80), rgb(120, 90, 90) },
+		fx = "fire",
+		biome = "Volcano",
+		weight = 60,
+	},
+	{
+		id = "MagmaMoth",
+		name = "Magma Moth",
+		rarity = 4,
+		income = 2500,
+		colors = { rgb(255, 110, 40), rgb(90, 50, 40) },
+		fx = "fire",
+		biome = "Volcano",
+		weight = 28,
+	},
+	{
+		id = "AshStormDrake",
+		name = "Ash Storm Drake",
+		rarity = 5,
+		income = 18000,
+		colors = { rgb(90, 85, 90), rgb(255, 120, 60) },
+		fx = "dust",
+		biome = "Volcano",
+		weight = 10,
+	},
+	{
+		id = "LavaRainGolem",
+		name = "Lava Rain Golem",
+		rarity = 6,
+		income = 60000,
+		colors = { rgb(255, 80, 30), rgb(60, 35, 35) },
+		fx = "fire",
+		biome = "Volcano",
+		weight = 2,
+	},
+	-- Space Skies
+	{
+		id = "StardustSprite",
+		name = "Stardust Sprite",
+		rarity = 4,
+		income = 5000,
+		colors = { rgb(200, 190, 255), rgb(120, 110, 200) },
+		fx = "stars",
+		biome = "Space",
+		weight = 60,
+	},
+	{
+		id = "CometKid",
+		name = "Comet Kid",
+		rarity = 5,
+		income = 40000,
+		colors = { rgb(160, 220, 255), rgb(70, 90, 180) },
+		fx = "stars",
+		biome = "Space",
+		weight = 28,
+	},
+	{
+		id = "MeteorShowerWhale",
+		name = "Meteor Shower Whale",
+		rarity = 7,
+		income = 250000,
+		colors = { rgb(80, 70, 160), rgb(255, 170, 90) },
+		fx = "stars",
+		biome = "Space",
+		weight = 9,
+	},
+	{
+		id = "SolarFlarePhoenix",
+		name = "Solar Flare Phoenix",
+		rarity = 7,
+		income = 500000,
+		colors = { rgb(255, 210, 80), rgb(255, 110, 50) },
+		fx = "fire",
+		biome = "Space",
+		weight = 3,
+	},
 } :: { StormDef }
 
 StormData.Mutations = {
@@ -356,11 +492,22 @@ function StormData.getMutation(id: string?): Mutation?
 	return mutationsById[id]
 end
 
--- Wild (non-hybrid) storms of one rarity.
+-- Storms of one rarity that roam the Wild Skies (no hybrids, no biome storms).
+-- Storms that live on one Climate Shift island.
+function StormData.ofBiome(biome: string): { StormDef }
+	local list = {}
+	for _, def in StormData.Storms do
+		if def.biome == biome then
+			table.insert(list, def)
+		end
+	end
+	return list
+end
+
 function StormData.wildOfRarity(rarity: number): { StormDef }
 	local list = {}
 	for _, def in StormData.Storms do
-		if def.rarity == rarity and not def.hybrid then
+		if def.rarity == rarity and not def.hybrid and not def.biome then
 			table.insert(list, def)
 		end
 	end
@@ -378,6 +525,8 @@ local ABILITIES: { [string]: string } = {
 	rain = "CloudJump",
 	fog = "CloudJump",
 	rainbow = "CloudJump",
+	fire = "Updraft", -- heat rises
+	stars = "BlinkDash",
 }
 
 StormData.AbilityInfo = {

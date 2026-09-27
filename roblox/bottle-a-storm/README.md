@@ -7,8 +7,8 @@ with no uploaded art.
 ## What's in this build
 
 These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1) and
-storm mixing and riding (v1.2) and trading (v1.3), plus three extras from the doc: storm moods,
-the island sky aura and thief styles.
+storm mixing and riding (v1.2) and trading (v1.3), plus four extras from the doc: storm moods,
+the island sky aura, thief styles and the Climate Shift rebirth.
 
 | Feature | Where |
 |---|---|
@@ -20,6 +20,7 @@ the island sky aura and thief styles.
 | Storm moods: happy storms earn more, neglected ones try to escape; pet, ride or feed them | `MoodService` |
 | Island sky aura: a cloud canopy and weather over your island from your best storm | `AuraService` |
 | Thief styles: Quick Hands, Cloud Walker or Umbrella Tank, unlocked with Sparks | `ThiefStyles`, `StealService`, `Shop` |
+| Climate Shift rebirth: reset Sparks for a permanent bonus and a new sky island (Arctic, Volcano, Space) with 12 exclusive storms and a Cosmic tier | `ClimateService`, `ClimateData`, `Climate`, `BiomeController` |
 | 8 player Sky Islands with pedestals, jar displays and a Collect pad for passive Sparks ⚡ | `PlotService`, `IncomeService` |
 | Stealing: grab a jar, carry it home (70% speed); Zapper tool, Lightning Rod traps, 60 s base lock | `StealService`, `PlotService` |
 | Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod, Storm Snacks, thief styles | `ShopService`, `Shop` |
@@ -28,7 +29,7 @@ the island sky aura and thief styles.
 | Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night) + forecast TV | `WeatherService`, `ForecastController` |
 | Mega-Storm raid every 45 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
-Not in this build yet: Climate Shift rebirth and the season pass.
+Not in this build yet: the season pass.
 
 ## Controls
 
@@ -117,6 +118,31 @@ lightning sparks with flashes, sand or rainbow sparkles.
 - **Label:** "✨ Legendary Sky: Hurricane Hana", readable from far away.
 - **Updates:** within about 2 seconds of your best storm changing.
 
+## Climate Shift (rebirth)
+
+Press **🌍 Climate** to see your climate and what the next shift needs.
+
+| Climate | Needs | Income bonus (permanent) | Island storms |
+|---|---|---|---|
+| 🌤️ Temperate | start | x1 | the Wild Skies |
+| ❄️ Arctic | ⚡5M | x1.5 | Frostbite Pup (Rare), Snowball Yeti (Epic), Glacier Guardian (Legendary), Polar Aurora (Mythic) |
+| 🌋 Volcano | ⚡100M | x2.25 | Ember Puff (Rare), Magma Moth (Epic), Ash Storm Drake (Legendary), Lava Rain Golem (Mythic) |
+| 🌌 Space | ⚡2B | x3.375 | Stardust Sprite (Epic), Comet Kid (Legendary), Meteor Shower Whale and Solar Flare Phoenix (new **Cosmic** tier) |
+
+- **Resets:** Sparks, Boots of Wind and Lightning Rod.
+- **Keeps:** storms, pedestals, jars, thief styles and passes.
+- **Confirming:** the button has to be pressed twice.
+- **Getting there:** each climate's island floats far out in the sky. Reach it through its portal
+  in the row on the Wild Skies (past the forecast TV); locked portals tell you what you need.
+  A portal on each island takes you back. Portals won't take stolen storms.
+- **Catching:** only players who reached that climate can catch its storms (the jar bounces off
+  otherwise). Anyone can own them through trading or stealing.
+- **New jars:** Mythics need the **Aurora Jar** (⚡2M, Arctic+), and Cosmics need the **Cosmic Jar**
+  (⚡500M, Space).
+- **How each island feels:** a colour tint on your screen, and **low gravity in Space**.
+- **Tuning:** climate numbers are in `src/shared/ClimateData.luau`; biome storms are in
+  `StormData`.
+
 ## Thief styles
 
 In the Shop's **🥷 Styles** tab, unlock a style with Sparks once, then equip one at a time. You
@@ -204,6 +230,10 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 - [ ] Thief styles (2 players): player 2 buys each style in 🥷 Styles and steals from player 1.
       Quick Hands grabs faster. Cloud Walker turns see-through. Umbrella Tank ignores player 1's
       Lightning Rod trap and survives the first zap.
+- [ ] Climate Shift: in Studio, test cheaply by lowering `cost` in `ClimateData` (for example 1000).
+      Shift, check Sparks reset and the income bonus, walk through the ❄️ portal, catch an
+      Arctic storm, feel the tint. For Space, check the low gravity. The portal back takes you
+      home.
 - [ ] Trade (2 players): player 1 presses 🤝 Trade and picks player 2, and player 2 accepts.
       Add storms, press Ready on both and watch the countdown. Change something during the
       countdown and check it stops. Try trading with a full island.
@@ -229,17 +259,18 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 
 ```
 src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (prices),
-              Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles,
+              Products (Robux IDs), WeatherEvents, RaidData (bosses), ThiefStyles, ClimateData,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, MixService,
-              TradeService, StealService, RaidService, AuraService, ShopService,
-              MonetizationService
+              TradeService, StealService, RaidService, AuraService, ClimateService,
+              ShopService, MonetizationService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars),
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
-  Controllers/ HUD, Shop, Mixer, Trade, ThrowController, RideController, Toasts,
+  Controllers/ HUD, Shop, Mixer, Trade, Climate, BiomeController, ThrowController,
+               RideController, Toasts,
                PromptController, ForecastController, UI
 ```
 

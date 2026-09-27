@@ -1,5 +1,6 @@
--- Spawns wild storms on the Wild Skies island and makes them roam. Rarer
--- storms are faster and run away from nearby players. Also tracks jar hits
+-- Spawns wild storms and makes them roam: on the Wild Skies island, and on
+-- each Climate Shift island (with that biome's own storms). Rarer storms are
+-- faster and run away from nearby players. Also tracks jar hits
 -- (dizzy stars), dodges and the "sucked into the jar" animation.
 
 local HttpService = game:GetService("HttpService")
@@ -7,6 +8,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local ClimateData = require(Shared.ClimateData)
 local Config = require(Shared.Config)
 local StormData = require(Shared.StormData)
 local WeatherEvents = require(Shared.WeatherEvents)
@@ -14,11 +16,25 @@ local WeatherEvents = require(Shared.WeatherEvents)
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 local StormModel = require(Modules.StormModel)
+local WorldBuilder = require(Modules.WorldBuilder)
 
 local StormSpawner = {}
 
+-- An island storms roam on.
+export type Zone = {
+	key: string, -- "Wild" or a biome key
+	label: string, -- "the Wild Skies"
+	center: Vector3, -- island top center
+	radius: number,
+	maxStorms: number,
+	interval: number,
+	count: number,
+	storms: { StormData.StormDef }?, -- biome storms (weighted); nil = Wild Skies roll
+}
+
 export type WildStorm = {
 	uid: string,
+	zone: Zone,
 	def: StormData.StormDef,
 	model: Model,
 	root: BasePart,
@@ -34,28 +50,41 @@ export type WildStorm = {
 }
 
 local storms: { [string]: WildStorm } = {}
-local count = 0
+local zones: { Zone } = {}
+local wildZone: Zone
 local folder: Folder
 local rng = Random.new()
 local event: WeatherEvents.WeatherEvent? = nil
 local paused = false
 
-local function hoverY(): number
-	return Config.Wild.HoverHeight
-end
-
-local function randomPointInWild(): Vector3
-	local radius = Config.World.WildRoamRadius * math.sqrt(rng:NextNumber())
+local function randomPointIn(zone: Zone): Vector3
+	local radius = zone.radius * math.sqrt(rng:NextNumber())
 	local angle = rng:NextNumber(0, math.pi * 2)
-	return Vector3.new(math.cos(angle) * radius, hoverY(), math.sin(angle) * radius)
+	return zone.center + Vector3.new(math.cos(angle) * radius, Config.Wild.HoverHeight, math.sin(angle) * radius)
 end
 
-local function clampToWild(point: Vector3): Vector3
-	local flat = Vector3.new(point.X, 0, point.Z)
-	if flat.Magnitude > Config.World.WildRoamRadius then
-		flat = flat.Unit * Config.World.WildRoamRadius
+local function clampTo(zone: Zone, point: Vector3): Vector3
+	local offset = Vector3.new(point.X - zone.center.X, 0, point.Z - zone.center.Z)
+	if offset.Magnitude > zone.radius then
+		offset = offset.Unit * zone.radius
 	end
-	return Vector3.new(flat.X, hoverY(), flat.Z)
+	return zone.center + offset + Vector3.new(0, Config.Wild.HoverHeight, 0)
+end
+
+-- Picks a storm for a biome island by its spawn weights.
+local function rollBiome(list: { StormData.StormDef }): StormData.StormDef
+	local total = 0
+	for _, def in list do
+		total += def.weight or 1
+	end
+	local pick = rng:NextNumber(0, total)
+	for _, def in list do
+		pick -= def.weight or 1
+		if pick <= 0 then
+			return def
+		end
+	end
+	return list[#list]
 end
 
 local function rollStorm(): StormData.StormDef
@@ -105,7 +134,7 @@ local function pickTarget(storm: WildStorm): Vector3
 		if away.Magnitude < 0.1 then
 			away = Vector3.new(rng:NextNumber(-1, 1), 0, rng:NextNumber(-1, 1))
 		end
-		return clampToWild(position + away.Unit * rng:NextNumber(16, 26))
+		return clampTo(storm.zone, position + away.Unit * rng:NextNumber(16, 26))
 	end
 	if storm.def.rarity >= 3 then
 		local threat = nearestPlayerWithin(position, Config.Wild.DodgeRadius)
@@ -114,14 +143,14 @@ local function pickTarget(storm: WildStorm): Vector3
 			if away.Magnitude < 0.1 then
 				away = Vector3.new(rng:NextNumber(-1, 1), 0, rng:NextNumber(-1, 1))
 			end
-			return clampToWild(position + away.Unit * rng:NextNumber(14, 24))
+			return clampTo(storm.zone, position + away.Unit * rng:NextNumber(14, 24))
 		end
 	end
 	local step = Vector3.new(rng:NextNumber(-1, 1), 0, rng:NextNumber(-1, 1))
 	if step.Magnitude < 0.1 then
 		step = Vector3.new(1, 0, 0)
 	end
-	return clampToWild(position + step.Unit * rng:NextNumber(10, 35))
+	return clampTo(storm.zone, position + step.Unit * rng:NextNumber(10, 35))
 end
 
 local function roam(storm: WildStorm)
@@ -155,20 +184,21 @@ local function roam(storm: WildStorm)
 	end
 end
 
-local function spawnStorm(def: StormData.StormDef?)
-	local chosen = def or rollStorm()
+local function spawnStorm(zone: Zone, def: StormData.StormDef?)
+	local chosen = def or (if zone.storms then rollBiome(zone.storms) else rollStorm())
 	local uid = HttpService:GenerateGUID(false)
 	local model = StormModel.build(chosen)
 	model.Name = "Wild_" .. chosen.id
 	model:SetAttribute("StormUid", uid)
 	local root = model.PrimaryPart :: BasePart
-	local position = randomPointInWild()
+	local position = randomPointIn(zone)
 	model:PivotTo(CFrame.new(position) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
 
 	StormModel.nameTag(chosen).Parent = root
 
 	local storm: WildStorm = {
 		uid = uid,
+		zone = zone,
 		def = chosen,
 		model = model,
 		root = root,
@@ -183,14 +213,18 @@ local function spawnStorm(def: StormData.StormDef?)
 		tween = nil,
 	}
 	storms[uid] = storm
-	count += 1
+	zone.count += 1
 	model.Parent = folder
 	task.spawn(roam, storm)
 
+	local rarityName = StormData.rarityOf(chosen).name
 	if chosen.rarity >= 5 then
-		Notify.all("✨ A LEGENDARY " .. chosen.name .. " appeared in the Wild Skies!", "rare")
-	elseif chosen.rarity == 4 then
-		Notify.all("💜 An Epic " .. chosen.name .. " is roaming the Wild Skies!", "info")
+		Notify.all(
+			"✨ A " .. string.upper(rarityName) .. " " .. chosen.name .. " appeared in " .. zone.label .. "!",
+			"rare"
+		)
+	elseif chosen.rarity == 4 and not zone.storms then
+		Notify.all("💜 An Epic " .. chosen.name .. " is roaming " .. zone.label .. "!", "info")
 	end
 end
 
@@ -328,7 +362,7 @@ function StormSpawner.remove(uid: string)
 		return
 	end
 	storms[uid] = nil
-	count -= 1
+	storm.zone.count -= 1
 	storm.alive = false
 	if storm.tween then
 		storm.tween:Cancel()
@@ -346,12 +380,19 @@ function StormSpawner.burst(amount: number)
 		return
 	end
 	for _ = 1, amount do
-		spawnStorm(nil)
+		spawnStorm(wildZone, nil)
 	end
 end
 
+-- Spawns this storm where it lives (its biome island, or the Wild Skies).
 function StormSpawner.spawnSpecific(def: StormData.StormDef)
-	spawnStorm(def)
+	local home = wildZone
+	for _, zone in zones do
+		if def.biome and zone.key == def.biome then
+			home = zone
+		end
+	end
+	spawnStorm(home, def)
 end
 
 -- While paused (during a Mega-Storm) wild storms hide and none spawn.
@@ -370,24 +411,54 @@ function StormSpawner.init()
 	folder = Instance.new("Folder")
 	folder.Name = "WildStorms"
 	folder.Parent = workspace
+
+	wildZone = {
+		key = "Wild",
+		label = "the Wild Skies",
+		center = Vector3.zero,
+		radius = Config.World.WildRoamRadius,
+		maxStorms = Config.Wild.MaxStorms,
+		interval = Config.Wild.SpawnInterval,
+		count = 0,
+		storms = nil,
+	}
+	table.insert(zones, wildZone)
+	-- WorldBuilder already ran (PlotService.init), so the biome islands exist.
+	for key, biome in WorldBuilder.Biomes do
+		table.insert(zones, {
+			key = key,
+			label = "the " .. biome.climate.name,
+			center = biome.center,
+			radius = ClimateData.RoamRadius,
+			maxStorms = Config.Biomes.MaxStorms,
+			interval = Config.Biomes.SpawnInterval,
+			count = 0,
+			storms = StormData.ofBiome(key),
+		})
+	end
+end
+
+local function spawnLoop(zone: Zone)
+	while true do
+		local isWild = zone == wildZone
+		local rate = if event and isWild then event.spawnRateMultiplier else 1
+		local cap = zone.maxStorms + (if event and isWild then event.extraStorms else 0)
+		-- Fill up quickly when the island is nearly empty.
+		local wait = zone.interval / rate
+		if zone.count < cap / 2 then
+			wait /= 3
+		end
+		task.wait(wait)
+		if zone.count < cap and not paused then
+			spawnStorm(zone, nil)
+		end
+	end
 end
 
 function StormSpawner.start()
-	task.spawn(function()
-		while true do
-			local rate = if event then event.spawnRateMultiplier else 1
-			local cap = Config.Wild.MaxStorms + (if event then event.extraStorms else 0)
-			-- Fill up quickly when the island is nearly empty.
-			local wait = Config.Wild.SpawnInterval / rate
-			if count < cap / 2 then
-				wait /= 3
-			end
-			task.wait(wait)
-			if count < cap and not paused then
-				spawnStorm(nil)
-			end
-		end
-	end)
+	for _, zone in zones do
+		task.spawn(spawnLoop, zone)
+	end
 
 	-- Storms drift away after a while so new ones can appear.
 	task.spawn(function()

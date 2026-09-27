@@ -36,6 +36,11 @@ local handlers: { [string]: (Player, any) -> (boolean, string) } = {
 		if not cost then
 			return false, "You already have the best jar!"
 		end
+		local needed = Config.Jars[data.jarTier + 1].climate or 0
+		if (data.climate or 0) < needed then
+			return false,
+				"🔒 The " .. Config.Jars[data.jarTier + 1].name .. " unlocks at Climate Shift " .. needed .. "."
+		end
 		local ok, err = spend(data, cost)
 		if not ok then
 			return false, err :: string

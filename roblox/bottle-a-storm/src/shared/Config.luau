@@ -32,9 +32,9 @@ Config.Throw = {
 	Speed = 90, -- jar flight speed, studs per second
 	DazeSeconds = 0.9, -- a storm freezes this long after a hit that doesn't catch it
 	DizzySeconds = 6, -- hits wear off if you wait longer than this between them
-	-- By rarity index: Common, Uncommon, Rare, Epic, Legendary
-	HitsNeeded = { 1, 1, 2, 2, 3 },
-	DodgeChance = { 0, 0.1, 0.25, 0.35, 0.45 },
+	-- By rarity index: Common, Uncommon, Rare, Epic, Legendary, Mythic, Cosmic
+	HitsNeeded = { 1, 1, 2, 2, 3, 3, 4 },
+	DodgeChance = { 0, 0.1, 0.25, 0.35, 0.45, 0.5, 0.55 },
 	JarDodgeReduction = 0.6, -- the best jar cuts dodge chance by this much
 	MutationChance = 0.08,
 }
@@ -75,7 +75,7 @@ Config.Trading = {
 
 -- Riding your storms.
 Config.Ride = {
-	SpeedByRarity = { 2, 3, 4, 6, 8, 10 }, -- extra walk speed while riding
+	SpeedByRarity = { 2, 3, 4, 6, 8, 10, 12 }, -- extra walk speed while riding
 	MountScale = 0.6,
 	Cooldowns = { Updraft = 5, BlinkDash = 3, Surf = 5, CloudJump = 0.3 },
 	UpdraftPower = 120, -- upward launch speed
@@ -92,6 +92,15 @@ Config.Jars = {
 	{ name = "Reinforced Jar", cost = 500, maxRarity = 3, power = 0.3 },
 	{ name = "Crystal Jar", cost = 15000, maxRarity = 4, power = 0.6 },
 	{ name = "Quantum Jar", cost = 250000, maxRarity = 5, power = 1 },
+	-- These need a Climate Shift first (climate = the level you must be at).
+	{ name = "Aurora Jar", cost = 2000000, maxRarity = 6, power = 1, climate = 1 },
+	{ name = "Cosmic Jar", cost = 500000000, maxRarity = 7, power = 1, climate = 3 },
+}
+
+-- Climate Shift biome islands (the climates themselves are in ClimateData).
+Config.Biomes = {
+	MaxStorms = 8, -- per island
+	SpawnInterval = 4,
 }
 
 Config.Pedestals = {

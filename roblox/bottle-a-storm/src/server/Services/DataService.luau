@@ -47,6 +47,7 @@ local function defaultData()
 		bootsLevel = 0,
 		trapLevel = 0,
 		raidShields = 0,
+		climate = 0, -- Climate Shift level: 0 Temperate, 1 Arctic, 2 Volcano, 3 Space
 		thiefStyles = {}, -- unlocked style key -> true; data.thiefStyle is the equipped one
 		storms = {}, -- { StormRecord }
 		discovered = {}, -- storm id -> true
@@ -58,6 +59,7 @@ local function defaultData()
 			sparksEarned = 0,
 			mixed = 0,
 			trades = 0,
+			shifts = 0,
 		},
 	}
 end

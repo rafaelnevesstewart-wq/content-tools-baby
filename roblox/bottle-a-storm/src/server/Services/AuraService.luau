@@ -16,7 +16,7 @@ local AuraService = {}
 local CANOPY_HEIGHT = 48
 local CANOPY_RADIUS = 32
 local PUFFS = 10
-local INTENSITY = { 0.4, 0.6, 0.8, 1, 1.3, 1.6 } -- by rarity index
+local INTENSITY = { 0.4, 0.6, 0.8, 1, 1.3, 1.6, 2 } -- by rarity index
 
 local SPARKLE = "rbxasset://textures/particles/sparkles_main.dds"
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
@@ -128,6 +128,28 @@ local WEATHER: { [string]: Weather } = {
 		spread = 30,
 		transparency = 0,
 		light = 0.9,
+	},
+	fire = {
+		texture = "rbxasset://textures/particles/fire_main.dds",
+		color = ColorSequence.new(Color3.fromRGB(255, 170, 60), Color3.fromRGB(255, 70, 30)),
+		size = 1.2,
+		speed = 9,
+		lifetime = 5,
+		rate = 25,
+		spread = 20,
+		transparency = 0.2,
+		light = 1,
+	},
+	stars = {
+		texture = SPARKLE,
+		color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(160, 180, 255)),
+		size = 0.8,
+		speed = 5,
+		lifetime = 8,
+		rate = 30,
+		spread = 40,
+		transparency = 0,
+		light = 1,
 	},
 	hurricane = {
 		texture = SMOKE,

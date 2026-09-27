@@ -8,6 +8,7 @@ local StormModel = {}
 
 local SPARKLE = "rbxasset://textures/particles/sparkles_main.dds"
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local FIRE = "rbxasset://textures/particles/fire_main.dds"
 
 type FxStyle = {
 	texture: string,
@@ -32,6 +33,32 @@ local rainbow = ColorSequence.new({
 })
 
 local FX: { [string]: FxStyle } = {
+	fire = {
+		texture = FIRE,
+		color = ColorSequence.new(Color3.fromRGB(255, 170, 60), Color3.fromRGB(255, 60, 30)),
+		size = 1.2,
+		speed = 4,
+		rate = 18,
+		lifetime = 0.8,
+		spread = 25,
+		down = false,
+		transparency = 0.2,
+		lightEmission = 0.9,
+		light = Color3.fromRGB(255, 140, 60),
+	},
+	stars = {
+		texture = SPARKLE,
+		color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 180, 255)),
+		size = 0.45,
+		speed = 1.5,
+		rate = 14,
+		lifetime = 2,
+		spread = 180,
+		down = false,
+		transparency = 0,
+		lightEmission = 1,
+		light = Color3.fromRGB(170, 170, 255),
+	},
 	rain = {
 		texture = SPARKLE,
 		color = ColorSequence.new(Color3.fromRGB(120, 180, 255)),
