@@ -30,6 +30,8 @@ local function grantPass(player: Player, key: string)
 	player:SetAttribute(Products.passAttribute(key), true)
 	if key == "AutoCollect" then
 		IncomeService.collect(player)
+	elseif key == "DoubleSlots" then
+		PlotService.rebuildPedestals(player) -- more pedestals fit on each floor now
 	end
 	IncomeService.sync(player)
 end

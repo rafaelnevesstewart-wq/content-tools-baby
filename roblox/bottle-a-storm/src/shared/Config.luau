@@ -123,6 +123,16 @@ Config.Pedestals = {
 	CostGrowth = 2.2,
 }
 
+-- Island floors: build up to 3 floors over your pedestals. Each floor holds
+-- PerFloor pedestals (PerFloorWithPass with the Double Pedestals pass).
+Config.Floors = {
+	Max = 3,
+	Height = 16, -- studs between floors
+	Costs = { 0, 75000, 2500000 }, -- price of floor 1, 2, 3
+	PerFloor = 10,
+	PerFloorWithPass = 20,
+}
+
 Config.Boots = {
 	MaxLevel = 5,
 	BaseCost = 100,

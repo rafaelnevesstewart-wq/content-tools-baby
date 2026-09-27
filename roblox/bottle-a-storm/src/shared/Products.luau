@@ -206,6 +206,20 @@ Products.Cosmetics = {
 		description = "A black cloud with a throbbing purple heart.",
 	},
 	{
+		key = "Cosmetic_CrystalPalace",
+		id = 0,
+		price = 149,
+		name = "Crystal Palace",
+		description = "See-through crystal with an icy dome.",
+	},
+	{
+		key = "Cosmetic_SkyTemple",
+		id = 0,
+		price = 199,
+		name = "Golden Sky Temple",
+		description = "Marble and gold, fit for a storm legend.",
+	},
+	{
 		key = "Cosmetic_StormDragon",
 		id = 0,
 		price = 79,

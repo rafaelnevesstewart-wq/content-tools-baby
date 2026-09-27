@@ -18,6 +18,7 @@ local IncomeService = require(script.Parent.IncomeService)
 local MovementService = require(script.Parent.MovementService)
 local MoodService = require(script.Parent.MoodService)
 local PlotService = require(script.Parent.PlotService)
+local HouseService = require(script.Parent.HouseService)
 local ThemeService = require(script.Parent.ThemeService)
 
 local ShopService = {}
@@ -65,6 +66,23 @@ local handlers: { [string]: (Player, any) -> (boolean, string) } = {
 		data.pedestals += 1
 		PlotService.refreshAll(player)
 		return true, "🏛️ New pedestal built! (" .. data.pedestals .. "/" .. max .. ")"
+	end,
+
+	Floor = function(player, data)
+		local cost = Economy.floorCost(data.floors or 1)
+		if not cost then
+			return false, "Your island already has " .. Config.Floors.Max .. " floors!"
+		end
+		local ok, err = spend(data, cost)
+		if not ok then
+			return false, err :: string
+		end
+		data.floors = (data.floors or 1) + 1
+		IncomeService.sync(player)
+		PlotService.rebuildPedestals(player)
+		HouseService.refresh(player)
+		return true,
+			"🏠 Floor " .. data.floors .. " built! Room for more pedestals. Use the glowing lift pad to go up."
 	end,
 
 	Boots = function(player, data)

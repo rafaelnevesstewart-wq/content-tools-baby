@@ -7,6 +7,8 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
+local Products = require(Shared.Products)
+local Economy = require(Shared.Economy)
 local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
 local StormData = require(Shared.StormData)
@@ -64,10 +66,18 @@ local function now(): number
 	return workspace:GetServerTimeNow()
 end
 
-local function localSlotPosition(slot: number): Vector3
-	local row = (slot - 1) // COLUMNS
-	local column = (slot - 1) % COLUMNS
-	return Vector3.new((column - (COLUMNS - 1) / 2) * SPACING, 0, 4 + row * SPACING)
+-- Where a pedestal goes: rows of 5 on the ground, then on each floor above.
+local function localSlotPosition(slot: number, perFloor: number): Vector3
+	local floor = (slot - 1) // perFloor
+	local index = (slot - 1) % perFloor
+	local row = index // COLUMNS
+	local column = index % COLUMNS
+	return Vector3.new((column - (COLUMNS - 1) / 2) * SPACING, floor * Config.Floors.Height, 4 + row * SPACING)
+end
+
+local function perFloorOf(owner: Player?): number
+	local hasPass = owner ~= nil and owner:GetAttribute(Products.passAttribute("DoubleSlots")) == true
+	return Economy.perFloor(hasPass)
 end
 
 local function makePart(props: { [string]: any }): Part
@@ -282,7 +292,7 @@ PlotService.stormInSlot = stormInSlot
 local function buildPedestal(plot: Plot, slot: number): Model
 	local model = Instance.new("Model")
 	model.Name = "Pedestal" .. slot
-	local frame = plot.cframe * CFrame.new(localSlotPosition(slot))
+	local frame = plot.cframe * CFrame.new(localSlotPosition(slot, perFloorOf(plot.owner)))
 
 	local base = makePart({
 		Name = "Base",
@@ -553,6 +563,19 @@ function PlotService.refreshSlot(player: Player, slot: number)
 	end
 end
 
+-- Rebuilds every pedestal (when floors or the pass change where they go).
+function PlotService.rebuildPedestals(player: Player)
+	local plot = plotByPlayer[player]
+	if not plot then
+		return
+	end
+	for slot, pedestal in plot.pedestals do
+		pedestal:Destroy()
+		plot.pedestals[slot] = nil
+	end
+	refreshPedestals(plot)
+end
+
 function PlotService.refreshAll(player: Player)
 	local plot = plotByPlayer[player]
 	if plot then
@@ -662,7 +685,7 @@ function PlotService.isOnPlot(owner: Player, position: Vector3): boolean
 	end
 	local offset = position - plot.cframe.Position
 	local flat = Vector3.new(offset.X, 0, offset.Z).Magnitude
-	return flat <= Config.World.PlotRadius and offset.Y > -10 and offset.Y < 40
+	return flat <= Config.World.PlotRadius and offset.Y > -10 and offset.Y < 70
 end
 
 function PlotService.collectPadPosition(player: Player): Vector3?

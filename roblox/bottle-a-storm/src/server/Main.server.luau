@@ -40,6 +40,7 @@ local order = {
 	"AuraService",
 	"ClimateService",
 	"ThemeService",
+	"HouseService",
 	"CosmeticService",
 	"ShopService",
 	"MonetizationService",

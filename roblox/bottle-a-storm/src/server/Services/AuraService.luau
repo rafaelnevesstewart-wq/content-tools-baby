@@ -13,7 +13,7 @@ local PlotService = require(script.Parent.PlotService)
 
 local AuraService = {}
 
-local CANOPY_HEIGHT = 48
+local CANOPY_HEIGHT = 70 -- above the top floor of a 3-floor house
 local CANOPY_RADIUS = 32
 local PUFFS = 10
 local INTENSITY = { 0.4, 0.6, 0.8, 1, 1.3, 1.6, 2 } -- by rarity index

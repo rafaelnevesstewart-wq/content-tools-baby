@@ -141,6 +141,16 @@ local function buildUpgrades()
 		setBuyable(card, text, can)
 	end)
 
+	add("Floor", function(card)
+		local floors = math.max(1, attr("Floors"))
+		card.title.Text = "🏠 Island Floors " .. floors .. "/" .. Config.Floors.Max
+		card.body.Text = if floors < Config.Floors.Max
+			then "Build floor " .. (floors + 1) .. " over your pedestals: room for more storms!"
+			else "Your island is a full sky tower!"
+		local text, can = sparksPrice(Economy.floorCost(floors))
+		setBuyable(card, text, can)
+	end)
+
 	add("Boots", function(card)
 		local level = attr("BootsLevel")
 		card.title.Text = "👟 Boots of Wind  Lv " .. level .. "/" .. Config.Boots.MaxLevel

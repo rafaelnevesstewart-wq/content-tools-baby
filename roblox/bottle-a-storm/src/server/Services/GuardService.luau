@@ -44,6 +44,12 @@ local function findRecord(data: any, uid: string?): StormData.StormRecord?
 	return nil
 end
 
+-- Guards circle above the roof of your house.
+local function orbitLift(player: Player): number
+	local data = DataService.get(player)
+	return (if data then data.floors or 1 else 1) * Config.Floors.Height
+end
+
 local function removeGuard(player: Player)
 	local guard = guards[player]
 	if guard then
@@ -68,7 +74,7 @@ local function showGuard(player: Player)
 	local model = StormModel.build(def, { mutation = record.mut, anchored = true })
 	model.Name = "Guard_" .. player.UserId
 	StormModel.nameTag(def, record.mut, "🛡️ " .. player.DisplayName .. "'s Guard").Parent = model.PrimaryPart
-	model:PivotTo(plot.cframe * CFrame.new(0, Config.Guard.OrbitHeight, 0))
+	model:PivotTo(plot.cframe * CFrame.new(0, Config.Guard.OrbitHeight + orbitLift(player), 0))
 	model.Parent = folder
 	player:SetAttribute("GuardUid", record.uid)
 	guards[player] = {
@@ -149,7 +155,9 @@ local function fly(dt: number)
 		if plot then
 			guard.angle += dt * 0.35
 			local offset = Vector3.new(math.cos(guard.angle), 0, math.sin(guard.angle)) * Config.Guard.OrbitRadius
-			local position = plot.cframe.Position + offset + Vector3.new(0, Config.Guard.OrbitHeight, 0)
+			local position = plot.cframe.Position
+				+ offset
+				+ Vector3.new(0, Config.Guard.OrbitHeight + orbitLift(player), 0)
 			local ahead = Vector3.new(-math.sin(guard.angle), 0, math.cos(guard.angle))
 			guard.root.CFrame = CFrame.lookAt(position, position + ahead)
 		end

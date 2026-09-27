@@ -44,6 +44,7 @@ local function defaultData()
 		unclaimed = 0,
 		jarTier = 1,
 		pedestals = Config.Pedestals.Start,
+		floors = 1, -- island floors (see Config.Floors)
 		bootsLevel = 0,
 		trapLevel = 0,
 		raidShields = 0,

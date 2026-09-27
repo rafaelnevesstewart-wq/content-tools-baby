@@ -4,6 +4,8 @@
 --   Rainbow (true)            puffs / parts cycle through the rainbow
 --   Pulse: a PointLight named "PulseLight" throbs
 --   Spin: every Weld named "SpinWeld" turns (its "Speed" attribute, rad/s)
+--   RotorSpeed (number, on an anchored Model): the whole model turns around
+--   its PrimaryPart's Y axis (windmill sails)
 -- Only things near the camera are animated.
 
 local CollectionService = game:GetService("CollectionService")
@@ -21,6 +23,7 @@ type Entry = {
 	rainbow: { BasePart },
 	pulses: { PointLight },
 	bolts: Color3?,
+	rotor: { base: CFrame, speed: number }?,
 	nextBolt: number,
 	phase: number,
 }
@@ -48,6 +51,7 @@ local function add(instance: Instance)
 		rainbow = {},
 		pulses = {},
 		bolts = nil,
+		rotor = nil,
 		nextBolt = os.clock() + rng:NextNumber(0.2, 1.5),
 		phase = rng:NextNumber(0, 1),
 	}
@@ -69,6 +73,10 @@ local function add(instance: Instance)
 				table.insert(entry.rainbow, item)
 			end
 		end
+	end
+	local rotorSpeed = instance:GetAttribute("RotorSpeed")
+	if instance:IsA("Model") and type(rotorSpeed) == "number" and instance.PrimaryPart then
+		entry.rotor = { base = instance:GetPivot(), speed = rotorSpeed }
 	end
 	local bolts = instance:GetAttribute("Bolts")
 	entry.bolts = if typeof(bolts) == "Color3" then bolts else nil
@@ -137,6 +145,10 @@ function FlashyFx.start()
 			local pivot = pivotOf(instance)
 			if not pivot or (pivot - eye).Magnitude > DRAW_DISTANCE then
 				continue
+			end
+			local rotor = entry.rotor
+			if rotor and instance:IsA("Model") then
+				instance:PivotTo(rotor.base * CFrame.Angles(0, t * rotor.speed, 0))
 			end
 			for _, spin in entry.spins do
 				spin.weld.C0 = spin.base * CFrame.Angles(0, t * spin.speed, 0)

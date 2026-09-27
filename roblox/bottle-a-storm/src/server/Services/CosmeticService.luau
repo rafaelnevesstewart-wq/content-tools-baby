@@ -23,6 +23,7 @@ local PetModels = require(Modules.PetModels)
 local StormModel = require(Modules.StormModel)
 
 local DataService = require(script.Parent.DataService)
+local HouseService = require(script.Parent.HouseService)
 local IncomeService = require(script.Parent.IncomeService)
 local PlotService = require(script.Parent.PlotService)
 
@@ -826,12 +827,19 @@ end
 -- Spots on the island (island space: -Z faces the Wild Skies) that stay clear
 -- of the pedestals, pads, mixer, spawn and bridge.
 local SPOTS = {
-	lamps = { Vector3.new(-33, 0, -4), Vector3.new(33, 0, -4), Vector3.new(-33, 0, 30), Vector3.new(33, 0, 30) },
-	fountain = Vector3.new(-38, 0, 14),
-	statue = Vector3.new(38, 0, 14),
-	arch = Vector3.new(0, 0, 48),
+	lamps = { Vector3.new(-36, 0, -4), Vector3.new(36, 0, -4), Vector3.new(-36, 0, 30), Vector3.new(36, 0, 30) },
+	fountain = Vector3.new(-41, 0, 14),
+	statue = Vector3.new(41, 0, 14),
+	arch = Vector3.new(0, 0, 51),
 	fireworks = Vector3.new(36, 0, -24),
 	flag = Vector3.new(-36, 0, -24),
+	gardens = { Vector3.new(-24, 0, -38), Vector3.new(24, 0, -38) },
+	picnic = Vector3.new(-46, 0, -8),
+	hotTub = Vector3.new(46, 0, -8),
+	windmill = Vector3.new(-44, 0, 33),
+	crystals = Vector3.new(44, 0, 33),
+	palms = { Vector3.new(-51, 0, 12), Vector3.new(51, 0, 12), Vector3.new(-30, 0, -48) },
+	waterfall = Vector3.new(-40, 0, -42),
 }
 
 local function bestStorm(data: any): StormData.StormRecord?
@@ -927,6 +935,225 @@ local DECOR: { [string]: (Instance, CFrame, any) -> () } = {
 		statue:PivotTo(base * CFrame.new(0, 2 + 3.5 * StormData.rarityOf(def).scale, 0) * CFrame.Angles(0, math.pi, 0))
 		statue:SetAttribute("StatueOf", def.id)
 		statue.Parent = parent
+	end,
+	GardenBeds = function(parent, frame)
+		for _, spot in SPOTS.gardens do
+			local base = frame * CFrame.new(spot)
+			part(parent, {
+				Size = Vector3.new(8, 1.2, 4),
+				Color = rgb(110, 80, 56),
+				Material = Enum.Material.WoodPlanks,
+				CFrame = base * CFrame.new(0, 0.6, 0),
+			})
+			part(parent, {
+				Size = Vector3.new(7.4, 0.3, 3.4),
+				Color = rgb(80, 58, 42),
+				Material = Enum.Material.Ground,
+				CFrame = base * CFrame.new(0, 1.25, 0),
+			})
+			for i = 1, 12 do
+				local spotX = (i % 6 - 2.5) * 1.2
+				local spotZ = if i > 6 then 0.8 else -0.8
+				cylinder(parent, 1.2, 0.12, rgb(70, 110, 50), base * CFrame.new(spotX, 1.9, spotZ))
+				ball(
+					parent,
+					Vector3.one * 0.6,
+					RAINBOW[i % #RAINBOW + 1],
+					base * CFrame.new(spotX, 2.6, spotZ),
+					Enum.Material.Fabric
+				)
+			end
+		end
+	end,
+	PicnicArea = function(parent, frame)
+		local base = frame * CFrame.new(SPOTS.picnic)
+		part(parent, {
+			Size = Vector3.new(7, 0.1, 6),
+			Color = rgb(210, 60, 60),
+			Material = Enum.Material.Fabric,
+			CFrame = base * CFrame.new(0, 0.05, 0),
+		})
+		part(parent, {
+			Size = Vector3.new(5, 0.3, 2.4),
+			Color = rgb(140, 100, 66),
+			Material = Enum.Material.WoodPlanks,
+			CFrame = base * CFrame.new(0, 2.2, 0),
+		})
+		for _, x in { -2, 2 } do
+			part(parent, {
+				Size = Vector3.new(0.3, 2, 2),
+				Color = rgb(120, 86, 58),
+				Material = Enum.Material.Wood,
+				CFrame = base * CFrame.new(x, 1.1, 0),
+			})
+		end
+		for _, z in { -2, 2 } do
+			part(parent, {
+				Size = Vector3.new(5, 0.3, 0.8),
+				Color = rgb(140, 100, 66),
+				Material = Enum.Material.WoodPlanks,
+				CFrame = base * CFrame.new(0, 1.2, z),
+			})
+		end
+		ball(parent, Vector3.new(1, 0.7, 0.8), rgb(180, 130, 70), base * CFrame.new(1.2, 2.7, 0), Enum.Material.Fabric)
+		ball(parent, Vector3.one * 0.5, rgb(210, 40, 40), base * CFrame.new(-1, 2.6, 0.3), Enum.Material.SmoothPlastic)
+	end,
+	PalmTrees = function(parent, frame)
+		for index, spot in SPOTS.palms do
+			local base = frame * CFrame.new(spot)
+			local lean = if index % 2 == 0 then 0.12 else -0.12
+			for i = 0, 7 do
+				cylinder(
+					parent,
+					1.6,
+					1.3 - i * 0.06,
+					rgb(140, 110, 76),
+					base * CFrame.Angles(0, 0, lean * i * 0.3) * CFrame.new(0, 0.8 + i * 1.5, 0)
+				).Material =
+					Enum.Material.Wood
+			end
+			local top = base * CFrame.Angles(0, 0, lean * 2.1) * CFrame.new(0, 12.5, 0)
+			for leaf = 1, 7 do
+				local angle = leaf / 7 * math.pi * 2
+				part(parent, {
+					Size = Vector3.new(0.2, 1.2, 6),
+					Color = rgb(70, 130, 60),
+					Material = Enum.Material.LeafyGrass,
+					CFrame = top
+						* CFrame.Angles(0, angle, 0)
+						* CFrame.new(0, -0.8, 2.6)
+						* CFrame.Angles(math.rad(-30), 0, 0),
+				})
+			end
+			for c = 1, 3 do
+				ball(
+					parent,
+					Vector3.one * 0.8,
+					rgb(110, 80, 50),
+					top * CFrame.new(math.cos(c * 2) * 0.6, -0.8, math.sin(c * 2) * 0.6),
+					Enum.Material.Wood
+				)
+			end
+		end
+	end,
+	FairyLights = function()
+		-- Strung along the roof by HouseService.
+	end,
+	HotTub = function(parent, frame)
+		local base = frame * CFrame.new(SPOTS.hotTub)
+		cylinder(parent, 2.2, 8, rgb(120, 90, 66), base * CFrame.new(0, 1.1, 0)).Material = Enum.Material.WoodPlanks
+		local water = cylinder(parent, 0.3, 7, rgb(80, 200, 230), base * CFrame.new(0, 2.1, 0))
+		water.Material = Enum.Material.Neon
+		water.Transparency = 0.35
+		local light = Instance.new("PointLight")
+		light.Color = rgb(90, 210, 240)
+		light.Range = 12
+		light.Brightness = 1.5
+		light.Parent = water
+		emitter(water, {
+			Texture = "rbxasset://textures/particles/smoke_main.dds",
+			Color = ColorSequence.new(rgb(240, 245, 250)),
+			Size = NumberSequence.new(1.5, 3),
+			Transparency = NumberSequence.new(0.6, 1),
+			EmissionDirection = Enum.NormalId.Right,
+			Speed = NumberRange.new(1, 2),
+			Lifetime = NumberRange.new(1.5, 2.5),
+			Rate = 6,
+			LightEmission = 0,
+		})
+		emitter(water, {
+			Color = ColorSequence.new(rgb(230, 250, 255)),
+			Size = NumberSequence.new(0.2),
+			EmissionDirection = Enum.NormalId.Right,
+			Speed = NumberRange.new(0.5, 1),
+			Lifetime = NumberRange.new(0.5, 1),
+			Rate = 20,
+		})
+	end,
+	Windmill = function(parent, frame)
+		local base = frame * CFrame.new(SPOTS.windmill)
+		for i = 0, 5 do
+			cylinder(parent, 2.2, 6 - i * 0.5, rgb(236, 230, 218), base * CFrame.new(0, 1.1 + i * 2.2, 0)).Material =
+				Enum.Material.Concrete
+		end
+		local cap =
+			ball(parent, Vector3.new(4, 3, 4), rgb(150, 70, 50), base * CFrame.new(0, 14, 0), Enum.Material.Slate)
+		cap.Name = "WindmillCap"
+		local hub = base * CFrame.new(0, 13.5, -2.4)
+		-- The sails turn: a "Rotor" model the client's FlashyFx spins.
+		local rotor = Instance.new("Model")
+		rotor.Name = "Rotor"
+		rotor:SetAttribute("RotorSpeed", 1.2)
+		rotor.Parent = parent
+		local axle = part(rotor, {
+			Name = "Axle",
+			Size = Vector3.one * 0.8,
+			Color = rgb(80, 60, 44),
+			Material = Enum.Material.Wood,
+			CFrame = hub * CFrame.Angles(math.rad(90), 0, 0),
+		})
+		for blade = 0, 3 do
+			part(rotor, {
+				Size = Vector3.new(1.4, 0.2, 7),
+				Color = rgb(240, 236, 226),
+				Material = Enum.Material.Fabric,
+				CFrame = axle.CFrame * CFrame.Angles(0, blade * math.pi / 2, 0) * CFrame.new(0, 0, 3.8),
+			})
+		end
+		rotor.PrimaryPart = axle
+		CollectionService:AddTag(rotor, "FlashyFx")
+	end,
+	Waterfall = function(parent, frame)
+		local base = frame * CFrame.new(SPOTS.waterfall)
+		part(parent, {
+			Size = Vector3.new(6, 1.6, 8),
+			Color = rgb(110, 104, 98),
+			Material = Enum.Material.Rock,
+			CFrame = base * CFrame.new(0, 0.8, 0),
+		})
+		local stream = part(parent, {
+			Size = Vector3.new(4, 0.3, 9),
+			Color = rgb(90, 170, 220),
+			Material = Enum.Material.Glass,
+			Transparency = 0.3,
+			CFrame = base * CFrame.new(0, 1.7, -1),
+		})
+		emitter(stream, {
+			Texture = "rbxasset://textures/particles/smoke_main.dds",
+			Color = ColorSequence.new(rgb(200, 230, 255), rgb(255, 255, 255)),
+			Size = NumberSequence.new(1.2, 3),
+			Transparency = NumberSequence.new(0.3, 1),
+			EmissionDirection = Enum.NormalId.Front,
+			Speed = NumberRange.new(4, 6),
+			Acceleration = Vector3.new(0, -30, 0),
+			SpreadAngle = Vector2.new(10, 10),
+			Lifetime = NumberRange.new(1.5, 2.2),
+			Rate = 40,
+			LightEmission = 0.1,
+		})
+	end,
+	CrystalGarden = function(parent, frame)
+		local base = frame * CFrame.new(SPOTS.crystals)
+		for i = 1, 9 do
+			local angle = i * 2.4
+			local height = 2 + (i % 4) * 1.4
+			local crystal = part(parent, {
+				Size = Vector3.new(0.9, height, 0.9),
+				Color = Color3.fromHSV((i * 0.11) % 1, 0.55, 1),
+				Material = Enum.Material.Neon,
+				Transparency = 0.15,
+				CFrame = base
+					* CFrame.new(math.cos(angle) * (i % 3 + 1) * 1.3, height / 2, math.sin(angle) * (i % 3 + 1) * 1.3)
+					* CFrame.Angles(math.rad(10 - i * 3), angle, math.rad(i * 4 - 15)),
+			})
+			if i % 3 == 0 then
+				local light = Instance.new("PointLight")
+				light.Color = crystal.Color
+				light.Range = 10
+				light.Brightness = 1.2
+				light.Parent = crystal
+			end
+		end
 	end,
 	Fireworks = function(parent, frame)
 		local base = frame * CFrame.new(SPOTS.fireworks)
@@ -1373,6 +1600,7 @@ local function applyIsland(player: Player)
 		end
 	end
 	fireworkIslands[player] = if cosmetics.decor.Fireworks then plot.cframe else nil
+	HouseService.refresh(player)
 	applySign(player, data)
 	applyPedestals(player)
 end
@@ -1489,6 +1717,8 @@ local function onAction(player: Player, action: any, a: any): (boolean, string)
 		end
 		if a == "pedestal" then
 			cosmetics.pedestal = "Marble"
+		elseif a == "house" then
+			cosmetics.house = nil
 		elseif a ~= "decor" and a ~= "pet" then
 			cosmetics[a] = nil
 		end

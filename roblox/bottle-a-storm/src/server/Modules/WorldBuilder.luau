@@ -664,9 +664,37 @@ local function scatter(
 end
 
 -- Keeps decorations off the pedestals, pads, spawn, arch and bridge.
+-- Spots that island cosmetics use (see CosmeticService SPOTS).
+local COSMETIC_SPOTS = {
+	Vector3.new(-36, 0, -4),
+	Vector3.new(36, 0, -4),
+	Vector3.new(-36, 0, 30),
+	Vector3.new(36, 0, 30),
+	Vector3.new(-41, 0, 14),
+	Vector3.new(41, 0, 14),
+	Vector3.new(36, 0, -24),
+	Vector3.new(-36, 0, -24),
+	Vector3.new(-24, 0, -38),
+	Vector3.new(24, 0, -38),
+	Vector3.new(-46, 0, -8),
+	Vector3.new(46, 0, -8),
+	Vector3.new(-44, 0, 33),
+	Vector3.new(44, 0, 33),
+	Vector3.new(-51, 0, 12),
+	Vector3.new(51, 0, 12),
+	Vector3.new(-30, 0, -48),
+	Vector3.new(-40, 0, -42),
+	Vector3.new(0, 0, 51),
+}
+
 local function plotBlocked(p: Vector3): boolean
-	if p.X > -30 and p.X < 30 and p.Z > -4 and p.Z < 45 then
-		return true -- pedestal grid
+	if p.X > -35 and p.X < 35 and p.Z > -8 and p.Z < 50 then
+		return true -- pedestals and the house over them
+	end
+	for _, spot in COSMETIC_SPOTS do
+		if (p - spot).Magnitude < 6 then
+			return true
+		end
 	end
 	for _, spot in { Vector3.new(-20, 0, -18), Vector3.new(20, 0, -18), Vector3.new(0, 0, -14), Vector3.new(0, 0, -30) } do
 		if (p - spot).Magnitude < 9 then
