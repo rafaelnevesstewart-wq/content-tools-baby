@@ -318,6 +318,51 @@ Config.Flight = {
 	MaxHeight = 220, -- can't fly higher than this
 }
 
+-- Grumpy clouds: little angry clouds on the Wild Skies that drop raindrops on
+-- players. Pop them with the Cloud Blaster for Sparks.
+Config.Grumps = {
+	MaxCount = 6,
+	SpawnInterval = 8,
+	Height = 11, -- above the island
+	Speed = 7,
+	ChaseRadius = 45, -- follows players closer than this
+	ShootRange = 35,
+	ShootEvery = 3, -- seconds between raindrops (plus a little random)
+	DropSeconds = 0.9, -- raindrop flight time, so you can dodge it
+	SplashRadius = 4.5,
+	Knockback = 30,
+	Lifetime = 150, -- drifts away after this
+	SmallHp = 3,
+	BigHp = 10,
+	BigChance = 0.15, -- chance a new one is a big Storm Grump
+	SmallRewardSeconds = 15, -- Sparks for everyone who hit it: this many seconds of income...
+	SmallRewardMin = 40, -- ...or at least this
+	BigRewardSeconds = 90,
+	BigRewardMin = 300,
+	BigSnackChance = 0.15, -- a big one may drop Storm Snacks...
+	BigStormChance = 0.05, -- ...or a Rare storm (for the player who popped it)
+}
+
+-- The Cloud Blaster tool: pops grumpy clouds.
+Config.Blaster = {
+	Cooldown = 0.35,
+	Range = 70,
+	AimRadius = 7,
+}
+
+-- Water balloons: throw them at other players. Nobody gets hurt: a hit knocks
+-- them back, soaks them (slower for a moment) and makes thieves drop the
+-- storm. Players are safe on their own island.
+Config.Balloon = {
+	Cooldown = 1.2,
+	Range = 60,
+	Speed = 70, -- flight speed
+	SplashRadius = 5,
+	Knockback = 45,
+	SoakSeconds = 2,
+	SoakSpeedMultiplier = 0.6,
+}
+
 -- Day and night: one full day in the sky takes this long.
 Config.DayNight = {
 	CycleSeconds = 720, -- 12 minutes

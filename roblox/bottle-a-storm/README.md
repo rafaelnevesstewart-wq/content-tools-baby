@@ -145,6 +145,26 @@ Numbers for all of this are in `src/shared/Config.luau` (`Starter`, `Combo`, `Go
   - Dodge chances are lower: Uncommon 5%, Rare 15%, Epic 22%, Legendary 30%.
   - Rare, Epic and Legendary storms spawn about 40–80% more often.
 
+## Fighting: grumpy clouds and water balloons
+
+- **Grumpy clouds** (`GrumpService`):
+  - Up to 6 angry little clouds float around the Wild Skies and follow players.
+  - Every few seconds one drops a raindrop where you're standing. Move and it misses. A hit
+    pushes you and soaks you (slower for a moment).
+  - Pop them with the **Cloud Blaster** (tool 3). Grumpy Clouds take 3 hits and big Storm
+    Grumps take 10.
+  - Everyone who hit one gets Sparks when it pops. A Storm Grump can also drop Storm Snacks
+    or a Rare storm for the player who popped it.
+  - Grumpy clouds hide during a Mega-Storm. There's a daily quest for them and a
+    "Cloud Popper" title.
+- **Water balloon fights** (`BalloonService`):
+  - Throw **Water Balloons** (tool 4) at other players. Nobody gets hurt: a splash knocks them
+    back and soaks them for 2 seconds.
+  - **Thieves drop the storm** when splashed. An Umbrella Tank blocks the first one.
+  - **Safe at home:** players standing on their own island can't be splashed.
+  - Hitting players counts toward the "Splash Champ" title.
+- Numbers are in `Config.Grumps`, `Config.Blaster` and `Config.Balloon`.
+
 ## Cloud Flight (game pass, 199 R$)
 
 Press `G` (☁️ Fly on phones) to hop on a fluffy cloud and fly anywhere for 30 seconds. Move as
@@ -161,7 +181,8 @@ normal; `Space` goes up and `Ctrl` or `C` goes down. After landing, the cloud re
 |---|---|---|
 | Hold your Storm Jar | `1` (hotbar) | tap the jar |
 | Throw the jar | click near a storm | tap near a storm |
-| Zapper / Storm Launcher | `2` / `3`, then click | tap the tool, then tap |
+| Zapper, Cloud Blaster, Water Balloons | `2`, `3`, `4`, then click | tap the tool, then tap |
+| Storm Launcher (during a Mega-Storm) | `5`, then click | tap the tool, then tap |
 | Pet your storm (or calm an escaping one) | `E` on your pedestal | tap "Pet" |
 | Options menu: Ride, Guard, Buddy or Sell a storm | `F` on your pedestal | tap "Options" |
 | Hop on / off | `Q` | Ride button |
@@ -394,6 +415,9 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
       With 2 players, press ⚔️ Battle to fight. Open 🎁 Rewards → 🏷️ Titles after your first
       catch. To see the rare-catch moment quickly, set `Config.Jars[1].maxRarity = 5` and
       catch an Epic.
+- [ ] Fighting: on the Wild Skies, press **3** and click a grumpy cloud until it pops. Stand
+      still under one to get splashed. With 2 players, press **4** and throw a balloon at
+      player 2 (off their island, then on it), and at a thief carrying a storm.
 - [ ] Cloud Flight: press **G**. In Studio it grants the pass for free. Press **G** again to
       fly, try Space and Ctrl, then steal a storm while flying (you should land).
 - [ ] Offline earnings: play, leave, and join again after 2+ minutes. (In Studio, turn on
@@ -448,7 +472,8 @@ src/shared/   Config, StormData (storms, rarities, mutations, moods), Economy (p
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
               IncomeService, CaptureService, RideService, MoodService, SeasonService, MixService,
-              TradeService, StealService, GuardService, BuddyService, FlightService, RaidService,
+              TradeService, StealService, GuardService, BuddyService, FlightService, GrumpService,
+              BalloonService, RaidService,
               IndexService, RewardService, DailyService, EventService, BattleService,
               TitleService, AuraService, ClimateService, ThemeService, ShopService,
               MonetizationService
@@ -456,7 +481,7 @@ src/server/   Main.server.luau starts the services in order
               Recipes (secret mixer recipes), Notify
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, Shop, Mixer, Trade, Climate, Season, Rewards, PedestalMenu, Battle,
-               BuddyController, FlightController,
+               BuddyController, FlightController, CombatController, Aim,
                BiomeController, ThrowController, RideController, Toasts, TutorialController,
                StormAnimator, AmbientController, JuiceController, Sfx,
                PromptController, ForecastController, UI

@@ -283,34 +283,40 @@ local function beam(from: Vector3, to: Vector3)
 end
 
 -- Zaps a thief who is carrying a stolen storm. Umbrella Tanks block the first
--- zap. `zapper` is the player who zapped (nil for a guard storm).
-function StealService.zapThief(target: Player, byName: string, from: Vector3, zapper: Player?)
+-- zap. `zapper` is the player who zapped (nil for a guard storm). With
+-- `splash` (a water balloon) there's no lightning beam and no stun.
+function StealService.zapThief(target: Player, byName: string, from: Vector3, zapper: Player?, splash: boolean?)
 	local carry = carries[target]
 	if not carry then
 		return
 	end
 	local targetRoot = rootOf(target)
-	if targetRoot then
+	if targetRoot and not splash then
 		beam(from, targetRoot.Position)
 	end
+	local what = if splash then "splash" else "zap"
 	if styleOf(target) == "UmbrellaTank" and not carry.umbrellaUsed then
 		carry.umbrellaUsed = true
 		Notify.player(
 			target,
-			"☂️ Your umbrella blocked " .. byName .. "'s zap! The next one gets through.",
+			"☂️ Your umbrella blocked " .. byName .. "'s " .. what .. "! The next one gets through.",
 			"success"
 		)
 		if zapper then
-			Notify.player(zapper, "☂️ " .. target.DisplayName .. "'s umbrella blocked your zap! Zap again!", "warn")
+			Notify.player(zapper, "☂️ " .. target.DisplayName .. "'s umbrella blocked it! Try again!", "warn")
 		end
 		return
 	end
-	cancel(target, "⚡ " .. byName .. " zapped you! The storm flew back.")
-	if styleOf(target) ~= "UmbrellaTank" then
-		MovementService.stun(target, Config.Zapper.StunSeconds)
+	if splash then
+		cancel(target, "💦 " .. byName .. " splashed you! The storm slipped away and flew back.")
+	else
+		cancel(target, "⚡ " .. byName .. " zapped you! The storm flew back.")
+		if styleOf(target) ~= "UmbrellaTank" then
+			MovementService.stun(target, Config.Zapper.StunSeconds)
+		end
 	end
 	if zapper then
-		Notify.player(zapper, "⚡ Zap! You stopped " .. target.DisplayName .. ".", "success")
+		Notify.player(zapper, "🎯 Got them! You stopped " .. target.DisplayName .. ".", "success")
 	end
 end
 

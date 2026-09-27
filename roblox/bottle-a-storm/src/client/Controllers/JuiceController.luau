@@ -2,6 +2,7 @@
 -- bursts, sound effects and camera shake (see server Modules/Juice).
 
 local Debris = game:GetService("Debris")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
@@ -200,6 +201,18 @@ local function rareCatch(name: string, rarityName: string, color: Color3, positi
 	end)
 end
 
+-- Pushed by a water balloon or raindrop splash.
+local function knock(velocity: Vector3)
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not root or not humanoid or humanoid.Health <= 0 then
+		return
+	end
+	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	root.AssemblyLinearVelocity += velocity
+end
+
 local function shake(strength: number)
 	shakeStrength = math.max(shakeStrength, strength)
 	shakeUntil = os.clock() + 0.35
@@ -221,6 +234,8 @@ function JuiceController.start()
 			rareCatch(a, b, c, d)
 		elseif kind == "welcome" and type(a) == "number" and type(b) == "number" then
 			welcome(a, b)
+		elseif kind == "knock" and typeof(a) == "Vector3" then
+			knock(a)
 		elseif kind == "shake" then
 			shake(if type(a) == "number" then a else 1)
 		end

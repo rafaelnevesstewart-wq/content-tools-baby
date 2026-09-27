@@ -4,6 +4,7 @@ local Controllers = script.Parent:WaitForChild("Controllers")
 
 local order = {
 	"Sfx",
+	"Aim",
 	"Toasts",
 	"Shop",
 	"Trade",
@@ -15,6 +16,7 @@ local order = {
 	"HUD",
 	"BiomeController",
 	"ThrowController",
+	"CombatController",
 	"RideController",
 	"FlightController",
 	"Mixer",

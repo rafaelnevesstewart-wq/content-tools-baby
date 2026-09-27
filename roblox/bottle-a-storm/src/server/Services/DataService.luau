@@ -77,6 +77,8 @@ local function defaultData()
 			raids = 0,
 			battlesWon = 0,
 			huntsWon = 0, -- Golden Hunts and Storm Races
+			grumpsPopped = 0, -- grumpy clouds you helped pop
+			splashes = 0, -- players you hit with water balloons
 		},
 	}
 end

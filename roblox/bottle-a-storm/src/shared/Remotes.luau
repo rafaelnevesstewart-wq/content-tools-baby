@@ -15,6 +15,8 @@ local EVENTS = {
 	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake, pop-ups
 	"PedestalAction", -- client -> server: (slot, "ride" | "guard" | "buddy" | "sell")
 	"Fly", -- client -> server: (wantsToFly: boolean)
+	"BlastCloud", -- client -> server: (targetPosition) Cloud Blaster shot
+	"ThrowBalloon", -- client -> server: (targetPosition) water balloon throw
 	"BattleAction", -- client -> server: ("request", userId) | ("respond", fromUserId, accept)
 	"BattleInvite", -- server -> client: (fromUserId, fromName)
 	"BattlePlay", -- server -> client: (battle) the whole fight, for the battle window

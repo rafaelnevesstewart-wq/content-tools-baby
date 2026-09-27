@@ -30,6 +30,12 @@ function Juice.rareCatch(player: Player, name: string, rarityName: string, color
 	juice:FireClient(player, "rareCatch", name, rarityName, color, position)
 end
 
+-- Pushes the player's character (their own screen moves it). Used by water
+-- balloons and grumpy cloud raindrops.
+function Juice.knock(player: Player, velocity: Vector3)
+	juice:FireClient(player, "knock", velocity)
+end
+
 -- Shakes the player's camera.
 function Juice.shake(player: Player, strength: number?)
 	juice:FireClient(player, "shake", strength or 1)

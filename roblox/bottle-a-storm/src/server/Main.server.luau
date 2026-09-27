@@ -21,6 +21,8 @@ local order = {
 	"GuardService",
 	"BuddyService",
 	"FlightService",
+	"GrumpService",
+	"BalloonService",
 	"RaidService",
 	"DailyService",
 	"EventService",

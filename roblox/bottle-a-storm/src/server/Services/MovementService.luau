@@ -14,6 +14,7 @@ local DataService = require(script.Parent.DataService)
 local MovementService = {}
 
 local stunnedUntil: { [Player]: number } = {}
+local soakedUntil: { [Player]: number } = {}
 local defaultJump: { [Humanoid]: { power: number, height: number } } = {}
 
 local function humanoidOf(player: Player): Humanoid?
@@ -57,6 +58,9 @@ function MovementService.refresh(player: Player)
 			then ThiefStyles.TankCarrySpeedMultiplier
 			else Config.Steal.CarrySpeedMultiplier
 	end
+	if (soakedUntil[player] or 0) > os.clock() then
+		speed *= Config.Balloon.SoakSpeedMultiplier
+	end
 	humanoid.WalkSpeed = speed
 	humanoid.JumpPower = jump.power
 	humanoid.JumpHeight = jump.height
@@ -88,6 +92,34 @@ function MovementService.stun(player: Player, seconds: number)
 	end)
 end
 
+-- Soaked by a water balloon or raindrop: slower for a moment, with drips.
+function MovementService.soak(player: Player, seconds: number)
+	soakedUntil[player] = math.max(soakedUntil[player] or 0, os.clock() + seconds)
+	MovementService.refresh(player)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if root and not root:FindFirstChild("SoakDrips") then
+		local drips = Instance.new("ParticleEmitter")
+		drips.Name = "SoakDrips"
+		drips.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		drips.Color = ColorSequence.new(Color3.fromRGB(120, 200, 255))
+		drips.Size = NumberSequence.new(0.35, 0.1)
+		drips.Speed = NumberRange.new(1, 3)
+		drips.Acceleration = Vector3.new(0, -30, 0)
+		drips.Lifetime = NumberRange.new(0.4, 0.7)
+		drips.Rate = 25
+		drips.Parent = root
+		task.delay(seconds, function()
+			drips:Destroy()
+		end)
+	end
+	task.delay(seconds + 0.05, function()
+		if player.Parent then
+			MovementService.refresh(player)
+		end
+	end)
+end
+
 function MovementService.start()
 	local function onPlayer(player: Player)
 		player.CharacterAdded:Connect(function(character)
@@ -105,6 +137,7 @@ function MovementService.start()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		stunnedUntil[player] = nil
+		soakedUntil[player] = nil
 	end)
 	DataService.ProfileLoaded:Connect(function(player)
 		MovementService.refresh(player)

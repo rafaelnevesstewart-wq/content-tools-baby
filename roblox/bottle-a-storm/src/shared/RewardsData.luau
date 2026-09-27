@@ -7,7 +7,7 @@ local SeasonData = require(script.Parent.SeasonData)
 export type Quest = {
 	id: string,
 	text: string, -- "%s" is replaced with the target
-	kind: string, -- what counts: catch, catchRare, steal, mix, pet, collect, raid
+	kind: string, -- what counts: catch, catchRare, steal, mix, pet, collect, raid, grump
 	targets: { number }, -- one is picked at random; collect is scaled to income instead
 }
 
@@ -32,6 +32,7 @@ RewardsData.Quests = {
 	{ id = "pet", text = "Pet your storms %s times", kind = "pet", targets = { 5, 8, 10 } },
 	{ id = "collect", text = "Collect ⚡%s", kind = "collect", targets = { 0 } },
 	{ id = "raid", text = "Fight in a Mega-Storm", kind = "raid", targets = { 1 } },
+	{ id = "grump", text = "Pop %s grumpy clouds", kind = "grump", targets = { 5, 8, 12 } },
 } :: { Quest }
 
 function RewardsData.quest(id: string): Quest?
