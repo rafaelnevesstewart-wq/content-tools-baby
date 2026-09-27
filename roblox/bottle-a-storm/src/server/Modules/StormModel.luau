@@ -208,6 +208,7 @@ export type BuildOptions = {
 	mutation: string?,
 	scale: number?, -- multiplies the rarity's size
 	anchored: boolean?, -- false when the model gets welded to a character
+	angry: boolean?, -- frowning eyebrows, for Mega-Storm bosses
 }
 
 -- Returns a Model whose PrimaryPart "Root" is the pivot. The creature faces -Z.
@@ -289,6 +290,21 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 		cheek.Name = "Cheek"
 		cheek.Transparency = 0.25
 		weld(root, cheek)
+		if opts.angry then
+			local brow = Instance.new("Part")
+			brow.Name = "Brow"
+			brow.Size = Vector3.new(1.1, 0.25, 0.3) * scale
+			brow.Color = Color3.fromRGB(25, 25, 35)
+			brow.CFrame = CFrame.new(Vector3.new(0.75 * side, 1.05, -1.8) * scale)
+				* CFrame.Angles(0, 0, math.rad(-25 * side))
+			brow.CanCollide = false
+			brow.CanTouch = false
+			brow.CanQuery = false
+			brow.Massless = true
+			brow.Anchored = false
+			brow.Parent = model
+			weld(root, brow)
+		end
 	end
 
 	addParticles(root, def.fx, scale)

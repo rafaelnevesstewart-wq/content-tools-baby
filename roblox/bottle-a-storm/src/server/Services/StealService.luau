@@ -148,6 +148,10 @@ local function begin(thief: Player, owner: Player, slot: number)
 	if CaptureService.isCapturing(thief) or MovementService.isStunned(thief) then
 		return
 	end
+	if workspace:GetAttribute("RaidState") == "active" then
+		Notify.player(thief, "No stealing during the Mega-Storm! Team up and fight it!", "warn")
+		return
+	end
 	local ownerData = DataService.get(owner)
 	local record = ownerData and PlotService.stormInSlot(ownerData, slot)
 	if not record or PlotService.isSlotStolen(owner, slot) then
@@ -258,6 +262,13 @@ local function giveZapper(player: Player)
 		zap(player)
 	end)
 	tool.Parent = backpack
+end
+
+-- Sends every carried storm back home (used when a Mega-Storm arrives).
+function StealService.cancelAll(reason: string)
+	for thief in carries do
+		cancel(thief, reason)
+	end
 end
 
 function StealService.isCarrying(player: Player): boolean

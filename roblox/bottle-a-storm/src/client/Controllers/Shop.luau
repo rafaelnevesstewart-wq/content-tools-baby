@@ -183,6 +183,9 @@ local function buildRobux()
 		end)
 		local function run()
 			local owned = isPass and player:GetAttribute(Products.passAttribute(item.key)) == true
+			if item.key == "RaidShield" then
+				card.body.Text = item.description .. " (You have " .. attr("RaidShields") .. ")"
+			end
 			if owned then
 				setBuyable(card, "Owned ✓", false)
 			else

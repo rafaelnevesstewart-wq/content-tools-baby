@@ -6,7 +6,7 @@ with no uploaded art.
 
 ## What's in this build
 
-These are steps 1–5 of the design doc's build order.
+These are steps 1–5 of the design doc's build order, plus the Mega-Storm raid (v1.1).
 
 | Feature | Where |
 |---|---|
@@ -16,11 +16,35 @@ These are steps 1–5 of the design doc's build order.
 | Stealing: grab a jar, carry it home (70% speed); Zapper tool, Lightning Rod traps, 60 s base lock | `StealService`, `PlotService` |
 | Sparks shop: jars, pedestals (3 → 10), Boots of Wind, Lightning Rod | `ShopService`, `Shop` |
 | Saving with a session lock (no duplicate storms across servers), autosave, safe shutdown | `DataService` |
-| 3 game passes (VIP, Double Pedestals, Auto-Collect) and 4 dev products (2 Sparks packs, Emergency Lock, Summon Rainbow Hour) | `MonetizationService`, `Products` |
+| 3 game passes (VIP, Double Pedestals, Auto-Collect) and 5 dev products (2 Sparks packs, Emergency Lock, Raid Shield, Summon Rainbow Hour) | `MonetizationService`, `Products` |
 | Weather events every 10 min (Rainbow Hour, Thunder Frenzy, Meteor Night) + forecast TV | `WeatherService`, `ForecastController` |
+| Mega-Storm raid every 45 min (details below) | `RaidService`, `RaidData`, `HUD` |
 
-Not in this build yet: the Mega-Storm raid (v1.1), fusion and riding storms (v1.2), trading (v1.3),
+Not in this build yet: fusion and riding storms (v1.2), trading (v1.3),
 storm moods, island sky aura, thief styles, Climate Shift rebirth and the season pass.
+
+## The Mega-Storm raid
+
+- **Warning:** 60 seconds before, the sky darkens and everyone is told to go to the Wild Skies.
+  The HUD and forecast TV count down.
+- **Fight (3 minutes):** a boss drops out of the sky. There are 3 bosses: Grandma Cyclone,
+  The Thunder Titan and Sir Blizzardington. Everyone gets a **Storm Launcher** that aims itself.
+  Click to fire. You must be on the Wild Skies island to hit the boss.
+  - Damage per shot grows with your income: x1 with nothing, about x6 at 100K ⚡/s.
+  - Boss HP adds up the same multiplier for every player in the server. A server where about 60%
+    of players fight should win.
+- **Boss attacks:** lightning strikes on red circles (1.5 s stun, so move!) and every third
+  attack a gust that blows everyone outward. Stand near the edge and you might fly off.
+  Below 30% HP it attacks faster.
+- **During the raid:** stealing is off, carried storms fly home, and wild storms hide.
+- **Win:** everyone who dealt damage gets an Epic storm (15% Legendary; the top damage dealer
+  gets 30%), placed on their island. If the island is full, it's paid out as 10 minutes of that
+  storm's income instead.
+- **Lose:** every island loses one random storm. Players who joined in the last 10 minutes are
+  safe, and a **Raid Shield** (39 R$ dev product) protects you once.
+
+Timing and balance are in `Config.Raid`. In Studio the first raid comes after 45 seconds, then
+every 5 minutes.
 
 ## Setup
 
@@ -50,6 +74,10 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 - [ ] Press the blue Lock button. Player 2 is pushed out and can't steal until it ends.
 - [ ] Robux tab: with IDs still at 0, Studio grants items for free so you can test them.
 - [ ] To test weather, set `Config.Weather.FirstEventDelay` to 10.
+- [ ] Raid: wait 45 s after starting. Walk to the Wild Skies, click to fire, dodge the red
+      circles. Try both winning and letting the timer run out. To lose easily, set
+      `Config.Raid.HpPerPlayer` very high; set `NewPlayerGraceSeconds` to 0 to see a storm get
+      blown away.
 
 ## Before publishing
 
@@ -63,10 +91,11 @@ Use **Test → Clients and Servers** with 2 players to try stealing.
 
 ```
 src/shared/   Config, StormData (rarities, 15 storms, mutations), Economy (prices),
-              Products (Robux IDs), WeatherEvents, Remotes, Format, Signal
+              Products (Robux IDs), WeatherEvents, RaidData (bosses), Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, PlotService, StormSpawner, WeatherService, MovementService,
-              IncomeService, CaptureService, StealService, ShopService, MonetizationService
+              IncomeService, CaptureService, StealService, RaidService, ShopService,
+              MonetizationService
   Modules/    WorldBuilder (islands, bridges, TV), StormModel (creatures, jars), Notify
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, Shop, CaptureMinigame, Toasts, PromptController, ForecastController, UI

@@ -38,6 +38,7 @@ local count = 0
 local folder: Folder
 local rng = Random.new()
 local event: WeatherEvents.WeatherEvent? = nil
+local paused = false
 
 local function hoverY(): number
 	return Config.Wild.HoverHeight
@@ -257,6 +258,9 @@ end
 
 -- Spawns `amount` storms right away (used when an event starts).
 function StormSpawner.burst(amount: number)
+	if paused then
+		return
+	end
 	for _ = 1, amount do
 		spawnStorm(nil)
 	end
@@ -264,6 +268,18 @@ end
 
 function StormSpawner.spawnSpecific(def: StormData.StormDef)
 	spawnStorm(def)
+end
+
+-- While paused (during a Mega-Storm) wild storms hide and none spawn.
+function StormSpawner.setPaused(value: boolean)
+	paused = value
+	if paused then
+		for uid, storm in storms do
+			if not storm.catcher then
+				StormSpawner.remove(uid)
+			end
+		end
+	end
 end
 
 function StormSpawner.init()
@@ -283,7 +299,7 @@ function StormSpawner.start()
 				wait /= 3
 			end
 			task.wait(wait)
-			if count < cap then
+			if count < cap and not paused then
 				spawnStorm(nil)
 			end
 		end

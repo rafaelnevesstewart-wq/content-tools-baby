@@ -46,6 +46,7 @@ local function defaultData()
 		pedestals = Config.Pedestals.Start,
 		bootsLevel = 0,
 		trapLevel = 0,
+		raidShields = 0,
 		storms = {}, -- { StormRecord }
 		discovered = {}, -- storm id -> true
 		receipts = {}, -- recent purchase ids, to never grant a purchase twice

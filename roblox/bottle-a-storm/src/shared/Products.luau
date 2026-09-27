@@ -60,6 +60,13 @@ Products.DevProducts = {
 		description = "Lock your island for 5 minutes, from anywhere, right now.",
 	},
 	{
+		key = "RaidShield",
+		id = 0,
+		price = 39,
+		name = "Raid Shield",
+		description = "If the next Mega-Storm wins, your storms stay safe.",
+	},
+	{
 		key = "SummonWeather",
 		id = 0,
 		price = 79,

@@ -77,6 +77,8 @@ local function endSession(player: Player, caught: boolean)
 	end
 end
 
+CaptureService.rollMutation = rollMutation
+
 function CaptureService.isCapturing(player: Player): boolean
 	return sessions[player] ~= nil
 end

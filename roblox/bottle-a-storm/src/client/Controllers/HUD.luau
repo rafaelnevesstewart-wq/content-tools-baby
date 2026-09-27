@@ -9,6 +9,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
 local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
+local RaidData = require(Shared.RaidData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local Shop = require(script.Parent.Shop)
@@ -25,6 +26,14 @@ local unclaimedLabel: TextLabel
 local weatherLabel: TextLabel
 local lockLabel: TextLabel
 local carryBanner: TextLabel
+local raidPill: Frame
+local raidLabel: TextLabel
+local bossBar: Frame
+local bossTitle: TextLabel
+local bossTime: TextLabel
+local bossFill: Frame
+local bossHpText: TextLabel
+local bossDamage: TextLabel
 
 local function pill(parent: Instance, order: number, height: number): Frame
 	return UI.new("Frame", {
@@ -82,6 +91,84 @@ local function lockText(now: number): (string, Color3)
 	return "🔓 Island open. Press your Lock button!", UI.Colors.Warn
 end
 
+-- The Mega-Storm HP bar, shown under the Sparks counter during a raid.
+local function buildBossBar(parent: Instance)
+	bossBar = UI.new("Frame", {
+		Name = "BossBar",
+		LayoutOrder = 2,
+		Size = UDim2.fromOffset(380, 76),
+		BackgroundColor3 = Color3.fromRGB(45, 20, 35),
+		BackgroundTransparency = 0.1,
+		Visible = false,
+		Parent = parent,
+	}, { UI.corner(12), UI.stroke(UI.Colors.Bad, 2.5), UI.padding(8) })
+	bossTitle = UI.label({
+		Size = UDim2.new(1, -70, 0, 22),
+		TextSize = 20,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = bossBar,
+	})
+	bossTime = UI.label({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.fromOffset(70, 22),
+		TextSize = 20,
+		TextColor3 = UI.Colors.Spark,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Parent = bossBar,
+	})
+	local track = UI.new("Frame", {
+		Position = UDim2.fromOffset(0, 26),
+		Size = UDim2.new(1, 0, 0, 20),
+		BackgroundColor3 = Color3.fromRGB(20, 10, 20),
+		Parent = bossBar,
+	}, { UI.corner(8) })
+	bossFill = UI.new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = UI.Colors.Bad,
+		Parent = track,
+	}, { UI.corner(8) })
+	bossHpText = UI.label({
+		Size = UDim2.fromScale(1, 1),
+		TextSize = 15,
+		TextStrokeTransparency = 0.3,
+		ZIndex = 2,
+		Parent = track,
+	})
+	bossDamage = UI.label({
+		Position = UDim2.fromOffset(0, 48),
+		Size = UDim2.new(1, 0, 0, 16),
+		TextSize = 14,
+		TextColor3 = UI.Colors.Muted,
+		Parent = bossBar,
+	})
+end
+
+local function refreshRaid(now: number)
+	local state = workspace:GetAttribute("RaidState")
+	local startsAt = workspace:GetAttribute("RaidStartsAt") or now
+	bossBar.Visible = state == "active"
+	raidPill.Visible = state ~= "active"
+	if state == "active" then
+		local boss = RaidData.get(workspace:GetAttribute("RaidBoss"))
+		local hp = workspace:GetAttribute("RaidHp") or 0
+		local maxHp = math.max(1, workspace:GetAttribute("RaidMaxHp") or 1)
+		bossTitle.Text = if boss then boss.emoji .. " " .. boss.name else "Mega-Storm"
+		bossTime.Text = Format.time((workspace:GetAttribute("RaidEndsAt") or now) - now)
+		bossFill.Size = UDim2.fromScale(math.clamp(hp / maxHp, 0, 1), 1)
+		bossHpText.Text = Format.number(hp) .. " / " .. Format.number(maxHp)
+		bossDamage.Text = "Your damage: "
+			.. Format.number(player:GetAttribute("RaidDamage") or 0)
+			.. "  ·  Click to fire your Storm Launcher!"
+	elseif state == "warning" then
+		raidLabel.Text = "⚠️ MEGA-STORM in " .. Format.time(startsAt - now) .. "! Go to the Wild Skies!"
+		raidLabel.TextColor3 = UI.Colors.Bad
+	else
+		raidLabel.Text = "🌪️ Mega-Storm in " .. Format.time(startsAt - now)
+		raidLabel.TextColor3 = UI.Colors.Muted
+	end
+end
+
 local function refreshStats()
 	sparksLabel.Text = "⚡ " .. Format.number(player:GetAttribute("Sparks") or 0)
 	incomeLabel.Text = "+" .. Format.number(player:GetAttribute("IncomePerSec") or 0) .. "/s"
@@ -123,7 +210,7 @@ function HUD.start()
 	incomeLabel = pillText(sparksPill, 2, 20, UI.Colors.Good)
 
 	unclaimedLabel = UI.label({
-		LayoutOrder = 2,
+		LayoutOrder = 3,
 		Size = UDim2.fromOffset(0, 22),
 		AutomaticSize = Enum.AutomaticSize.X,
 		TextSize = 17,
@@ -131,8 +218,11 @@ function HUD.start()
 		Parent = top,
 	})
 
-	weatherLabel = pillText(pill(top, 3, 32), 1, 18, UI.Colors.Text)
-	lockLabel = pillText(pill(top, 4, 30), 1, 16, UI.Colors.Warn)
+	weatherLabel = pillText(pill(top, 4, 32), 1, 18, UI.Colors.Text)
+	raidPill = pill(top, 5, 30)
+	raidLabel = pillText(raidPill, 1, 16, UI.Colors.Muted)
+	lockLabel = pillText(pill(top, 6, 30), 1, 16, UI.Colors.Warn)
+	buildBossBar(top)
 
 	local side = UI.new("Frame", {
 		Name = "Side",
@@ -188,6 +278,7 @@ function HUD.start()
 			local text, color = lockText(now)
 			lockLabel.Text = text
 			lockLabel.TextColor3 = color
+			refreshRaid(now)
 			task.wait(0.25)
 		end
 	end)

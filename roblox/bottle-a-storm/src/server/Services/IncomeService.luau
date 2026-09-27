@@ -58,6 +58,7 @@ function IncomeService.sync(player: Player)
 	player:SetAttribute("MaxPedestals", Economy.maxPedestals(hasPass(player, "DoubleSlots")))
 	player:SetAttribute("BootsLevel", data.bootsLevel)
 	player:SetAttribute("TrapLevel", data.trapLevel)
+	player:SetAttribute("RaidShields", data.raidShields)
 	player:SetAttribute("StormCount", #data.storms)
 
 	local leaderstats = player:FindFirstChild("leaderstats")

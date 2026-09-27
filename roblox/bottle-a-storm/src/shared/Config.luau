@@ -96,6 +96,36 @@ Config.Weather = {
 	Duration = 180,
 }
 
+-- The Mega-Storm raid: a server-wide boss fight every 45 minutes.
+Config.Raid = {
+	Interval = 2700, -- seconds from one raid's start to the next
+	FirstDelay = 900, -- first raid after a server starts
+	StudioFirstDelay = 45, -- shorter in Studio so you can test it
+	StudioInterval = 300,
+	WarningSeconds = 60,
+	Duration = 180,
+	-- Boss HP = HpPerPlayer x each player's damage multiplier, summed over the server.
+	-- About 60% of players fighting should be enough to win.
+	HpPerPlayer = 1100,
+	ShotDamage = 10,
+	ShotCooldown = 0.6,
+	BossHeight = 55,
+	AttackInterval = 6,
+	EnragedAttackInterval = 3.5,
+	EnrageAt = 0.3, -- fraction of HP left
+	StrikeRadius = 8,
+	StrikeWarning = 1.5,
+	StrikeStun = 1.5,
+	MaxStrikeTargets = 4,
+	GustEvery = 3, -- every Nth attack is a gust instead of lightning
+	GustSpeed = 65,
+	GustSeconds = 0.35,
+	LegendaryChance = 0.15, -- reward odds; everything else is Epic
+	MVPLegendaryChance = 0.3,
+	FullIslandRewardSeconds = 600, -- reward paid as this much of the storm's income if your island is full
+	NewPlayerGraceSeconds = 600, -- players who just joined never lose a storm
+}
+
 Config.Products = {
 	SparksSmallMin = 1000,
 	SparksSmallSeconds = 300, -- or 5 minutes of your income, whichever is more

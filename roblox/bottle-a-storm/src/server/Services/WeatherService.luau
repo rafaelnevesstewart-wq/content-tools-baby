@@ -28,6 +28,7 @@ type LightingState = {
 	AtmosphereColor: Color3,
 }
 local baseline: LightingState
+local override: LightingState? = nil
 
 local function now(): number
 	return workspace:GetServerTimeNow()
@@ -40,7 +41,8 @@ local function publish()
 	workspace:SetAttribute("NextWeatherAt", nextAt)
 end
 
-local function applyLighting(state: LightingState)
+local function applyLighting(requested: LightingState)
+	local state = override or requested
 	local info = TweenInfo.new(4, Enum.EasingStyle.Sine)
 	TweenService:Create(Lighting, info, {
 		ClockTime = state.ClockTime,
@@ -86,6 +88,12 @@ local function endEvent()
 	if ended then
 		Notify.all(ended.emoji .. " " .. ended.name .. " is over. Check the forecast TV for the next one!", "info")
 	end
+end
+
+-- Forces a look (the Mega-Storm's dark sky) until cleared with nil.
+function WeatherService.setLightingOverride(state: LightingState?)
+	override = state
+	applyLighting(if current then current.lighting else baseline)
 end
 
 function WeatherService.current(): WeatherEvents.WeatherEvent?

@@ -49,6 +49,11 @@ local productHandlers: { [string]: (Player, any) -> boolean } = {
 	EmergencyLock = function(player)
 		return PlotService.lock(player, Config.Lock.EmergencyDuration, true)
 	end,
+	RaidShield = function(player, data)
+		data.raidShields += 1
+		Notify.player(player, "🛡️ Raid Shield ready! You have " .. data.raidShields .. ".", "success")
+		return true
+	end,
 	SummonWeather = function(player)
 		WeatherService.summon("RainbowHour", player.DisplayName)
 		return true
