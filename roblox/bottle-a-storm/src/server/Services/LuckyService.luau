@@ -1,5 +1,5 @@
 -- Lucky Blocks mode: glowing ❓ blocks appear on every island (at the start
--- and every Config.Lucky.Interval seconds). Hit one with your sword 3 times
+-- and every Config.Lucky.Interval seconds). Hit one 3 times with your sword or pickaxe
 -- and it bursts open: usually something great (a diamond sword, armor, TNT,
 -- resources...), sometimes a nasty surprise (an explosion, lightning, a
 -- launch into the sky, getting frozen in ice).
@@ -336,6 +336,16 @@ local function groundAt(spot: Vector3): Vector3?
 	return if hit then hit.Position else nil
 end
 
+-- Never on (or next to) a generator, bed, shop or spawn pad.
+local function nearProtected(spot: Vector3): boolean
+	for _, protected in MatchService.protectedSpots() do
+		if ((protected - spot) * Vector3.new(1, 0, 1)).Magnitude < 12 then
+			return true
+		end
+	end
+	return false
+end
+
 local function count(): number
 	return if folder then #folder:GetChildren() else 0
 end
@@ -348,8 +358,9 @@ local function scatter(frame: CFrame, amount: number, minR: number, maxR: number
 		local angle = rng:NextNumber(0, math.pi * 2)
 		local r = rng:NextNumber(minR, maxR)
 		local spot = Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
-		if not blocked(spot) then
-			local ground = groundAt(frame:PointToWorldSpace(spot))
+		local world = frame:PointToWorldSpace(spot)
+		if not blocked(spot) and not nearProtected(world) then
+			local ground = groundAt(world)
 			if ground then
 				placed += 1
 				local block = makeBlock(ground + Vector3.new(0, Config.Lucky.Size / 2 + 0.3, 0))
@@ -376,13 +387,14 @@ local function open(block: BasePart, player: Player)
 	Notify.player(player, "🍀 " .. (if ok then message else "Lucky!"), if ok then "success" else "info")
 end
 
-local function onSwung(player: Player, aim: Vector3, _weaponName: string)
+-- A sword, pickaxe or axe hit near a lucky block. Returns whether one was hit.
+local function hitBlock(player: Player, aim: Vector3): boolean
 	if not active or not folder or not MatchService.isPlaying(player) then
-		return
+		return false
 	end
 	local root = rootOf(player)
 	if not root then
-		return
+		return false
 	end
 	local best: BasePart? = nil
 	local bestDistance = Config.Match.SwordRange + 2
@@ -397,13 +409,13 @@ local function onSwung(player: Player, aim: Vector3, _weaponName: string)
 		end
 	end
 	if not best then
-		return
+		return false
 	end
 	local block = best :: BasePart
 	local hits = (block:GetAttribute("Hits") or 0) + 1
 	if hits >= Config.Lucky.Hits then
 		open(block, player)
-		return
+		return true
 	end
 	block:SetAttribute("Hits", hits)
 	block.Color = GOLD:Lerp(Color3.fromRGB(255, 120, 40), hits / Config.Lucky.Hits)
@@ -414,12 +426,16 @@ local function onSwung(player: Player, aim: Vector3, _weaponName: string)
 		"❓ " .. left .. " more " .. (if left == 1 then "hit!" else "hits!"),
 		block.Position + Vector3.new(0, 3, 0)
 	)
+	return true
 end
 
 ---------------------------------------------------------------------------
 
 function LuckyService.start()
-	CombatService.Swung:Connect(onSwung)
+	CombatService.Swung:Connect(function(player, aim)
+		hitBlock(player, aim)
+	end)
+	GadgetService.hitLucky = hitBlock
 	MatchService.MatchStarted:Connect(function()
 		if workspace:GetAttribute("MatchMode") ~= "Lucky" then
 			return
@@ -431,7 +447,7 @@ function LuckyService.start()
 		newFolder.Name = "LuckyBlocks"
 		newFolder.Parent = workspace
 		folder = newFolder
-		Notify.all("🍀 Lucky Blocks! Hit a ❓ block 3 times with your sword for a surprise.", "rare")
+		Notify.all("🍀 Lucky Blocks! Hit a ❓ block 3 times with your sword or pickaxe for a surprise.", "rare")
 		task.spawn(function()
 			task.wait(2)
 			while active and round == myRound and MatchService.phase() == "playing" do

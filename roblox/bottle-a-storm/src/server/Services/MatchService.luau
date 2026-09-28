@@ -139,6 +139,27 @@ function MatchService.teamCount(): number
 	return startedTeams
 end
 
+-- Places nobody may dig or drop things on: beds, generators, shops and
+-- spawn pads.
+function MatchService.protectedSpots(): { Vector3 }
+	local spots = {}
+	for _, team in teams do
+		table.insert(spots, team.spawn.Position - Vector3.new(0, 4, 0))
+		table.insert(spots, (team.frame * CFrame.new(0, 0, 22)).Position) -- bed
+		table.insert(spots, (team.frame * CFrame.new(-14, 0, -12)).Position) -- shop
+		if team.generator then
+			table.insert(spots, team.generator.pad.Position)
+		end
+	end
+	for _, generator in middleGenerators do
+		table.insert(spots, generator.pad.Position)
+	end
+	return spots
+end
+
+-- Called (in order, before the map theme is undone) when a match is over.
+MatchService.beforeReset = {} :: { () -> () }
+
 -- The island top-center frames of the teams in this match (-Z faces the
 -- middle island).
 function MatchService.teamFrames(): { CFrame }
@@ -414,6 +435,11 @@ local function makeGenerator(
 	kinds: { [string]: { every: number, cap: number } },
 	team: MatchTeam?
 ): Generator
+	-- Nothing may cover a generator: clear any rock or ground bump above
+	-- the island's surface around it, so you can always stand on the pad.
+	pcall(function()
+		workspace.Terrain:FillBlock(at * CFrame.new(0, 6, 0), Vector3.new(14, 12, 14), Enum.Material.Air)
+	end)
 	-- A stone pedestal with an iron rim, four little pillars with glowing
 	-- orbs, and a glowing plate you stand on to pick things up.
 	local base = part(parent, {
@@ -718,7 +744,15 @@ local function runGenerator(generator: Generator, dt: number, speed: number)
 	if total > 0 then
 		for _, player in Players:GetPlayers() do
 			local root = rootOf(player)
-			if root and MatchService.isPlaying(player) and (root.Position - generator.pad.Position).Magnitude < 5 then
+			local offset = root and (root.Position - generator.pad.Position)
+			-- Anywhere on or right next to the pad counts (even on a block over it).
+			if
+				root
+				and offset
+				and MatchService.isPlaying(player)
+				and (offset * Vector3.new(1, 0, 1)).Magnitude < 6
+				and math.abs(offset.Y) < 8
+			then
 				for key, amount in generator.stock do
 					if amount > 0 then
 						MatchService.addResource(player, key, amount)
@@ -838,6 +872,13 @@ local function onDied(player: Player)
 end
 
 local function resetToLobby()
+	-- Services put the ground back (dug holes) before the map theme is undone.
+	for _, cleanup in MatchService.beforeReset do
+		local ok, problem = pcall(cleanup)
+		if not ok then
+			warn("[Bottle a Storm] Cleanup failed: " .. tostring(problem))
+		end
+	end
 	MatchService.MatchEnded:Fire()
 	pcall(MapService.reset)
 	for _, team in teams do

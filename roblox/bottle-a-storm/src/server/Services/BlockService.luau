@@ -160,10 +160,11 @@ end
 
 -- A swing at `aim` (sword power 1, or a pickaxe/axe): damages the placed
 -- block nearest to it, if any. The axe does double on wood and wool.
-function BlockService.hit(player: Player, aim: Vector3, power: number?, axe: boolean?)
+-- Hits the placed block nearest `aim`. Returns whether it hit one.
+function BlockService.hit(player: Player, aim: Vector3, power: number?, axe: boolean?): boolean
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root or (aim - root.Position).Magnitude > Config.Match.SwordRange + SIZE then
-		return
+		return false
 	end
 	local best: BasePart? = nil
 	local bestDistance = SIZE
@@ -176,7 +177,7 @@ function BlockService.hit(player: Player, aim: Vector3, power: number?, axe: boo
 		end
 	end
 	if not best then
-		return
+		return false
 	end
 	local block = best :: BasePart
 	local amount = power or 1
@@ -184,6 +185,7 @@ function BlockService.hit(player: Player, aim: Vector3, power: number?, axe: boo
 		amount *= 2
 	end
 	damageBlock(block, amount)
+	return true
 end
 
 -- An explosion: every placed block within `radius` takes `hits` damage

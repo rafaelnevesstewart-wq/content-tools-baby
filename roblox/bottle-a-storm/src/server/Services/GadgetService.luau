@@ -1,5 +1,6 @@
 -- Bed Wars gadgets: Storm TNT, Fireballs, potions (speed, jump,
--- invisibility), and pickaxes and axes that break placed blocks faster.
+-- invisibility), and pickaxes and axes that break placed blocks faster and
+-- dig into the ground. Everyone always has at least a Wood Pickaxe.
 -- The client only aims and asks (WeaponController, BlockController);
 -- everything is checked here.
 
@@ -33,6 +34,9 @@ type Kit = {
 }
 
 local kits: { [Player]: Kit } = {}
+-- Ground dug up this match: the terrain as it was, to put back afterwards.
+local dug: { { region: Region3, materials: any, occupancies: any } } = {}
+local dugCells: { [string]: boolean } = {}
 local lastUse: { [Player]: number } = {}
 local lastMine: { [Player]: number } = {}
 local effects: { [Player]: { [string]: number } } = {} -- potion -> ends at (os.clock)
@@ -328,6 +332,66 @@ local function drink(player: Player, key: string)
 	end)
 end
 
+-- Set by LuckyService: hits a lucky block near `aim` (true if it did).
+GadgetService.hitLucky = function(_player: Player, _aim: Vector3): boolean
+	return false
+end
+
+-- Digs a hole in the island ground at `aim`. Returns whether it dug.
+local function dig(player: Player, aim: Vector3, power: number): boolean
+	local root = rootOf(player)
+	if not root or (aim - root.Position).Magnitude > Config.Match.BlockReach or aim.Y < Config.Match.DigDepth then
+		return false
+	end
+	for _, spot in MatchService.protectedSpots() do
+		if (spot - aim).Magnitude < Config.Match.DigKeepAway then
+			Notify.player(player, "⛏️ You can't dig next to beds, generators, shops or spawns.", "error")
+			return false
+		end
+	end
+	local terrain = workspace.Terrain
+	-- Remember the ground here (in fixed 8-stud cells) before the first dig.
+	local base = Vector3.new(math.floor(aim.X / 8) * 8, math.floor(aim.Y / 8) * 8, math.floor(aim.Z / 8) * 8)
+	local region = Region3.new(base - Vector3.one * 4, base + Vector3.one * 12)
+	local materials, occupancies = terrain:ReadVoxels(region, 4)
+	local solid = false
+	local size = materials.Size
+	for x = 1, size.X do
+		for y = 1, size.Y do
+			for z = 1, size.Z do
+				local material = materials[x][y][z]
+				if material ~= Enum.Material.Air and material ~= Enum.Material.Water then
+					solid = true
+				end
+			end
+		end
+	end
+	if not solid then
+		return false
+	end
+	local cell = tostring(base)
+	if not dugCells[cell] then
+		dugCells[cell] = true
+		table.insert(dug, { region = region, materials = materials, occupancies = occupancies })
+	end
+	terrain:FillBall(aim, Config.Match.DigRadius + power * 0.2, Enum.Material.Air)
+	Juice.sound(player, "pop")
+	return true
+end
+
+-- Puts every dug hole back, newest first so overlapping cells end up as
+-- they were at the start.
+local function refill()
+	for index = #dug, 1, -1 do
+		local entry = dug[index]
+		pcall(function()
+			workspace.Terrain:WriteVoxels(entry.region, 4, entry.materials, entry.occupancies)
+		end)
+	end
+	dug = {}
+	dugCells = {}
+end
+
 local function mine(player: Player, aim: Vector3)
 	local kit = kitOf(player)
 	local character = player.Character
@@ -338,7 +402,11 @@ local function mine(player: Player, aim: Vector3)
 	for key, info in MatchData.Tools do
 		local tier = if key == "Pickaxe" then kit.pickaxe else kit.axe
 		if tier > 0 and character and character:FindFirstChild(key) then
-			BlockService.hit(player, aim, info.tiers[tier].power, key == "Axe")
+			local power = info.tiers[tier].power
+			-- A placed block first, then a lucky block, then the ground.
+			if not BlockService.hit(player, aim, power, key == "Axe") and not GadgetService.hitLucky(player, aim) then
+				dig(player, aim, power)
+			end
 			return
 		end
 	end
@@ -418,7 +486,7 @@ function GadgetService.start()
 	MatchService.PlayerSpawned:Connect(function(player)
 		-- Tools drop one tier; everything else is lost.
 		local kit = kitOf(player)
-		kit.pickaxe = math.max(math.min(kit.pickaxe, 1), kit.pickaxe - 1)
+		kit.pickaxe = math.max(1, kit.pickaxe - 1) -- never less than a Wood Pickaxe
 		kit.axe = math.max(math.min(kit.axe, 1), kit.axe - 1)
 		kit.tnt = 0
 		kit.fireballs = 0
@@ -432,6 +500,7 @@ function GadgetService.start()
 		refreshTools(player)
 		applyMovement(player)
 	end)
+	table.insert(MatchService.beforeReset, refill)
 	MatchService.MatchEnded:Connect(function()
 		for player in kits do
 			for _, name in TOOL_NAMES do

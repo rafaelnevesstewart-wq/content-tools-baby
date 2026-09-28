@@ -51,6 +51,11 @@ Config.Match = {
 	-- Blocks.
 	BlockSize = 3,
 	BlockReach = 20,
+	-- Digging: a pickaxe or axe also digs into the islands' ground. Holes
+	-- are filled back in after the match.
+	DigRadius = 2.6,
+	DigDepth = -8, -- can't dig deeper than this (the island's rocky bottom)
+	DigKeepAway = 9, -- studs from beds, generators, shops and spawns
 	MaxBlockHeight = 70,
 	BedBreakSeconds = 2.5,
 }
