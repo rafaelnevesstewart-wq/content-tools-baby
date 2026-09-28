@@ -96,13 +96,34 @@ function BaseBuilder.start()
 		Name = "Window", -- frees the mouse so you can aim and click
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -12),
-		Size = UDim2.fromOffset(0, 58),
-		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(620, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = UI.Colors.Panel,
 		BackgroundTransparency = 0.1,
 		Visible = false,
 		Parent = screen,
-	}, { UI.corner(12), UI.stroke(UI.Colors.Stroke, 2), UI.padding(5), UI.list(4, Enum.FillDirection.Horizontal) })
+	}, {
+		UI.corner(12),
+		UI.stroke(UI.Colors.Stroke, 2),
+		UI.padding(5),
+		-- Wraps onto more rows on narrow (phone) screens.
+		UI.new("UIListLayout", {
+			Padding = UDim.new(0, 4),
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Wraps = true,
+		}),
+	})
+	local function fitPalette()
+		local camera = workspace.CurrentCamera
+		local width = if camera then camera.ViewportSize.X - 24 else 620
+		palette.Size = UDim2.fromOffset(math.clamp(width, 240, 620), 0)
+	end
+	fitPalette()
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitPalette)
+	end
 	local function addButton(order: number, key: string, text: string, color: Color3?, onClick: () -> ()): TextButton
 		local button = UI.button({
 			LayoutOrder = order,

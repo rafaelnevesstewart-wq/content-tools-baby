@@ -83,6 +83,12 @@ CombatService.duelOpponent = function(_player: Player): Player?
 	return nil
 end
 
+-- Set by ArenaCupService: whether two players are on opposite sides of a
+-- 🏟️ 2v2 arena fight right now.
+CombatService.duelFoe = function(_player: Player, _other: Player): boolean
+	return false
+end
+
 type Gear = {
 	sword: number,
 	armor: number,
@@ -454,6 +460,7 @@ local function onSwing(player: Player, aim: any)
 		local otherRoot = rootOf(other)
 		local foe = (playing and MatchService.isEnemy(player, other) and MatchService.isPlaying(other))
 			or (opponent ~= nil and other == opponent)
+			or CombatService.duelFoe(player, other)
 		if other ~= player and otherRoot and foe then
 			local offset = otherRoot.Position - root.Position
 			local distance = offset.Magnitude

@@ -53,6 +53,11 @@ BaseData.Blocks = {
 export type Furniture = { key: string, name: string, emoji: string, color: Color3 }
 
 BaseData.Furniture = {
+	-- 🧱 Building pieces (they turn too).
+	{ key = "Stairs", name = "Stairs", emoji = "🪜", color = rgb(150, 150, 155) },
+	{ key = "Slab", name = "Half Block", emoji = "▬", color = rgb(160, 160, 165) },
+	{ key = "Window", name = "Window", emoji = "🪟", color = rgb(190, 230, 255) },
+	{ key = "Door", name = "Door (2 tall)", emoji = "🚪", color = rgb(130, 85, 50) },
 	{ key = "Chair", name = "Chair", emoji = "🪑", color = rgb(150, 105, 65) },
 	{ key = "Table", name = "Table", emoji = "🍽️", color = rgb(160, 115, 70) },
 	{ key = "Bed", name = "Bed", emoji = "🛏️", color = rgb(200, 70, 80) },

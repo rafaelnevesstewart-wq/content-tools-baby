@@ -340,7 +340,14 @@ function TournamentService.start()
 				local weekday = tonumber(os.date("!%w", now)) -- 0 = Sunday, 6 = Saturday
 				local slot = math.floor(now / (Config.Tournament.EveryMinutes * 60))
 				local phase = MatchService.phase()
-				if (weekday == 0 or weekday == 6) and slot ~= lastSlot and phase ~= "playing" and phase ~= "ended" then
+				local cupOn = workspace:GetAttribute("ArenaCupOn") == true -- 🏟️ the 2v2 cup has the arena
+				if
+					(weekday == 0 or weekday == 6)
+					and slot ~= lastSlot
+					and phase ~= "playing"
+					and phase ~= "ended"
+					and not cupOn
+				then
 					lastSlot = slot
 					openSignup(nil)
 				end

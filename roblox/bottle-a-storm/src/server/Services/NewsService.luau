@@ -45,7 +45,11 @@ local function happening(): { string }
 		table.insert(lines, "⚔️ Waiting for the next match")
 	end
 	if type(workspace:GetAttribute("BossHealth")) == "number" then
-		table.insert(lines, "🐉 The Storm Dragon is attacking the middle island!")
+		local name = workspace:GetAttribute("BossName")
+		table.insert(
+			lines,
+			(if type(name) == "string" then name else "🐉 Storm Dragon") .. " is attacking the middle island!"
+		)
 	end
 	local wave = workspace:GetAttribute("ZombieWave")
 	if type(wave) == "number" and wave > 0 then
@@ -65,6 +69,9 @@ local function happening(): { string }
 		table.insert(lines, "🎨 Vote in the build contest now!")
 	end
 	table.insert(lines, "🗺️ New treasure hunt clues every day (top right)!")
+	if workspace:GetAttribute("ArenaCupOn") then
+		table.insert(lines, "🏟️ The 2v2 Arena Cup is on in the castle arena!")
+	end
 	local costumeRaw = workspace:GetAttribute("Costume")
 	local costumeOk, costume =
 		pcall(HttpService.JSONDecode, HttpService, if type(costumeRaw) == "string" then costumeRaw else "{}")

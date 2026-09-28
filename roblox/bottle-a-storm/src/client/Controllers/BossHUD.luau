@@ -1,5 +1,6 @@
--- The 🐉 Storm Dragon's health bar at the top of the screen while it's
--- attacking (BossService shares "BossHealth" and "BossMax").
+-- The boss's (🐉 Storm Dragon or 🐍 Sea Serpent) health bar at the top of the
+-- screen while it's attacking (BossService shares "BossHealth", "BossMax"
+-- and "BossName").
 
 local TweenService = game:GetService("TweenService")
 
@@ -41,7 +42,8 @@ function BossHUD.start()
 			return
 		end
 		frame.Visible = true
-		text.Text = "🐉 Storm Dragon  " .. health .. " / " .. max
+		local name = workspace:GetAttribute("BossName")
+		text.Text = (if type(name) == "string" then name else "🐉 Storm Dragon") .. "  " .. health .. " / " .. max
 		TweenService:Create(fill, TweenInfo.new(0.2), { Size = UDim2.fromScale(math.clamp(health / max, 0, 1), 1) })
 			:Play()
 	end

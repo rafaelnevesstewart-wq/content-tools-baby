@@ -37,6 +37,7 @@ local EVENTS = {
 	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed
 	"UseGadget", -- client -> server: ("TNT" | "Fireball" | "Rocket" | potion key | "Mine", aimPoint)
 	"Glide", -- client -> server: (on) you started or stopped gliding (the wings show)
+	"ArenaCupAction", -- client -> server: ("join" | "leave") the 🏟️ 2v2 Arena Cup sign-ups
 	"BoatAction", -- client -> server: ("stop") quit the 🚤 Sky Boat Race
 	"PickClass", -- client -> server: (classKey) your 🧙 class for the next match
 	"Fish", -- client -> server: ("cast", aimPoint) or ("reel") with the Fishing Rod
@@ -75,6 +76,7 @@ local FUNCTIONS = {
 	"GetGifts", -- client -> server: (userId) -> what you could gift them and your Sparks
 	"SendGift", -- client -> server: (userId, cosmeticId) -> (ok, message)
 	"CustomRules", -- client -> server: ("get") -> the rules, or ("set", optionKey, choice) -> ok (private server owner)
+	"PlayerShop", -- client -> server: ("info") -> the 🏪 Player Market, or ("sell" | "cancel" | "buy", a, b) -> (ok, message)
 	"Costume", -- client -> server: ("info") -> costume party info, or ("look" | "vote", userId, stars) -> (ok, message)
 	"PuzzleCode", -- client -> server: (fourDigits) -> (ok, message) the 🔐 Code Door
 	"GetFish", -- client -> server: () -> your Fish Book (caught counts, best weights)

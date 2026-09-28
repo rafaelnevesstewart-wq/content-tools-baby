@@ -35,7 +35,61 @@ end
 local WOOD = rgb(150, 105, 65)
 local DARK = rgb(96, 66, 42)
 
+local STONE = rgb(150, 150, 155)
+
+-- 🚪 A door swings open and shut when anyone uses its handle.
+local function door(parent: Instance, c: CFrame)
+	local floor = c * CFrame.new(0, -1.5, 0)
+	local frame = rgb(110, 76, 44)
+	for _, x in { -1.35, 1.35 } do
+		piece(parent, Vector3.new(0.3, 6, 0.6), floor * CFrame.new(x, 3, 0), frame, M.Wood)
+	end
+	piece(parent, Vector3.new(3, 0.3, 0.6), floor * CFrame.new(0, 5.85, 0), frame, M.Wood)
+	local hinge = floor * CFrame.new(-1.2, 0, 0)
+	local closed = hinge * CFrame.new(1.2, 2.85, 0)
+	local open = hinge * CFrame.Angles(0, math.rad(-90), 0) * CFrame.new(1.2, 2.85, 0)
+	local panel = piece(parent, Vector3.new(2.4, 5.6, 0.25), closed, rgb(150, 100, 60), M.WoodPlanks)
+	panel.Name = "DoorPanel"
+	local knob = piece(parent, Vector3.new(0.25, 0.25, 0.5), closed * CFrame.new(0.9, 0, 0), rgb(230, 190, 80), M.Foil)
+	knob.CanCollide = false
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Open"
+	prompt.ObjectText = "🚪 Door"
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = 7
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = panel
+	local isOpen = false
+	prompt.Triggered:Connect(function()
+		isOpen = not isOpen
+		local at = if isOpen then open else closed
+		panel.CFrame = at
+		knob.CFrame = at * CFrame.new(0.9, 0, 0)
+		prompt.ActionText = if isOpen then "Close" else "Open"
+	end)
+end
+
 local BUILDERS: { [string]: (Instance, CFrame) -> () } = {
+	Stairs = function(parent, c)
+		local floor = c * CFrame.new(0, -1.5, 0)
+		-- Three steps going up toward the back.
+		for step = 1, 3 do
+			piece(parent, Vector3.new(3, step, 1), floor * CFrame.new(0, step / 2, -1.5 + (step - 0.5)), STONE, M.Brick)
+		end
+	end,
+	Slab = function(parent, c)
+		piece(parent, Vector3.new(3, 1.5, 3), c * CFrame.new(0, -0.75, 0), STONE, M.Brick)
+	end,
+	Window = function(parent, c)
+		-- A stone wall block with a glass pane in the middle.
+		piece(parent, Vector3.new(3, 0.5, 3), c * CFrame.new(0, 1.25, 0), STONE, M.Brick)
+		piece(parent, Vector3.new(3, 0.5, 3), c * CFrame.new(0, -1.25, 0), STONE, M.Brick)
+		for _, x in { -1.25, 1.25 } do
+			piece(parent, Vector3.new(0.5, 2, 3), c * CFrame.new(x, 0, 0), STONE, M.Brick)
+		end
+		piece(parent, Vector3.new(2, 2, 0.2), c, rgb(190, 230, 255), M.Glass, { Transparency = 0.5 })
+	end,
+	Door = door,
 	Chair = function(parent, c)
 		local floor = c * CFrame.new(0, -1.5, 0)
 		piece(parent, Vector3.new(1.8, 0.25, 1.8), floor * CFrame.new(0, 1.3, 0), WOOD, M.Wood)

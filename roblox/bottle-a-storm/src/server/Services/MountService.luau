@@ -102,7 +102,10 @@ local function mount(player: Player)
 	player:SetAttribute("MountFlies", kind.flies == true)
 end
 
-local function tryTame(_helpers: { Player }, damage: { [Player]: number }?)
+local function tryTame(_helpers: { Player }, damage: { [Player]: number }?, kind: string?)
+	if kind == "Serpent" then
+		return -- only the Storm Dragon can be tamed
+	end
 	local best, most = nil, 0
 	local hits: { [Player]: number } = damage or {}
 	for player, amount in hits do

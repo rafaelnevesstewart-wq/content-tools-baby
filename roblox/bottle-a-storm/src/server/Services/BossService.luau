@@ -5,6 +5,10 @@
 -- with swords; bows, fireballs and TNT work any time). Beat it and everyone
 -- who helped gets Sparks, and the team that did the most damage gets a pile
 -- of Crystals and Cores. If nobody beats it, it flies away.
+--
+-- 🐍 On the 🌊 Bubble Reef map the boss is the Sea Serpent instead: a long
+-- wriggling serpent that swims around the middle island spitting water
+-- bubbles, then rears up and slams down a tidal wave. Same fight, same loot.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -23,23 +27,28 @@ local Notify = require(Modules.Notify)
 
 local BlockService = require(script.Parent.BlockService)
 local CombatService = require(script.Parent.CombatService)
+local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local MatchService = require(script.Parent.MatchService)
 
 local BossService = {}
 
--- (helpers) the dragon was beaten: everyone who hurt it.
+-- (helpers, damage, kind) the boss was beaten: everyone who hurt it, how
+-- much each did, and "Dragon" or "Serpent".
 BossService.Defeated = Signal.new()
 
-local NAME = "🐉 Storm Dragon"
 local PURPLE = Color3.fromRGB(70, 48, 118)
 local BELLY = Color3.fromRGB(150, 128, 206)
 local WING = Color3.fromRGB(46, 30, 84)
 local HORN = Color3.fromRGB(230, 220, 200)
 
-type Piece = { part: BasePart, offset: CFrame, wing: number? } -- wing: -1 left, 1 right
+-- wing: -1 left, 1 right (flaps); seg: which body segment it rides on (the
+-- serpent's body wriggles, 0 is the head).
+type Piece = { part: BasePart, offset: CFrame, wing: number?, seg: number? }
 
 type Boss = {
+	kind: string, -- "Dragon" | "Serpent"
+	name: string,
 	model: Model,
 	body: BasePart,
 	head: BasePart,
@@ -69,7 +78,7 @@ end
 -- The model
 ---------------------------------------------------------------------------
 
-local function build(): Boss
+local function buildDragon(): Boss
 	local model = Instance.new("Model")
 	model.Name = "StormDragon"
 	local pieces: { Piece } = {}
@@ -219,6 +228,8 @@ local function build(): Boss
 
 	model.PrimaryPart = body
 	return {
+		kind = "Dragon",
+		name = "🐉 Storm Dragon",
 		model = model,
 		body = body,
 		head = head,
@@ -237,11 +248,169 @@ local function build(): Boss
 	}
 end
 
--- Puts every piece where it belongs for the dragon's pose (wings flapping).
+-- 🐍 The Sea Serpent: a big finned head and a long tail of shrinking
+-- segments with fins, in teal and gold.
+local SEA = Color3.fromRGB(40, 150, 150)
+local SEA_BELLY = Color3.fromRGB(230, 210, 140)
+local FIN = Color3.fromRGB(60, 200, 190)
+local SEGMENTS = 12
+
+local function buildSerpent(): Boss
+	local model = Instance.new("Model")
+	model.Name = "SeaSerpent"
+	local pieces: { Piece } = {}
+	local function add(
+		name: string,
+		size: Vector3,
+		offset: CFrame,
+		color: Color3,
+		material: Enum.Material,
+		seg: number,
+		shape: string?
+	): Part
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanTouch = false
+		p.Size = size
+		p.Color = color
+		p.Material = material
+		if shape then
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = if shape == "ball" then Enum.MeshType.Sphere else Enum.MeshType.Wedge
+			mesh.Parent = p
+		end
+		p.Parent = model
+		table.insert(pieces, { part = p, offset = offset, seg = seg })
+		return p
+	end
+	local head = add("Head", Vector3.new(6, 5, 9), CFrame.new(0, 0, -2), SEA, Enum.Material.Glass, 0, "ball")
+	add("Jaw", Vector3.new(4.6, 1.6, 6), CFrame.new(0, -2, -3.6), SEA_BELLY, Enum.Material.SmoothPlastic, 0, "ball")
+	for _, side in { -1, 1 } do
+		local eye = add(
+			"Eye",
+			Vector3.one * 1.2,
+			CFrame.new(side * 2.2, 1, -5),
+			Color3.fromRGB(255, 240, 120),
+			Enum.Material.Neon,
+			0,
+			"ball"
+		)
+		eye.CanQuery = false
+		add(
+			"Fin",
+			Vector3.new(0.4, 3, 4),
+			CFrame.new(side * 3.2, 1.2, 0.5) * CFrame.Angles(0, 0, side * math.rad(-40)),
+			FIN,
+			Enum.Material.Glass,
+			0,
+			"wedge"
+		)
+	end
+	add(
+		"Crest",
+		Vector3.new(0.5, 3.4, 6),
+		CFrame.new(0, 3.4, 0) * CFrame.Angles(0, math.pi, 0),
+		Color3.fromRGB(240, 196, 70),
+		Enum.Material.Foil,
+		0,
+		"wedge"
+	)
+	local body: Part = head
+	for i = 1, SEGMENTS do
+		local size = 5.4 - i * 0.3
+		local segment = add("Segment", Vector3.new(size, size, 4.6), CFrame.new(), SEA, Enum.Material.Glass, i, "ball")
+		if i == 1 then
+			body = segment
+		end
+		add(
+			"Belly",
+			Vector3.new(size * 0.8, size * 0.5, 4),
+			CFrame.new(0, -size * 0.3, 0),
+			SEA_BELLY,
+			Enum.Material.SmoothPlastic,
+			i,
+			"ball"
+		)
+		if i % 2 == 0 then
+			add(
+				"BackFin",
+				Vector3.new(0.3, size * 0.6, 2.6),
+				CFrame.new(0, size * 0.6, 0) * CFrame.Angles(0, math.pi, 0),
+				FIN,
+				Enum.Material.Glass,
+				i,
+				"wedge"
+			)
+		end
+	end
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(120, 230, 255)
+	light.Range = 24
+	light.Brightness = 2
+	light.Parent = head
+	local bubbles = Instance.new("ParticleEmitter")
+	bubbles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	bubbles.Color = ColorSequence.new(Color3.fromRGB(210, 240, 255))
+	bubbles.Size = NumberSequence.new(0.5, 1)
+	bubbles.Transparency = NumberSequence.new(0.2, 1)
+	bubbles.Lifetime = NumberRange.new(1, 2)
+	bubbles.Rate = 12
+	bubbles.Speed = NumberRange.new(2, 4)
+	bubbles.Parent = head
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.fromOffset(260, 44)
+	gui.StudsOffset = Vector3.new(0, 9, 0)
+	gui.AlwaysOnTop = true
+	gui.MaxDistance = 400
+	gui.Parent = head
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = Enum.Font.GothamBlack
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(180, 255, 250)
+	label.TextStrokeTransparency = 0.2
+	label.Parent = gui
+	model.PrimaryPart = head
+	return {
+		kind = "Serpent",
+		name = "🐍 Sea Serpent",
+		model = model,
+		body = body,
+		head = head,
+		pieces = pieces,
+		health = 0,
+		maxHealth = 0,
+		damage = {},
+		pose = CFrame.new(0, 160, -320),
+		state = "arrive",
+		stateEndsAt = 0,
+		angle = 0,
+		nextFire = 0,
+		nextStomp = 0,
+		dead = false,
+		label = label,
+	}
+end
+
+-- Puts every piece where it belongs for the boss's pose (wings flapping, the
+-- serpent's body wriggling).
 local function place(b: Boss, t: number)
 	local flap = if b.state == "land" then math.sin(t * 2) * 0.15 else math.sin(t * 5) * 0.55
 	for _, piece in b.pieces do
-		if piece.wing then
+		if piece.seg then
+			-- The serpent's segments follow the head in a wriggling line.
+			local seg = piece.seg
+			local sway = math.min(1, seg / 3)
+			local wiggle = CFrame.new(
+				math.sin(t * 3 - seg * 0.55) * 2.4 * sway,
+				math.sin(t * 2 - seg * 0.5) * 0.9 * sway,
+				seg * 3.8
+			)
+			piece.part.CFrame = b.pose * wiggle * piece.offset
+		elseif piece.wing then
 			local side = piece.wing
 			local shoulder = CFrame.new(side * 3.6, 2.4, -1)
 			local fromShoulder = shoulder:Inverse() * piece.offset
@@ -256,10 +425,12 @@ local function publish(b: Boss?)
 	if b and not b.dead then
 		workspace:SetAttribute("BossHealth", math.max(0, math.floor(b.health)))
 		workspace:SetAttribute("BossMax", b.maxHealth)
-		b.label.Text = NAME .. "  " .. math.max(0, math.floor(b.health)) .. " / " .. b.maxHealth
+		workspace:SetAttribute("BossName", b.name)
+		b.label.Text = b.name .. "  " .. math.max(0, math.floor(b.health)) .. " / " .. b.maxHealth
 	else
 		workspace:SetAttribute("BossHealth", nil)
 		workspace:SetAttribute("BossMax", nil)
+		workspace:SetAttribute("BossName", nil)
 	end
 end
 
@@ -273,7 +444,7 @@ local function onMiddle(position: Vector3): boolean
 		and position.Y < 60
 end
 
-local function hurtNear(center: Vector3, radius: number, damage: number, knock: number)
+local function hurtNear(name: string, center: Vector3, radius: number, damage: number, knock: number)
 	for _, player in Players:GetPlayers() do
 		local root = rootOf(player)
 		if root and MatchService.isPlaying(player) then
@@ -281,28 +452,33 @@ local function hurtNear(center: Vector3, radius: number, damage: number, knock: 
 			if offset.Magnitude <= radius then
 				local flat = offset * Vector3.new(1, 0, 1)
 				local direction = if flat.Magnitude > 0.1 then flat.Unit else Vector3.xAxis
-				CombatService.hurtByBot(player, damage, direction * knock + Vector3.new(0, knock * 0.6, 0), NAME, "")
+				CombatService.hurtByBot(player, damage, direction * knock + Vector3.new(0, knock * 0.6, 0), name, "")
 			end
 		end
 	end
 end
 
 local function fireball(b: Boss, target: Vector3)
+	local water = b.kind == "Serpent"
 	local ball = Instance.new("Part")
-	ball.Name = "DragonFireball"
+	ball.Name = if water then "WaterBubble" else "DragonFireball"
 	ball.Shape = Enum.PartType.Ball
-	ball.Size = Vector3.one * 2.4
+	ball.Size = Vector3.one * (if water then 3 else 2.4)
 	ball.Anchored = true
 	ball.CanCollide = false
 	ball.CanQuery = false
-	ball.Material = Enum.Material.Neon
-	ball.Color = Color3.fromRGB(255, 120, 40)
-	local fire = Instance.new("Fire")
-	fire.Size = 4
-	fire.Color = Color3.fromRGB(255, 150, 40)
-	fire.SecondaryColor = Color3.fromRGB(170, 70, 255)
-	fire.Parent = ball
-	local from = (b.pose * CFrame.new(0, 3.5, -16)).Position
+	ball.Material = if water then Enum.Material.Glass else Enum.Material.Neon
+	ball.Color = if water then Color3.fromRGB(120, 210, 255) else Color3.fromRGB(255, 120, 40)
+	ball.Transparency = if water then 0.3 else 0
+	if not water then
+		local fire = Instance.new("Fire")
+		fire.Size = 4
+		fire.Color = Color3.fromRGB(255, 150, 40)
+		fire.SecondaryColor = Color3.fromRGB(170, 70, 255)
+		fire.Parent = ball
+	end
+	local mouth = if water then CFrame.new(0, -1, -7) else CFrame.new(0, 3.5, -16)
+	local from = (b.pose * mouth).Position
 	Effects.lob(ball, from, target, 1.3, function()
 		Effects.confetti(target, 20)
 		local flash = Instance.new("Part")
@@ -311,14 +487,14 @@ local function fireball(b: Boss, target: Vector3)
 		flash.CanCollide = false
 		flash.CanQuery = false
 		flash.Material = Enum.Material.Neon
-		flash.Color = Color3.fromRGB(255, 150, 60)
+		flash.Color = if water then Color3.fromRGB(140, 220, 255) else Color3.fromRGB(255, 150, 60)
 		flash.Size = Vector3.one * 2
 		flash.CFrame = CFrame.new(target)
 		flash.Parent = workspace
 		TweenService:Create(flash, TweenInfo.new(0.35), { Size = Vector3.one * 14, Transparency = 1 }):Play()
 		Debris:AddItem(flash, 0.4)
 		BlockService.explode(target, 6, 2, { Obsidian = true })
-		hurtNear(target, 7, Config.Boss.FireballDamage, 40)
+		hurtNear(b.name, target, 7, Config.Boss.FireballDamage, 40)
 	end)
 end
 
@@ -330,7 +506,7 @@ local function stomp(b: Boss)
 	ring.CanCollide = false
 	ring.CanQuery = false
 	ring.Material = Enum.Material.Neon
-	ring.Color = Color3.fromRGB(190, 140, 255)
+	ring.Color = if b.kind == "Serpent" then Color3.fromRGB(90, 200, 255) else Color3.fromRGB(190, 140, 255)
 	ring.Transparency = 0.3
 	ring.Size = Vector3.new(0.4, 4, 4)
 	ring.CFrame = CFrame.new(ground) * CFrame.Angles(0, 0, math.rad(90))
@@ -344,7 +520,7 @@ local function stomp(b: Boss)
 			Juice.sound(player, "boom")
 		end
 	end
-	hurtNear(ground, Config.Boss.StompRadius, Config.Boss.StompDamage, 70)
+	hurtNear(b.name, ground, Config.Boss.StompRadius, Config.Boss.StompDamage, 70)
 end
 
 -- A player on the middle island to shoot at (or nil).
@@ -410,7 +586,13 @@ local function defeated(b: Boss)
 	end
 	for _, player in helpers do
 		IncomeService.addSparks(player, Config.Boss.HelperSparks)
-		Notify.player(player, "🐉 You helped beat the Storm Dragon! +⚡" .. Config.Boss.HelperSparks, "success")
+		Notify.player(player, "You helped beat the " .. b.name .. "! +⚡" .. Config.Boss.HelperSparks, "success")
+		if b.kind == "Serpent" then
+			local data = DataService.get(player)
+			if data then
+				data.stats.serpentsBeaten = (data.stats.serpentsBeaten or 0) + 1
+			end
+		end
 	end
 	if bestTeam then
 		for _, member in bestTeam.members do
@@ -418,16 +600,14 @@ local function defeated(b: Boss)
 				for key, amount in Config.Boss.TeamLoot do
 					MatchService.addResource(member, key, amount)
 				end
-				Notify.player(
-					member,
-					"🐉 Your team did the most damage: dragon loot (💎 Crystals and ⚡ Cores)!",
-					"rare"
-				)
+				Notify.player(member, "Your team did the most damage: boss loot (💎 Crystals and ⚡ Cores)!", "rare")
 				Juice.sound(member, "win")
 			end
 		end
 		Notify.all(
-			"🐉 The Storm Dragon was defeated! "
+			"The "
+				.. b.name
+				.. " was defeated! "
 				.. bestTeam.info.emoji
 				.. " "
 				.. bestTeam.info.name
@@ -435,9 +615,9 @@ local function defeated(b: Boss)
 			"rare"
 		)
 	else
-		Notify.all("🐉 The Storm Dragon was defeated!", "rare")
+		Notify.all("The " .. b.name .. " was defeated!", "rare")
 	end
-	BossService.Defeated:Fire(helpers, b.damage)
+	BossService.Defeated:Fire(helpers, b.damage, b.kind)
 end
 
 local function hurt(b: Boss, attacker: Player, amount: number)
@@ -463,7 +643,7 @@ local function spawnBoss()
 	if boss or MatchService.phase() ~= "playing" then
 		return
 	end
-	local b = build()
+	local b = if workspace:GetAttribute("MapTheme") == "Reef" then buildSerpent() else buildDragon()
 	local playing = 0
 	for _, player in Players:GetPlayers() do
 		if MatchService.isPlaying(player) then
@@ -478,7 +658,12 @@ local function spawnBoss()
 	place(b, os.clock())
 	boss = b
 	publish(b)
-	Notify.all("🐉 A Storm Dragon is attacking the middle island! Beat it for loot!", "rare")
+	Notify.all(
+		if b.kind == "Serpent"
+			then "🐍 A Sea Serpent is swimming around the middle island! Beat it for loot!"
+			else "🐉 A Storm Dragon is attacking the middle island! Beat it for loot!",
+		"rare"
+	)
 	for _, player in Players:GetPlayers() do
 		Juice.sound(player, "boom")
 	end
@@ -521,7 +706,9 @@ local function step(b: Boss, dt: number)
 			b.nextStomp = t + 2.5
 		end
 	elseif b.state == "land" then
-		local goal = CFrame.lookAt(Vector3.new(0, 6.5, 0), Vector3.new(0, 6.5, -10))
+		-- (The serpent rears up high over the middle.)
+		local height = if b.kind == "Serpent" then 9 else 6.5
+		local goal = CFrame.lookAt(Vector3.new(0, height, 0), Vector3.new(0, height, -10))
 		b.pose = b.pose:Lerp(goal, math.min(1, dt * 1.5))
 		if t >= b.nextStomp and (b.pose.Position - goal.Position).Magnitude < 2 then
 			b.nextStomp = t + Config.Boss.StompEvery
@@ -589,7 +776,12 @@ function BossService.start()
 				if b and not b.dead and round == myRound then
 					b.state = "leave"
 					b.stateEndsAt = os.clock() + 5
-					Notify.all("🐉 The Storm Dragon flew away... it'll be back!", "info")
+					Notify.all(
+						if b.kind == "Serpent"
+							then "🐍 The Sea Serpent swam away... it'll be back!"
+							else "🐉 The Storm Dragon flew away... it'll be back!",
+						"info"
+					)
 				end
 				task.wait(Config.Boss.Every)
 			end

@@ -235,6 +235,33 @@ shiny Legendary kit, ⚡10,000 and the 🌟 Challenger title.
 - 💎 **Robux shop:** VIP, Star Booster, Sparks, Golden Kit Crate, wheel spins, Battle Pass
   Premium, tier skips and Summon Rainbow Hour. Nothing sold makes you stronger in a match.
 
+## 🐍 Sea Serpent
+
+On the 🌊 Bubble Reef map the boss is the Sea Serpent instead of the Storm Dragon: a long
+wriggling serpent that swims around the middle island spitting water bubbles, then rears up
+and slams down a tidal wave. Same fight and loot (it can't be tamed); 5 wins earn 🐍 Serpent
+Slayer.
+
+## 🏪 Player Market
+
+At the kiosk at the start of Shop Street: **💰 Sell** puts up to 5 of your Sparks cosmetics on
+sale at your price, **🛒 Buy** shows everything on sale in the server. The seller gets the price
+minus a 10% fee and the cosmetic moves to the buyer (Robux and free cosmetics can't be sold).
+Listings end when you leave. Selling 10 earns 🏪 Merchant.
+
+## 🌠 Shooting stars
+
+At night, shooting stars streak across the sky and land somewhere on the lobby islands (you're
+told where). Find the glowing Wish Star and hold E to wish for a surprise: Sparks, a kit or a
+cosmetic. 3 wishes per star, 10 a day. 25 wishes earn 🌠 Star Gazer.
+
+## 🏟️ 2v2 Arena Cup
+
+Every 20 minutes (between matches) sign-ups open for a minute: tap 🏟️ at the top right. Party
+members are paired together, everyone else in the order they joined. Pairs fight in the castle
+arena in a knockout bracket (knock both enemies out or out of the ring). Winners get ⚡1,500
+each and the 🏟️ Arena Champion title.
+
 ## 🧙 Classes
 
 Before a match press **Class** (next to the mode vote) and pick one. It's saved for next
@@ -243,6 +270,11 @@ time.
 - 🏹 **Archer:** bow damage +25%, spawns with a Bow and 8 arrows.
 - 🧱 **Builder:** spawns with 16 Cloud Wool and a better pickaxe.
 - 💚 **Healer:** heals itself and teammates close by every 2 seconds; swords hit 10% softer.
+
+🎓 **Class levels:** each class earns XP when you play it (matches, wins, knockouts, beds) and
+levels up to 10. Every level makes its perks stronger (Knights take even less damage, Archers
+hit harder and get more arrows, Builders get more wool, Healers heal more and further). The
+class cards show your level and what it does now.
 
 ## 🌋 Disasters
 
@@ -260,9 +292,10 @@ Claiming 10 earns the 🎯 Bounty Hunter title.
 
 ## 🏠 Base furniture
 
-In the Builder bar press 🪑 to switch to furniture (chair, table, bed, sofa, lamp, plant,
-bookshelf, TV, rug, painting, fireplace, aquarium). 🔄 or **R** turns it. It's saved with
-your base.
+In the Builder bar press 🪑 to switch to furniture and building pieces: 🪜 stairs, ▬ half
+blocks, 🪟 windows, 🚪 doors (two cells tall; anyone can open and close them), chair, table,
+bed, sofa, lamp, plant, bookshelf, TV, rug, painting, fireplace and aquarium. 🔄 or **R** turns
+it. It's saved with your base.
 
 ## 🧩 Puzzle rooms
 
@@ -478,7 +511,8 @@ src/server/   Main.server.luau starts the services in order
               ContestService, FishingService, MonthlyService, PetHelperService,
               CustomMatchService, TreasureService (ZombieService also runs Castle Defense),
               ClassService, DisasterService, BountyService, PuzzleService, BoatService,
-              CostumeService, LegendsService
+              CostumeService, LegendsService, PlayerShopService, WishService,
+              ArenaCupService (BossService also runs the Sea Serpent)
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
               ItemModels (weapons and items), PetModels, MountModels (and the sky boat),
               FurnitureModels, StormModel (kit
@@ -497,7 +531,7 @@ src/client/   Main.client.luau starts the controllers
                BaseBuilder, EventClient (low gravity), GlideController, GuideTracker,
                ContestClient, Gift, FishingController, FishBook, MonthlyChip, PetHelpChip,
                CustomMatch, TreasureChip, PhotoMode, ClassPicker, DisasterChip, PuzzleCode,
-               BoatController, CostumeClient, Toasts, Sfx, UI
+               BoatController, CostumeClient, PlayerShop, ArenaCupClient, Toasts, Sfx, UI
 ```
 
 ## Known limits

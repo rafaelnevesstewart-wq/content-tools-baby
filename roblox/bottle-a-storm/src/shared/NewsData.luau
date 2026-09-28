@@ -9,6 +9,17 @@ local NewsData = {}
 
 NewsData.List = {
 	{
+		version = 12,
+		title = "🐍 A Sea Serpent, player shops and a 2v2 cup!",
+		lines = {
+			"🐍 The Sea Serpent boss swims in on the 🌊 Bubble Reef map",
+			"🏪 Sell your spare cosmetics at the Player Market (Shop Street)",
+			"🎓 Classes level up as you play them, with stronger perks",
+			"🌠 Shooting stars at night: find where they land and make a wish",
+			"🧱 Stairs, half blocks, windows and doors, 🏟️ the 2v2 Arena Cup",
+		},
+	},
+	{
 		version = 11,
 		title = "🧙 Classes, disasters and a boat race!",
 		lines = {

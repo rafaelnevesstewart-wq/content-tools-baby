@@ -66,6 +66,22 @@ local function makeFurniture(plot: Plot, i: number, j: number, k: number, key: s
 	end
 	holder:SetAttribute("Cell", cellKey(i, j, k))
 	holder:SetAttribute("Turn", turn)
+	-- 🚪 A door is two cells tall: it keeps the cell above it for itself.
+	local above = cellKey(i, j, k + 1)
+	if key == "Door" and BaseData.inside(i, j, k + 1) and not plot.cells[above] then
+		local top = Instance.new("Part")
+		top.Name = "DoorTop"
+		top.Anchored = true
+		top.CanCollide = false
+		top.Transparency = 1
+		top.Size = Vector3.one * (BaseData.CellSize - 0.1)
+		top.CFrame = cell * CFrame.new(0, BaseData.CellSize, 0)
+		top:SetAttribute("Cell", above)
+		top:SetAttribute("DoorOf", cellKey(i, j, k))
+		top.Parent = holder
+		plot.cells[above] = top
+		holder:SetAttribute("Top", above)
+	end
 	holder.Parent = plot.folder
 	plot.cells[cellKey(i, j, k)] = holder
 	return holder
@@ -379,6 +395,10 @@ local function onEdit(player: Player, action: any, i: any, j: any, k: any, key: 
 		if plot.cells[id] or type(key) ~= "string" or not (BaseData.block(key) or BaseData.furniture(key)) then
 			return
 		end
+		if key == "Door" and (not BaseData.inside(i, j, k + 1) or plot.cells[cellKey(i, j, k + 1)]) then
+			Notify.player(player, "🚪 A door needs two empty cells, one on top of the other.", "error")
+			return
+		end
 		local count = 0
 		for _ in plot.cells do
 			count += 1
@@ -395,7 +415,17 @@ local function onEdit(player: Player, action: any, i: any, j: any, k: any, key: 
 		end
 	elseif action == "remove" then
 		local part = plot.cells[id]
+		-- The top half of a door removes the whole door.
+		local doorOf = part and part:GetAttribute("DoorOf")
+		if type(doorOf) == "string" and plot.cells[doorOf] then
+			id = doorOf
+			part = plot.cells[doorOf]
+		end
 		if part then
+			local top = part:GetAttribute("Top")
+			if type(top) == "string" then
+				plot.cells[top] = nil
+			end
 			Effects.confetti(part.Position, 6)
 			part:Destroy()
 			plot.cells[id] = nil

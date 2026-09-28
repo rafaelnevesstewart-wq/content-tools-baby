@@ -66,6 +66,8 @@ local function defaultData()
 		monthly = { month = "", points = 0, paid = "" }, -- 🏅 this month's Season Points (MonthlyData)
 		treasure = { day = -1, found = 0 }, -- 🗺️ today's treasure hunt (TreasureData)
 		class = "Knight", -- 🧙 your class for matches (ClassData)
+		classXp = {}, -- 🎓 class key -> { level, xp }
+		wishes = { day = -1, count = 0 }, -- 🌠 today's shooting-star wishes
 		puzzles = { day = -1, done = {} }, -- 🧩 today's solved puzzle rooms (PuzzleData)
 		-- 🌟 Challenges (ChallengeService fills these in).
 		challenges = { day = -1, week = -1, bonusClaimed = false },

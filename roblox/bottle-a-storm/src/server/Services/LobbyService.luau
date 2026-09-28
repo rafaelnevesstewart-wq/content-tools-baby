@@ -57,9 +57,16 @@ local function alive(player: Player): boolean
 	return humanoid ~= nil and humanoid.Health > 0
 end
 
--- In the lobby, alive and not already dueling.
+-- Set by ArenaCupService while a 🏟️ 2v2 fight has the arena.
+LobbyService.arenaTaken = false
+
+-- In the lobby, alive and not already dueling (1v1 or 2v2).
 local function free(player: Player): boolean
-	return player.Parent ~= nil and not player:GetAttribute("InMatch") and duelOf[player] == nil and alive(player)
+	return player.Parent ~= nil
+		and not player:GetAttribute("InMatch")
+		and duelOf[player] == nil
+		and player:GetAttribute("Dueling") == nil
+		and alive(player)
 end
 
 local function place(player: Player, cframe: CFrame)
@@ -248,6 +255,8 @@ local function onAction(player: Player, action: any, userId: any)
 			Notify.player(player, "⚔️ That challenge ran out.", "error")
 		elseif not free(player) or not free(other) then
 			Notify.player(player, "⚔️ You can't duel right now (one of you is busy or in a match).", "error")
+		elseif LobbyService.arenaTaken then
+			Notify.player(player, "⚔️ The arena is busy with the 🏟️ 2v2 Arena Cup. Try again soon!", "error")
 		else
 			begin(other, player)
 		end

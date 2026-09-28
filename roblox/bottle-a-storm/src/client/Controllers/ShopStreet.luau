@@ -7,6 +7,7 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local EmoteWheel = require(script.Parent.EmoteWheel)
 local FishBook = require(script.Parent.FishBook)
+local PlayerShop = require(script.Parent.PlayerShop)
 local PuzzleCode = require(script.Parent.PuzzleCode)
 local Kits = require(script.Parent.Kits)
 local Market = require(script.Parent.Market)
@@ -34,6 +35,7 @@ local OPEN: { [string]: () -> () } = {
 	Robux = Shop.toggle,
 	FishBook = FishBook.toggle, -- 🎣 the stand by the fishing pond
 	CodeDoor = PuzzleCode.toggle, -- 🧩 the puzzle rooms' Code Door
+	PlayerShop = PlayerShop.toggle, -- 🏪 the Player Market kiosk
 }
 
 function ShopStreet.start()

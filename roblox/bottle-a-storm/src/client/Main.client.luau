@@ -68,6 +68,8 @@ local order = {
 	"PuzzleCode",
 	"BoatController",
 	"CostumeClient",
+	"PlayerShop",
+	"ArenaCupClient",
 	"EmoteWheel",
 	"ShopStreet",
 }
