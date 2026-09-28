@@ -19,6 +19,8 @@ local EVENTS = {
 	"DuelAction", -- client -> server: ("challenge" | "accept" | "decline", userId)
 	"DuelInvite", -- server -> client: (fromUserId, fromName) someone challenged you
 	"SaveSetting", -- client -> server: (key, value) a ⚙️ Settings choice
+	"KitPower", -- client -> server: (ability, aimOrDirection) kit powers the server runs
+	"TournamentAction", -- client -> server: ("join" | "leave")
 	"Victory", -- server -> client: (teamKey) your team won: dance!
 	"DamageShown", -- server -> client: (position, amount) you hit someone
 	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed
@@ -48,6 +50,7 @@ local FUNCTIONS = {
 	"GetKits", -- client -> server: () -> your storms and the chosen kit
 	"ChooseKit", -- client -> server: (uid) -> (ok, message)
 	"GetAchievements", -- client -> server: () -> achievements and your progress
+	"GetStats", -- client -> server: () -> your 📊 Stats page
 }
 
 local folder: Instance

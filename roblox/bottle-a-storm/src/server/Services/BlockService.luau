@@ -103,6 +103,8 @@ local function blocked(cell: Vector3): boolean
 	return false
 end
 
+local create: (Player, Vector3, string) -> BasePart
+
 local function onPlace(player: Player, blockKey: any, point: any)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not MatchService.isPlaying(player) or type(blockKey) ~= "string" or typeof(point) ~= "Vector3" or not root then
@@ -117,6 +119,25 @@ local function onPlace(player: Player, blockKey: any, point: any)
 	if (cell - root.Position).Magnitude > Config.Match.BlockReach or blocked(cell) then
 		return
 	end
+	counts[player][blockKey] = have - 1
+	create(player, cell, blockKey)
+	publish(player)
+	BlockService.Placed:Fire(player)
+end
+
+-- Puts a block in a free cell for a player's team (kit powers use this; no
+-- block is used up). Returns whether it placed one.
+function BlockService.placeFor(player: Player, point: Vector3, blockKey: string): boolean
+	local cell = snap(point)
+	if blocked(cell) or not MatchData.Blocks[blockKey] then
+		return false
+	end
+	create(player, cell, blockKey)
+	return true
+end
+
+create = function(player: Player, cell: Vector3, blockKey: string): BasePart
+	local block = MatchData.Blocks[blockKey]
 	local team = MatchService.teamOf(player)
 	local part = Instance.new("Part")
 	part.Name = "Block"
@@ -124,16 +145,21 @@ local function onPlace(player: Player, blockKey: any, point: any)
 	part.Size = Vector3.one * SIZE
 	part.CFrame = CFrame.new(cell)
 	part.Material = block.material
-	part.Color = block.color or (if team then team.info.color:Lerp(Color3.new(1, 1, 1), 0.4) else Color3.new(1, 1, 1))
+	-- Every block carries your team's color: wool fully, the others a tint.
+	local teamColor = if team then team.info.color else nil
+	if block.color then
+		part.Color = if teamColor then block.color:Lerp(teamColor, 0.3) else block.color
+	else
+		part.Color = if teamColor then teamColor:Lerp(Color3.new(1, 1, 1), 0.15) else Color3.new(1, 1, 1)
+	end
+	part:SetAttribute("TeamKey", if team then team.info.key else nil)
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	part:SetAttribute("BlockKey", blockKey)
 	part:SetAttribute("Hits", block.hits)
 	part.Parent = folder
 	placed[key(cell)] = part
-	counts[player][blockKey] = have - 1
-	publish(player)
-	BlockService.Placed:Fire(player)
+	return part
 end
 
 local function damageBlock(block: BasePart, amount: number)
@@ -186,6 +212,25 @@ function BlockService.hit(player: Player, aim: Vector3, power: number?, axe: boo
 	end
 	damageBlock(block, amount)
 	return true
+end
+
+-- A bot hitting whatever block is at `point` (when a wall is in its way).
+function BlockService.hitAt(point: Vector3, power: number): boolean
+	local best: BasePart? = nil
+	local bestDistance = SIZE
+	for _, part in folder:GetChildren() do
+		if part:IsA("BasePart") then
+			local distance = (part.Position - point).Magnitude
+			if distance < bestDistance then
+				best, bestDistance = part, distance
+			end
+		end
+	end
+	if best then
+		damageBlock(best, power)
+		return true
+	end
+	return false
 end
 
 -- An explosion: every placed block within `radius` takes `hits` damage

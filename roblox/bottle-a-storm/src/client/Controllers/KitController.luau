@@ -7,6 +7,8 @@
 --   Surf Boost   (ice, hail, sand)         a burst of speed
 --   Cloud Jump   (rain, fog, rainbow)      jump again in mid-air; you also glide
 --   Cloud Flight (a few rare kits)         fly where you look for a few seconds
+--   Healing Rain, Instant Bridge, Arrow Volley (healer, builder and archer
+--   kits) are run by the server (KitPowerService); this just asks.
 
 local ContextActionService = game:GetService("ContextActionService")
 local Debris = game:GetService("Debris")
@@ -15,8 +17,10 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local Remotes = require(Shared.Remotes)
 local StormData = require(Shared.StormData)
 
+local Aim = require(script.Parent.Aim)
 local UI = require(script.Parent.UI)
 
 local player = Players.LocalPlayer
@@ -120,6 +124,21 @@ local powers: { [string]: (Model, BasePart, Humanoid) -> boolean } = {
 			attachment:Destroy()
 			cloud:Destroy()
 		end)
+		return true
+	end,
+
+	Heal = function()
+		Remotes.event("KitPower"):FireServer("Heal", Vector3.zero)
+		return true
+	end,
+
+	Bridge = function(_character, root)
+		Remotes.event("KitPower"):FireServer("Bridge", flatLook(root))
+		return true
+	end,
+
+	Volley = function()
+		Remotes.event("KitPower"):FireServer("Volley", Aim.point({}, 0))
 		return true
 	end,
 

@@ -16,6 +16,7 @@ local order = {
 	"Style",
 	"Kits",
 	"Party",
+	"Stats",
 	"ItemShop",
 	"HUD",
 	"MatchHUD",
@@ -32,6 +33,8 @@ local order = {
 	"DamageFeed",
 	"PetFollower",
 	"TouchControls",
+	"MusicController",
+	"TournamentHUD",
 }
 
 for _, name in order do

@@ -42,6 +42,15 @@ local TitleData = {}
 
 TitleData.List = {
 	{
+		id = "TourneyChamp",
+		name = "Tournament Champion",
+		emoji = "🏆",
+		color = rgb(255, 205, 70),
+		goal = "Win a weekend tournament",
+		target = 1,
+		progress = stat("tournamentWins"),
+	},
+	{
 		id = "Rookie",
 		name = "Rookie",
 		emoji = "🌱",

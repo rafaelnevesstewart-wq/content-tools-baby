@@ -374,6 +374,15 @@ ProgressionData.Achievements = {
 		progress = stat("duelsWon"),
 		reward = sparks(1500),
 	},
+	{
+		id = "Tourney3",
+		name = "Bracket Buster",
+		emoji = "🏆",
+		goal = "Win 3 weekend tournaments",
+		target = 3,
+		progress = stat("tournamentWins"),
+		reward = sparks(10000),
+	},
 	-- Collecting
 	{
 		id = "Kits10",

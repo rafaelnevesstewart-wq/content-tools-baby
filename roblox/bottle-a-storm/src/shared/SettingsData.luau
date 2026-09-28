@@ -42,6 +42,14 @@ SettingsData.List = {
 		touchOnly = true,
 	},
 	{
+		key = "music",
+		name = "🎵 Music",
+		hint = "Songs in the lobby and during matches.",
+		kind = "level",
+		default = 0.5,
+		levels = { 0, 0.25, 0.5, 0.75, 1 },
+	},
+	{
 		key = "sfx",
 		name = "🔊 Sound effects",
 		hint = "How loud hits, pops and chimes are.",

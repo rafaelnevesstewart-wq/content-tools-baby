@@ -101,7 +101,7 @@ local function victory(emote: string)
 			task.wait(3)
 		end
 	end)
-	Sfx.play("chime")
+	Sfx.play("win")
 end
 
 function JuiceController.start()

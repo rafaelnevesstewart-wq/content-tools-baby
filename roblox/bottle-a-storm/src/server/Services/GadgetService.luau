@@ -120,7 +120,14 @@ end
 -- Explosions
 ---------------------------------------------------------------------------
 
-local function boom(owner: Player, center: Vector3, radius: number, maxDamage: number, knockback: number)
+local function boom(
+	owner: Player,
+	center: Vector3,
+	radius: number,
+	maxDamage: number,
+	knockback: number,
+	weapon: string
+)
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
 	flash.Anchored = true
@@ -152,12 +159,31 @@ local function boom(owner: Player, center: Vector3, radius: number, maxDamage: n
 					player,
 					owner,
 					maxDamage * strength,
-					direction * knockback * strength + Vector3.new(0, knockback * 0.5, 0)
+					direction * knockback * strength + Vector3.new(0, knockback * 0.5, 0),
+					weapon
 				)
 			end
 			if distance < radius * 4 then
 				Juice.shake(player, math.clamp(1 - distance / (radius * 4), 0.2, 1))
+				Juice.sound(player, "boom")
 			end
+		end
+	end
+	-- Bots get blown around too.
+	for _, botRoot in CombatService.bots.enemiesOf(owner) do
+		local offset = botRoot.Position - center
+		local distance = offset.Magnitude
+		local bot = CombatService.bots.botOf(botRoot)
+		if bot and distance <= radius then
+			local strength = 1 - distance / radius * 0.6
+			local direction = if distance > 0.1 then offset.Unit else Vector3.yAxis
+			CombatService.bots.hurt(
+				bot,
+				owner,
+				maxDamage * strength,
+				direction * knockback * strength + Vector3.new(0, knockback * 0.5, 0),
+				weapon
+			)
 		end
 	end
 end
@@ -194,7 +220,7 @@ local function placeTNT(player: Player, point: Vector3)
 		tnt:Destroy()
 		if MatchService.phase() == "playing" then
 			BlockService.explode(cell, Config.Match.TNTRadius, math.huge, { Obsidian = true })
-			boom(player, cell, Config.Match.TNTRadius, Config.Match.TNTDamage, Config.Match.TNTKnockback)
+			boom(player, cell, Config.Match.TNTRadius, Config.Match.TNTDamage, Config.Match.TNTKnockback, "TNT")
 		end
 	end)
 end
@@ -253,7 +279,14 @@ local function throwFireball(player: Player, aim: Vector3)
 		end
 		ball:Destroy()
 		BlockService.explode(position, Config.Match.FireballRadius, 2, { StoneBricks = true, Obsidian = true })
-		boom(player, position, Config.Match.FireballRadius, Config.Match.FireballDamage, Config.Match.FireballKnockback)
+		boom(
+			player,
+			position,
+			Config.Match.FireballRadius,
+			Config.Match.FireballDamage,
+			Config.Match.FireballKnockback,
+			"Fireball"
+		)
 	end)
 end
 
@@ -439,7 +472,7 @@ end
 
 -- A blast that hurts and throws players near it (lucky blocks use this).
 function GadgetService.blast(owner: Player, center: Vector3, radius: number, damage: number, knockback: number)
-	boom(owner, center, radius, damage, knockback)
+	boom(owner, center, radius, damage, knockback, "Lucky Block")
 end
 
 function GadgetService.handles(key: string): boolean

@@ -25,7 +25,13 @@ local MatchService = require(script.Parent.MatchService)
 
 local LobbyService = {}
 
-type Duel = { a: Player, b: Player, started: boolean, endsAt: number }
+type Duel = {
+	a: Player,
+	b: Player,
+	started: boolean,
+	endsAt: number,
+	onDone: ((Player?) -> ())?, -- tournament duels report their winner here
+}
 
 local duelOf: { [Player]: Duel } = {}
 local invites: { [Player]: { [Player]: number } } = {} -- challenged -> challenger -> when
@@ -111,6 +117,16 @@ local function finish(duel: Duel, winner: Player?, why: string)
 	if duelOf[duel.a] ~= duel then
 		return
 	end
+	if not winner and duel.onDone then
+		-- A tournament needs a winner: whoever has more health left.
+		local function health(player: Player): number
+			local humanoid = humanoidOf(player)
+			return if humanoid and player.Parent then humanoid.Health else -1
+		end
+		local a, b = health(duel.a), health(duel.b)
+		winner = if a == b then (if math.random() < 0.5 then duel.a else duel.b) elseif a > b then duel.a else duel.b
+		why ..= " The one with more health goes through!"
+	end
 	duelOf[duel.a] = nil
 	duelOf[duel.b] = nil
 	for _, player in { duel.a, duel.b } do
@@ -126,13 +142,23 @@ local function finish(duel: Duel, winner: Player?, why: string)
 		if loser.Parent then
 			Notify.player(loser, "⚔️ " .. winner.DisplayName .. " won the duel. " .. why, "info")
 		end
-		reward(winner)
+		if duel.onDone then
+			local data = DataService.get(winner)
+			if data then
+				data.stats.duelsWon = (data.stats.duelsWon or 0) + 1
+			end
+		else
+			reward(winner)
+		end
 	else
 		for _, player in { duel.a, duel.b } do
 			if player.Parent then
 				Notify.player(player, "⚔️ Duel over: " .. why, "info")
 			end
 		end
+	end
+	if duel.onDone then
+		task.spawn(duel.onDone, winner)
 	end
 	-- Back to the courtyard with a practice sword. (A knocked out duelist
 	-- respawns there anyway.)
@@ -147,8 +173,8 @@ local function finish(duel: Duel, winner: Player?, why: string)
 	end)
 end
 
-local function begin(a: Player, b: Player)
-	local duel: Duel = { a = a, b = b, started = false, endsAt = 0 }
+local function begin(a: Player, b: Player, onDone: ((Player?) -> ())?)
+	local duel: Duel = { a = a, b = b, started = false, endsAt = 0, onDone = onDone }
 	duelOf[a] = duel
 	duelOf[b] = duel
 	for index, player in { a, b } do
@@ -378,6 +404,22 @@ local function onSwung(player: Player, _aim: Vector3, weaponName: string)
 end
 
 ---------------------------------------------------------------------------
+
+-- Starts a duel between two players in the arena (tournaments use this).
+-- `onDone` gets the winner (a draw is decided by health). Returns false if
+-- either player can't duel right now.
+function LobbyService.startDuel(a: Player, b: Player, onDone: (Player?) -> ()): boolean
+	if a == b or not free(a) or not free(b) then
+		return false
+	end
+	begin(a, b, onDone)
+	return true
+end
+
+-- Whether a player is in the lobby, alive and not dueling.
+function LobbyService.isFree(player: Player): boolean
+	return free(player)
+end
 
 function LobbyService.start()
 	CombatService.duelOpponent = function(player: Player): Player?

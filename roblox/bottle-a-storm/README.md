@@ -25,9 +25,12 @@ Duos, Squads or 🍀 Lucky Blocks** (team size 1, 2, 4, or duos with ❓ blocks 
 that give a surprise after 3 sword hits: gear, TNT, resources... or an explosion, lightning or
 a launch into the sky); the most votes wins (no votes: solos with up to 4 players, duos with
 more).
-**Parties** (👥 Party) always end up on the same team. Up to 8 teams. Every match is on a new
-**map**: 🌿 Meadow, 🌋 Volcano, ❄️ Frozen, 🍭 Candy or 🌌 Space (ground, cliffs, props and a
-color wash), never the same twice in a row. Each team gets a sky island with:
+**Parties** (👥 Party) always end up on the same team. Up to 8 teams. 🤖 **Bots** fill empty
+teams (up to 4 teams), so one player is enough to start: they hunt enemies, cross the bridges
+to break beds, hack through block walls and respawn while their bed stands. Every match is on
+a new **map**: 🌿 Meadow, 🌋 Volcano, ❄️ Frozen, 🍭 Candy, 🌌 Space, 🏜️ Desert (cacti and
+sandstone), 👻 Haunted (dusk, gravestones, jack-o'-lanterns and ghost wisps) or 🏙️ Sky City
+(tower blocks, street lamps, billboards), never the same twice in a row. Each team gets a sky island with:
 
 - a **cloud bed** at the back. While it stands, you respawn 5 seconds after a knockout.
   Enemies break it by holding **E** on it for 2.5 seconds, but only if they can see it, so wall
@@ -57,7 +60,10 @@ generators 3x) or 🌙 Moon Gravity. The forecast TV in the lobby shows what's n
 
 Every storm you own is a **kit**. Pick one in 🌪️ **Kits**: in a match it floats beside you with
 your name and gives its power on **Shift**: Updraft, Blink Dash, Surf Boost, Cloud Jump, or
-🕊️ Cloud Flight (Hurricane Hana, Typhoon Titan and Solar Flare Phoenix only). **Rarer kits
+🕊️ Cloud Flight (Hurricane Hana, Typhoon Titan and Solar Flare Phoenix only). Support kits have team
+powers: 💚 **Healing Rain** (heals you and teammates nearby: Healing Drizzle, Mending Monsoon),
+🌉 **Instant Bridge** (a line of your team's blocks in front of you: Builder Breeze, Architect
+Cyclone) and 🏹 **Arrow Volley** (a fan of free arrows: Arrow Gale, Sky Archer). **Rarer kits
 recharge faster** (Common 100% of the cooldown down to Cosmic 55%). Shiny variants (Charged,
 Frozen, Golden...) just look cooler. New players get a Puffcloud.
 
@@ -95,6 +101,13 @@ Abuse and Rainbow Hour (the HUD shows your current bonus). Spend them on cosmeti
   in the arena; the first knockout wins Sparks (10 paid wins a day). Stepping out of the ring
   gives up; 90 seconds with no knockout is a draw.
 - 🎯 **Training dummies:** hit them with your practice sword to see your damage.
+- 🏆 **Weekend tournaments:** on Saturdays and Sundays a 1v1 bracket opens every 30 minutes
+  (admins can start one any time). Press Join, then fight one duel at a time in the arena until
+  one champion is left. Prizes: ⚡5,000 for the champion, 2,000 for the runner-up, 750 for the
+  semifinals and 150 for joining, plus the 🏆 Tournament Champion title. The bracket shows on
+  the board by the arena and in 📋 Bracket. Matches wait while a tournament is on.
+- 🎁 **Mystery Chest:** open it once a day for Sparks, a kit, a new cosmetic, wheel spins or
+  a rare ⚡10,000 jackpot.
 - The **parkour** climbs around the outside of the island to a free Epic kit once a day.
 - Falling off the lobby island just puts you back at the spawn.
 
@@ -142,15 +155,30 @@ Click with a sword (or the 🪄 **Knockback Stick**: barely hurts, sends people 
 (you can also hit placed blocks to break them), a pickaxe or axe to mine blocks, the bow to
 shoot, a Fireball to throw it, a potion to drink it; hold a block or Storm TNT to see where it
 goes and click to place it; **E** to open the Item Shop or break a bed; **Shift** for your
-kit's power. Hits show **damage numbers**, and knockouts and broken beds show in the **kill
+kit's power. Everyone always has at least a ⛏️ **Wood Pickaxe**: it breaks blocks, opens lucky
+blocks and **digs into the ground** (not next to beds, generators, shops or spawns; holes are
+filled back in after the match). Placed blocks and armor trim are in your **team's color**.
+Hits show **damage numbers**, and knockouts and broken beds show in the **kill
 feed** on the right.
 
 On phones, big **⚔️ Use** (aims at the crosshair in the middle) and **🎒 Next item** buttons
 sit next to the jump button.
 
+## 📊 Stats
+
+Wins, matches, win rate, knockouts, final kills, K/D, beds broken, streaks, level, rank, duels,
+parkour clears, Sparks earned and your **favorite weapon** (with a bar for every weapon).
+
+## 🎵 Music and sounds
+
+Sword slashes, hits, knockouts, explosions, broken beds and a victory fanfare. Music plays in
+the lobby and in matches once you add songs to `Config.Music`: in Studio open Toolbox → Audio,
+pick free Roblox-licensed music, right-click → Copy Asset ID, and paste the numbers into the
+Lobby and Match lists.
+
 ## ⚙️ Settings
 
-Camera follows the mouse, over-the-shoulder view, big phone buttons, sound effects volume,
+Music volume, camera follows the mouse, over-the-shoulder view, big phone buttons, sound effects volume,
 sky extras, damage numbers, kill feed, fancy effects (turn off on slow devices) and other
 players' pets. Saved with your profile.
 
@@ -205,7 +233,9 @@ src/server/   Main.server.luau starts the services in order
               parkour), LobbyService (duels, training dummies), LuckyService (Lucky
               Blocks mode), SettingsService,
               CommunityService (codes, group, likes), LeaderboardService, AdminService,
-              MonetizationService
+              MonetizationService, BotService (bots), TournamentService,
+              ChestService (Mystery Chest), StatsService, KitPowerService (heal, bridge
+              and volley powers)
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
               ItemModels (weapons and items), PetModels, StormModel (kit storms), Effects,
               Juice, Notify, Codes
@@ -214,7 +244,8 @@ src/client/   Main.client.luau starts the controllers
                WeaponController, BlockController, Aim, Shop, Market, HolidayShop, Style,
                Season, Rewards, AdminPanel, ForecastController, StormAnimator, FlashyFx,
                AmbientController, JuiceController, Settings, DamageFeed (damage numbers,
-               kill feed), PetFollower, TouchControls (phone buttons), Toasts, Sfx, UI
+               kill feed), PetFollower, TouchControls (phone buttons), Stats,
+               MusicController, TournamentHUD, Toasts, Sfx, UI
 ```
 
 ## Known limits

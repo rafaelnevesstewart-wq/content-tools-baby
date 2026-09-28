@@ -18,6 +18,7 @@ local Notify = require(Modules.Notify)
 
 local IncomeService = require(script.Parent.IncomeService)
 local MatchService = require(script.Parent.MatchService)
+local TournamentService = require(script.Parent.TournamentService)
 local WeatherService = require(script.Parent.WeatherService)
 
 local AdminService = {}
@@ -75,6 +76,12 @@ local commands: { [string]: (Player, any) -> (boolean, string) } = {
 			return true, "Match started!"
 		end
 		return false, "A match is already on."
+	end,
+	tournament = function(player)
+		if TournamentService.startNow(player.DisplayName) then
+			return true, "Tournament sign-ups are open!"
+		end
+		return false, "Wait for the match (or tournament) to end."
 	end,
 	endmatch = function()
 		if MatchService.endNow() then

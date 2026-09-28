@@ -70,6 +70,8 @@ export type MatchTeam = {
 	upgrades: { [string]: number },
 	roblox: Team,
 	folder: Folder,
+	botTotal: number, -- bots on this team (BotService runs them)
+	botsIn: number, -- bots not knocked out for good yet
 }
 
 local islands: { WorldBuilder.PlotInfo } = {}
@@ -101,7 +103,7 @@ end
 ---------------------------------------------------------------------------
 
 local function aliveCount(team: MatchTeam): number
-	local count = 0
+	local count = team.botsIn or 0
 	for player in team.alive do
 		if player.Parent then
 			count += 1
@@ -120,7 +122,7 @@ local function publish()
 			key = team.info.key,
 			bed = team.bedAlive,
 			alive = aliveCount(team),
-			total = #team.members,
+			total = #team.members + (team.botTotal or 0),
 		})
 	end
 	workspace:SetAttribute("MatchTeams", HttpService:JSONEncode(list))
@@ -286,7 +288,7 @@ local function noBuild(p: BasePart)
 	CollectionService:AddTag(p, "NoBuild")
 end
 
-local function breakBed(team: MatchTeam, breaker: Player?)
+local function breakBed(team: MatchTeam, breaker: Player?, bot: { name: string, teamKey: string }?)
 	if not team.bedAlive or phase ~= "playing" then
 		return
 	end
@@ -316,7 +318,25 @@ local function breakBed(team: MatchTeam, breaker: Player?)
 		})
 		reward(breaker, "Bed")
 		addStat(breaker, "bedsBroken")
+		for _, other in Players:GetPlayers() do
+			Juice.sound(other, "bedBreak")
+		end
 		MatchService.BedBroken:Fire(breaker, team)
+	elseif bot then
+		Notify.all(
+			"🛏️ "
+				.. team.info.emoji
+				.. " "
+				.. team.info.name
+				.. "'s cloud bed was destroyed by "
+				.. bot.name
+				.. "!",
+			"rare"
+		)
+		Remotes.event("KillFeed"):FireAllClients({ killer = bot.name, killerTeam = bot.teamKey, bed = team.info.key })
+		for _, other in Players:GetPlayers() do
+			Juice.sound(other, "bedBreak")
+		end
 	else
 		Notify.all("🛏️ " .. team.info.emoji .. " " .. team.info.name .. "'s cloud bed broke!", "warn")
 	end
@@ -324,7 +344,7 @@ local function breakBed(team: MatchTeam, breaker: Player?)
 		if member.Parent then
 			Notify.player(member, "💔 Your cloud bed is gone! If you die now, you're out.", "warn")
 			Juice.shake(member, 1)
-			Juice.sound(member, "zap")
+			Juice.sound(member, "oops")
 		end
 	end
 	publish()
@@ -677,6 +697,8 @@ local function setUpTeam(info: MatchData.TeamInfo, island: WorldBuilder.PlotInfo
 		upgrades = {},
 		roblox = robloxTeam,
 		folder = folder,
+		botTotal = 0,
+		botsIn = 0,
 	}
 	team.bed = cloudBed(team)
 	team.generator = makeGenerator(folder, island.cframe * CFrame.new(0, 0, -4), info.color, {
@@ -830,14 +852,78 @@ local function checkWin()
 	end
 end
 
+---------------------------------------------------------------------------
+-- Bots (BotService runs them; the match keeps score here)
+---------------------------------------------------------------------------
+
+local lastBotHit: { [Player]: { name: string, teamKey: string, at: number } } = {}
+
+function MatchService.teamsInMatch(): { MatchTeam }
+	return teams
+end
+
+-- A bot hit this player (so a knockout soon after is the bot's).
+function MatchService.recordBotHit(victim: Player, name: string, teamKey: string)
+	lastBotHit[victim] = { name = name, teamKey = teamKey, at = os.clock() }
+	lastHit[victim] = nil
+end
+
+-- A bot breaks a team's bed.
+function MatchService.breakBedByBot(team: MatchTeam, name: string, teamKey: string)
+	breakBed(team, nil, { name = name, teamKey = teamKey })
+end
+
+-- A bot was knocked out (by `killer`, a player, if any). Returns whether it's
+-- out for good (its bed is gone).
+function MatchService.botKnockedOut(team: MatchTeam, name: string, killer: Player?, position: Vector3?): boolean
+	if phase ~= "playing" then
+		return true
+	end
+	local final = not team.bedAlive
+	if final then
+		team.botsIn = math.max(0, team.botsIn - 1)
+	end
+	if killer and position then
+		CosmeticService.knockout(killer, position)
+	end
+	Remotes.event("KillFeed"):FireAllClients({
+		killer = if killer then killer.DisplayName else nil,
+		killerTeam = if killer then killer:GetAttribute("TeamKey") else nil,
+		victim = name,
+		victimTeam = team.info.key,
+		final = final,
+		weapon = "Sword",
+	})
+	if killer then
+		Juice.sound(killer, "kill")
+		reward(killer, if final then "FinalKill" else "Kill")
+		addStat(killer, "kills")
+		if final then
+			addStat(killer, "finalKills")
+		end
+	end
+	publish()
+	checkWin()
+	return final
+end
+
+-- Set by CombatService: what last hurt a player (for the kill feed).
+MatchService.weaponOf = function(_victim: Player): string?
+	return nil
+end
+
 local function onDied(player: Player)
 	if not MatchService.isPlaying(player) then
 		return
 	end
+	addStat(player, "deaths")
 	local team = teamByPlayer[player] :: MatchTeam
 	local hit = lastHit[player]
 	local killer = if hit and os.clock() - hit.at < 12 and hit.by.Parent then hit.by else nil
 	lastHit[player] = nil
+	local botHit = lastBotHit[player]
+	lastBotHit[player] = nil
+	local botKiller = if not killer and botHit and os.clock() - botHit.at < 12 then botHit else nil
 	local final = not team.bedAlive
 	local root = rootOf(player)
 	if killer and root then
@@ -850,13 +936,16 @@ local function onDied(player: Player)
 	end
 	clearResources(player)
 	Remotes.event("KillFeed"):FireAllClients({
-		killer = if killer then killer.DisplayName else nil,
-		killerTeam = if killer then killer:GetAttribute("TeamKey") else nil,
+		killer = if killer then killer.DisplayName elseif botKiller then botKiller.name else nil,
+		killerTeam = if killer then killer:GetAttribute("TeamKey") elseif botKiller then botKiller.teamKey else nil,
 		victim = player.DisplayName,
 		victimTeam = team.info.key,
 		final = final,
+		weapon = if killer then MatchService.weaponOf(player) else nil,
 	})
+	Juice.sound(player, "oof")
 	if killer then
+		Juice.sound(killer, "kill")
 		reward(killer, if final then "FinalKill" else "Kill")
 		addStat(killer, "kills")
 		if final then
@@ -893,6 +982,7 @@ local function resetToLobby()
 	teamByPlayer = {}
 	eliminated = {}
 	lastHit = {}
+	lastBotHit = {}
 	suddenDeath = false
 	phase = "waiting"
 	phaseEndsAt = 0
@@ -946,6 +1036,25 @@ endMatch = function(winner: MatchTeam?)
 	end
 	publish()
 	task.delay(Config.Match.EndSeconds, resetToLobby)
+end
+
+-- Set by TournamentService: a reason to hold off starting matches (a
+-- tournament is on in the lobby), or nil.
+MatchService.pausedBy = function(): string?
+	return nil
+end
+
+-- Players needed to start: bots fill in, so one is enough when they're on.
+local function neededPlayers(): number
+	if Config.Bots.Enabled then
+		return 1
+	end
+	return if RunService:IsStudio() then Config.Match.StudioMinPlayers else Config.Match.MinPlayers
+end
+
+-- Set by BotService: how many extra all-bot teams a match gets.
+MatchService.botTeamsFor = function(_players: number, _teams: number): number
+	return 0
 end
 
 local function eligible(): { Player }
@@ -1006,13 +1115,23 @@ local function startMatch()
 	if not mapOk then
 		warn("[Bottle a Storm] The map theme failed: " .. tostring(mapProblem))
 	end
-	for i = 1, teamCount do
-		local islandIndex = math.floor((i - 1) * #islands / teamCount) + 1
-		table.insert(teams, setUpTeam(MatchData.Teams[i], islands[islandIndex]))
+	local botTeams = math.clamp(MatchService.botTeamsFor(#players, teamCount), 0, maxTeams - teamCount)
+	local total = teamCount + botTeams
+	local playerTeams: { MatchTeam } = {}
+	for i = 1, total do
+		local islandIndex = math.floor((i - 1) * #islands / total) + 1
+		local team = setUpTeam(MatchData.Teams[i], islands[islandIndex])
+		table.insert(teams, team)
+		if i <= teamCount then
+			table.insert(playerTeams, team)
+		else
+			team.botTotal = math.clamp(size, 1, 2)
+			team.botsIn = team.botTotal
+		end
 	end
 	local function roomiest(): MatchTeam
-		local best = teams[1]
-		for _, team in teams do
+		local best = playerTeams[1]
+		for _, team in playerTeams do
 			if #team.members < #best.members then
 				best = team
 			end
@@ -1048,7 +1167,7 @@ local function startMatch()
 			CosmeticService.dressBed(team.bed, team.frame * CFrame.new(0, 0, 22), team.members)
 		end
 	end
-	startedTeams = teamCount
+	startedTeams = total
 	phase = "playing"
 	startedAt = now()
 	phaseEndsAt = startedAt + Config.Match.MaxSeconds
@@ -1176,26 +1295,25 @@ function MatchService.start()
 			-- An error in one step never stops the rounds.
 			local ok, problem = pcall(function()
 				if phase == "waiting" then
-					local needed = if RunService:IsStudio()
-						then Config.Match.StudioMinPlayers
-						else Config.Match.MinPlayers
+					local needed = neededPlayers()
 					local count = #eligible()
+					local paused = MatchService.pausedBy()
 					workspace:SetAttribute("MatchNeeded", needed)
 					workspace:SetAttribute("MatchReady", count)
-					if count >= needed then
+					workspace:SetAttribute("MatchPaused", paused)
+					if count >= needed and not paused then
+						-- Alone with bots: a longer wait, to enjoy the lobby first.
+						local countdown = if count < Config.Match.MinPlayers
+							then Config.Bots.SoloCountdown
+							else Config.Match.CountdownSeconds
 						phase = "starting"
-						phaseEndsAt = t + Config.Match.CountdownSeconds
+						phaseEndsAt = t + countdown
 						publish()
-						Notify.all(
-							"⚔️ A Bed Wars match starts in " .. Config.Match.CountdownSeconds .. " seconds!",
-							"info"
-						)
+						Notify.all("⚔️ A Bed Wars match starts in " .. countdown .. " seconds!", "info")
 					end
 				elseif phase == "starting" then
-					local needed = if RunService:IsStudio()
-						then Config.Match.StudioMinPlayers
-						else Config.Match.MinPlayers
-					if #eligible() < needed then
+					local needed = neededPlayers()
+					if #eligible() < needed or MatchService.pausedBy() then
 						phase = "waiting"
 						publish()
 					elseif t >= phaseEndsAt then

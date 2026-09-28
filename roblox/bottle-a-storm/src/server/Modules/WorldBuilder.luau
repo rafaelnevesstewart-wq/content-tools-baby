@@ -636,6 +636,8 @@ WorldBuilder.LobbySpots = {
 	arena = lobbyPoint(28, 0, 10),
 	arenaRadius = 10,
 	dummies = { lobbyPoint(-33, 0, -8), lobbyPoint(-33, 0, 0), lobbyPoint(-33, 0, 8), lobbyPoint(-33, 0, 16) },
+	chest = CFrame.lookAt(lobbyPoint(-20, 0, -22), lobbyPoint(0, 0, 0)),
+	bracket = CFrame.lookAt(lobbyPoint(28, 0, -8), lobbyPoint(28, 0, 10)),
 }
 
 -- Keeps trees and holiday decor out of the castle, off the path from the

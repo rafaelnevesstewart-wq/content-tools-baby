@@ -113,6 +113,55 @@ StormData.Storms = {
 		colors = { rgb(235, 195, 110), rgb(200, 150, 70) },
 		fx = "dust",
 	},
+	-- Healer, builder and archer kits
+	{
+		id = "HealingDrizzle",
+		name = "Healing Drizzle",
+		rarity = 3,
+		colors = { rgb(140, 235, 160), rgb(90, 200, 120) },
+		fx = "rain",
+		ability = "Heal",
+	},
+	{
+		id = "BuilderBreeze",
+		name = "Builder Breeze",
+		rarity = 3,
+		colors = { rgb(210, 170, 120), rgb(170, 130, 90) },
+		fx = "wind",
+		ability = "Bridge",
+	},
+	{
+		id = "ArrowGale",
+		name = "Arrow Gale",
+		rarity = 4,
+		colors = { rgb(255, 210, 120), rgb(200, 150, 80) },
+		fx = "lightning",
+		ability = "Volley",
+	},
+	{
+		id = "MendingMonsoon",
+		name = "Mending Monsoon",
+		rarity = 5,
+		colors = { rgb(120, 255, 190), rgb(60, 200, 160), rgb(220, 255, 240) },
+		fx = "rainbow",
+		ability = "Heal",
+	},
+	{
+		id = "ArchitectCyclone",
+		name = "Architect Cyclone",
+		rarity = 5,
+		colors = { rgb(240, 200, 140), rgb(150, 110, 70) },
+		fx = "hurricane",
+		ability = "Bridge",
+	},
+	{
+		id = "SkyArcher",
+		name = "Sky Archer",
+		rarity = 6,
+		colors = { rgb(255, 230, 150), rgb(255, 170, 60), rgb(255, 255, 220) },
+		fx = "stars",
+		ability = "Volley",
+	},
 	-- Legendary
 	{
 		id = "HurricaneHana",
@@ -528,6 +577,9 @@ StormData.AbilityInfo = {
 	Surf = { name = "Surf Boost", emoji = "🏄", description = "a burst of speed" },
 	CloudJump = { name = "Cloud Jump", emoji = "☁️", description = "jump again in mid-air; you also glide" },
 	Flight = { name = "Cloud Flight", emoji = "🕊️", description = "fly on a cloud for a few seconds" },
+	Heal = { name = "Healing Rain", emoji = "💚", description = "heals you and teammates near you" },
+	Bridge = { name = "Instant Bridge", emoji = "🌉", description = "builds a bridge of blocks in front of you" },
+	Volley = { name = "Arrow Volley", emoji = "🏹", description = "shoots a fan of free arrows" },
 }
 
 function StormData.abilityOf(def: StormDef): string

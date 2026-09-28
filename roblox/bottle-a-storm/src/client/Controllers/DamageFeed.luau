@@ -13,6 +13,7 @@ local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
 
 local Settings = require(script.Parent.Settings)
+local Stats = require(script.Parent.Stats)
 local UI = require(script.Parent.UI)
 
 local DamageFeed = {}
@@ -146,7 +147,7 @@ local function onFeed(entry: any)
 		if entry.killer then
 			addLine({
 				{ text = tostring(entry.killer), color = teamColor(entry.killerTeam) },
-				{ text = "⚔️", color = white },
+				{ text = Stats.WeaponEmoji[entry.weapon] or "⚔️", color = white },
 				{ text = tostring(entry.victim) .. tag, color = teamColor(entry.victimTeam) },
 			})
 		else

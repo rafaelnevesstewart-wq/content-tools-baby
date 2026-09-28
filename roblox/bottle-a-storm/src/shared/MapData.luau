@@ -13,6 +13,7 @@ export type Map = {
 	colors: { [Enum.Material]: Color3 }?,
 	tint: Color3?, -- a color wash over the whole screen
 	props: string?, -- what MapService scatters on the islands
+	clock: number?, -- time of day during the match (nil: afternoon)
 }
 
 local rgb = Color3.fromRGB
@@ -61,6 +62,37 @@ MapData.List = {
 		colors = { [M.Pavement] = rgb(70, 70, 92), [M.Asphalt] = rgb(40, 38, 56), [M.Rock] = rgb(48, 46, 64) },
 		tint = rgb(214, 212, 255),
 		props = "space",
+	},
+	{
+		key = "Desert",
+		name = "Desert Island",
+		emoji = "🏜️",
+		grass = M.Sand,
+		dirt = M.Sandstone,
+		colors = { [M.Sand] = rgb(226, 196, 140), [M.Sandstone] = rgb(196, 150, 100), [M.Rock] = rgb(170, 128, 88) },
+		tint = rgb(255, 240, 214),
+		props = "desert",
+	},
+	{
+		key = "Haunted",
+		name = "Haunted Island",
+		emoji = "👻",
+		grass = M.Mud,
+		dirt = M.Limestone, -- (not Slate: the islands' own rocks are Slate)
+		colors = { [M.Mud] = rgb(62, 58, 52), [M.Limestone] = rgb(64, 58, 70), [M.Rock] = rgb(46, 42, 50) },
+		tint = rgb(206, 196, 236),
+		props = "haunted",
+		clock = 18.9, -- dusk
+	},
+	{
+		key = "City",
+		name = "Sky City",
+		emoji = "🏙️",
+		grass = M.Concrete,
+		dirt = M.Brick,
+		colors = { [M.Concrete] = rgb(196, 196, 192), [M.Brick] = rgb(150, 92, 72), [M.Rock] = rgb(120, 120, 126) },
+		tint = rgb(240, 246, 255),
+		props = "city",
 	},
 } :: { Map }
 

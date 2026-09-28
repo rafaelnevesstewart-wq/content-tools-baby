@@ -32,6 +32,19 @@ CombatService.Attacked = Signal.new()
 -- training dummies).
 CombatService.Swung = Signal.new()
 
+-- Set by BotService: the bots in the match, so weapons can hit them.
+CombatService.bots = {
+	-- Living bots that are enemies of `player`: their root parts.
+	enemiesOf = function(_player: Player): { BasePart }
+		return {}
+	end,
+	-- The bot model a part belongs to (or nil).
+	botOf = function(_part: Instance): Model?
+		return nil
+	end,
+	hurt = function(_bot: Model, _attacker: Player, _amount: number, _push: Vector3, _weapon: string) end,
+}
+
 -- Set by LobbyService: who a player is dueling in the lobby (nil if nobody).
 CombatService.duelOpponent = function(_player: Player): Player?
 	return nil
@@ -230,14 +243,28 @@ local function dressArmor(player: Player)
 	if torso then
 		local size = torso.Size
 		plate(torso, size + Vector3.new(0.18, 0.08, 0.18), CFrame.new())
-		-- A raised ridge down the middle and a team emblem on the chest.
-		plate(torso, Vector3.new(0.2, size.Y * 0.8, 0.12), CFrame.new(0, 0, -size.Z / 2 - 0.12), { Color = look.trim })
+		-- A team-colored tabard, a raised ridge down the middle and an
+		-- emblem on the chest, and team-colored edges along the bottom.
+		plate(torso, Vector3.new(size.X * 0.55, size.Y * 0.95, 0.06), CFrame.new(0, -0.02, -size.Z / 2 - 0.1), {
+			Color = teamColor,
+			Material = Enum.Material.Fabric,
+			Reflectance = 0,
+		})
+		plate(torso, Vector3.new(0.2, size.Y * 0.8, 0.12), CFrame.new(0, 0, -size.Z / 2 - 0.14), { Color = look.trim })
 		plate(
 			torso,
 			Vector3.new(0.5, 0.5, 0.08),
-			CFrame.new(0, size.Y * 0.15, -size.Z / 2 - 0.17) * CFrame.Angles(0, 0, math.rad(45)),
-			{ Color = teamColor, Material = Enum.Material.SmoothPlastic, Reflectance = 0 }
+			CFrame.new(0, size.Y * 0.15, -size.Z / 2 - 0.2) * CFrame.Angles(0, 0, math.rad(45)),
+			{
+				Color = teamColor:Lerp(Color3.new(1, 1, 1), 0.55),
+				Material = Enum.Material.SmoothPlastic,
+				Reflectance = 0,
+			}
 		)
+		plate(torso, Vector3.new(size.X + 0.22, 0.14, size.Z + 0.22), CFrame.new(0, -size.Y / 2 + 0.07, 0), {
+			Color = teamColor,
+			Material = Enum.Material.SmoothPlastic,
+		})
 	end
 	-- Rounded pauldrons on the shoulders.
 	for _, arm in { find("RightUpperArm", "Right Arm"), find("LeftUpperArm", "Left Arm") } do
@@ -254,13 +281,13 @@ local function dressArmor(player: Player)
 				arm,
 				Vector3.new(size.X + 0.12, 0.12, size.Z + 0.12),
 				CFrame.new(0, size.Y * 0.12, 0),
-				{ Color = look.trim }
+				{ Color = teamColor, Material = Enum.Material.SmoothPlastic }
 			)
 		end
 	end
 	if lower then
 		plate(lower, Vector3.new(lower.Size.X + 0.2, 0.35, lower.Size.Z + 0.2), CFrame.new(0, 0, 0), {
-			Color = Color3.fromRGB(70, 50, 36),
+			Color = teamColor:Lerp(Color3.new(0, 0, 0), 0.35),
 			Material = Enum.Material.Fabric,
 			Reflectance = 0,
 		})
@@ -272,6 +299,12 @@ local function dressArmor(player: Player)
 				shin,
 				Vector3.new(shin.Size.X + 0.12, shin.Size.Y * 0.7, 0.2),
 				CFrame.new(0, 0, -shin.Size.Z / 2 - 0.05)
+			)
+			plate(
+				shin,
+				Vector3.new(shin.Size.X + 0.14, 0.12, 0.22),
+				CFrame.new(0, shin.Size.Y * 0.3, -shin.Size.Z / 2 - 0.06),
+				{ Color = teamColor, Material = Enum.Material.SmoothPlastic }
 			)
 		end
 	end
@@ -324,7 +357,14 @@ end
 -- Damage
 ---------------------------------------------------------------------------
 
-local function damage(victim: Player, attacker: Player, amount: number, push: Vector3)
+-- What last hurt each player, for the favorite-weapon stat.
+local lastWeapon: { [Player]: string } = {}
+
+function CombatService.lastWeaponOn(victim: Player): string?
+	return lastWeapon[victim]
+end
+
+local function damage(victim: Player, attacker: Player, amount: number, push: Vector3, weapon: string?)
 	local humanoid = humanoidOf(victim)
 	local character = victim.Character
 	if not humanoid or humanoid.Health <= 0 or not character or character:FindFirstChildOfClass("ForceField") then
@@ -334,6 +374,9 @@ local function damage(victim: Player, attacker: Player, amount: number, push: Ve
 	local protection = MatchService.upgradeLevel(victim, "Protection")
 	local taken = math.max(0.3, armor.taken - 0.06 * protection)
 	MatchService.recordHit(victim, attacker)
+	if victim ~= attacker then
+		lastWeapon[victim] = weapon or "Sword"
+	end
 	humanoid:TakeDamage(amount * taken)
 	local head = character:FindFirstChild("Head") :: BasePart?
 	if head then
@@ -341,8 +384,8 @@ local function damage(victim: Player, attacker: Player, amount: number, push: Ve
 	end
 	CombatService.Attacked:Fire(attacker)
 	Juice.knock(victim, push * WeatherService.knockbackMultiplier())
-	Juice.sound(victim, "zap")
-	Juice.sound(attacker, "pop")
+	Juice.sound(victim, "hurt")
+	Juice.sound(attacker, "hit")
 end
 
 local function arrowEffect(player: Player): string?
@@ -383,6 +426,38 @@ local function onSwing(player: Player, aim: any)
 			end
 		end
 	end
+	-- A bot closer than any player?
+	local bestBot: BasePart? = nil
+	if playing then
+		for _, botRoot in CombatService.bots.enemiesOf(player) do
+			local offset = botRoot.Position - root.Position
+			local distance = offset.Magnitude
+			if distance <= bestDistance and root.CFrame.LookVector:Dot(offset.Unit) > 0.2 then
+				bestBot, bestDistance = botRoot, distance
+			end
+		end
+	end
+	if bestBot then
+		local stick = (weapon :: Instance).Name == "Knockback Stick"
+		local sword = MatchData.Swords[gearOf(player).sword]
+		local amount = if stick
+			then Config.Match.StickDamage
+			else sword.damage + 4 * MatchService.upgradeLevel(player, "Sharpness")
+		local flat = (bestBot.Position - root.Position) * Vector3.new(1, 0, 1)
+		local direction = if flat.Magnitude > 0.1 then flat.Unit else root.CFrame.LookVector
+		local push = Config.Match.Knockback * (if stick then Config.Match.StickKnockback else 1)
+		local bot = CombatService.bots.botOf(bestBot)
+		if bot then
+			CombatService.bots.hurt(
+				bot,
+				player,
+				amount,
+				direction * push + Vector3.new(0, if stick then 30 else 14, 0),
+				if stick then "Knockback Stick" else "Sword"
+			)
+		end
+		return
+	end
 	if best then
 		local stick = (weapon :: Instance).Name == "Knockback Stick"
 		local sword = MatchData.Swords[gearOf(player).sword]
@@ -393,7 +468,13 @@ local function onSwing(player: Player, aim: any)
 		local otherRoot = rootOf(best) :: BasePart
 		local flat = (otherRoot.Position - root.Position) * Vector3.new(1, 0, 1)
 		local direction = if flat.Magnitude > 0.1 then flat.Unit else root.CFrame.LookVector
-		damage(best, player, amount, direction * push + Vector3.new(0, if stick then 30 else 14, 0))
+		damage(
+			best,
+			player,
+			amount,
+			direction * push + Vector3.new(0, if stick then 30 else 14, 0),
+			if stick then "Knockback Stick" else "Sword"
+		)
 		return
 	end
 	if typeof(aim) == "Vector3" then
@@ -419,6 +500,8 @@ local function arrow(from: Vector3, to: Vector3, effect: string?)
 	-- It sticks where it lands for a moment.
 	Debris:AddItem(model, distance / 180 + 3)
 end
+
+local shootArrow: (Player, Vector3, Vector3) -> ()
 
 local function onShoot(player: Player, aim: any)
 	local g = gearOf(player)
@@ -446,17 +529,37 @@ local function onShoot(player: Player, aim: any)
 	if direction.Magnitude < 0.1 then
 		return
 	end
+	shootArrow(player, origin, direction)
+end
+
+-- One arrow from `origin` along `direction`: flies, sticks, hurts an enemy.
+shootArrow = function(player: Player, origin: Vector3, direction: Vector3)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances = { player.Character :: Instance }
+	local ignore: { Instance } = {}
+	if player.Character then
+		table.insert(ignore, player.Character)
+	end
+	params.FilterDescendantsInstances = ignore
 	local result = workspace:Raycast(origin, direction.Unit * Config.Match.BowRange, params)
 	local hitPoint = if result then result.Position else origin + direction.Unit * Config.Match.BowRange
 	arrow(origin, hitPoint, arrowEffect(player))
 	if result then
+		local bot = CombatService.bots.botOf(result.Instance)
+		if bot and MatchService.isPlaying(player) then
+			CombatService.bots.hurt(
+				bot,
+				player,
+				Config.Match.BowDamage,
+				direction.Unit * 18 + Vector3.new(0, 10, 0),
+				"Bow"
+			)
+			return
+		end
 		local model = result.Instance:FindFirstAncestorOfClass("Model")
 		local victim = model and Players:GetPlayerFromCharacter(model)
 		if victim and MatchService.isEnemy(player, victim) and MatchService.isPlaying(victim) then
-			damage(victim, player, Config.Match.BowDamage, direction.Unit * 18 + Vector3.new(0, 10, 0))
+			damage(victim, player, Config.Match.BowDamage, direction.Unit * 18 + Vector3.new(0, 10, 0), "Bow")
 		end
 	end
 end
@@ -496,10 +599,52 @@ local function onUse(player: Player, key: any, aim: any)
 	end
 end
 
+-- The Arrow Volley kit power: a fan of free arrows toward `aim`.
+function CombatService.volley(player: Player, aim: Vector3, count: number)
+	local root = rootOf(player)
+	if not root then
+		return
+	end
+	local origin = root.Position + Vector3.new(0, 1.5, 0)
+	local direction = aim - origin
+	if direction.Magnitude < 0.1 then
+		direction = root.CFrame.LookVector
+	end
+	for index = 1, count do
+		local spread = (index - (count + 1) / 2) * math.rad(7)
+		local turned = CFrame.fromAxisAngle(Vector3.yAxis, spread):VectorToWorldSpace(direction.Unit)
+		shootArrow(player, origin, turned)
+		task.wait(0.05)
+	end
+end
+
+-- A bot's sword hit on a player: armor and Protection count, like any hit.
+function CombatService.hurtByBot(victim: Player, amount: number, push: Vector3, botName: string, botTeam: string)
+	local humanoid = humanoidOf(victim)
+	local character = victim.Character
+	if
+		not humanoid
+		or humanoid.Health <= 0
+		or not character
+		or character:FindFirstChildOfClass("ForceField")
+		or not MatchService.isPlaying(victim)
+	then
+		return
+	end
+	local armor = MatchData.Armor[gearOf(victim).armor]
+	local protection = MatchService.upgradeLevel(victim, "Protection")
+	local taken = math.max(0.3, armor.taken - 0.06 * protection)
+	MatchService.recordBotHit(victim, botName, botTeam)
+	lastWeapon[victim] = nil
+	humanoid:TakeDamage(amount * taken)
+	Juice.knock(victim, push * WeatherService.knockbackMultiplier())
+	Juice.sound(victim, "hurt")
+end
+
 -- Hurts an enemy with armor and upgrades counted (explosions use this).
-function CombatService.hurt(victim: Player, attacker: Player, amount: number, push: Vector3)
+function CombatService.hurt(victim: Player, attacker: Player, amount: number, push: Vector3, weapon: string?)
 	if victim == attacker or MatchService.isEnemy(attacker, victim) then
-		damage(victim, attacker, if victim == attacker then amount * 0.3 else amount, push)
+		damage(victim, attacker, if victim == attacker then amount * 0.3 else amount, push, weapon)
 	end
 end
 
@@ -566,6 +711,7 @@ function CombatService.give(player: Player, key: string, amount: number?): strin
 end
 
 function CombatService.start()
+	MatchService.weaponOf = CombatService.lastWeaponOn
 	Remotes.event("Swing").OnServerEvent:Connect(onSwing)
 	Remotes.event("ShootBow").OnServerEvent:Connect(onShoot)
 	Remotes.event("UseItem").OnServerEvent:Connect(onUse)
@@ -619,6 +765,7 @@ function CombatService.start()
 		onPlayer(player)
 	end
 	Players.PlayerRemoving:Connect(function(player)
+		lastWeapon[player] = nil
 		gear[player] = nil
 		lastSwing[player] = nil
 		lastShot[player] = nil

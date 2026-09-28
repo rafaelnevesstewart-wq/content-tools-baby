@@ -54,12 +54,16 @@ function WeaponController.start()
 			end
 			lastSwing = os.clock()
 			slash(toolName)
-			Sfx.play("throw", (if toolName == "Sword" then 1.3 else 0.9) + math.random() * 0.2)
+			if toolName == "Sword" then
+				Sfx.play("slash", 0.95 + math.random() * 0.15)
+			else
+				Sfx.play("throw", 0.9 + math.random() * 0.2)
+			end
 			Remotes.event("Swing"):FireServer(Aim.point(enemyRoots(), 2))
 		end)
 	end
 	Aim.hookTool("Bow", function()
-		Sfx.play("throw", 0.8)
+		Sfx.play("arrow", 0.9 + math.random() * 0.2)
 		Remotes.event("ShootBow"):FireServer(Aim.point(enemyRoots(), 4))
 	end)
 	Aim.hookTool("Storm Apple", function()

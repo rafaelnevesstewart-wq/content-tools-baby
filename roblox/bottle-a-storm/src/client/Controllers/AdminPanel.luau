@@ -66,6 +66,7 @@ function AdminPanel.start()
 	local actions = {
 		{ "⚔️ Start match now", "startmatch", UI.Colors.Good },
 		{ "🏁 End match", "endmatch", UI.Colors.Bad },
+		{ "🏆 Start tournament", "tournament", UI.Colors.Spark },
 		{ "👑 ADMIN ABUSE", "abuse", UI.Colors.Spark },
 	}
 	for order, action in actions do

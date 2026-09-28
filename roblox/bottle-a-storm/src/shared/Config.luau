@@ -69,6 +69,51 @@ Config.Lobby = {
 	CastleHalf = 44, -- the castle walls are a square this far from the center
 }
 
+-- Background music (MusicController). Add songs as Roblox audio ids: in
+-- Studio open Toolbox > Audio, pick the Music category (the free
+-- Roblox-licensed tracks), right-click a song > Copy Asset ID and paste the
+-- number here, e.g. Lobby = { 1234567890, 2345678901 }. Empty lists play
+-- nothing. The volume is in ⚙️ Settings.
+Config.Music = {
+	Lobby = {} :: { number }, -- calm songs between matches
+	Match = {} :: { number }, -- faster songs while you fight
+	Victory = nil :: number?, -- a short fanfare when your team wins
+	Volume = 0.35,
+}
+
+-- 🤖 Bots (BotService): computer players that fill empty teams, so a
+-- match can start with just one real player.
+Config.Bots = {
+	Enabled = true,
+	MinTeams = 4, -- bot teams are added until a match has this many teams
+	SoloCountdown = 40, -- the wait before a match when you're alone with bots
+	Health = 100,
+	DamageScale = 0.55, -- bots hit softer than players with the same sword
+	HitCooldown = 0.9,
+	Reach = 6.5,
+	SightRange = 45, -- they go after enemies this close
+	BedBreakSeconds = 4,
+	WalkSpeed = 15,
+	Names = {
+		"Bolt",
+		"Nimbus",
+		"Drizzle",
+		"Gusty",
+		"Thunder",
+		"Misty",
+		"Cyclone",
+		"Hailey",
+		"Breeze",
+		"Sleet",
+		"Squall",
+		"Zephyr",
+		"Flurry",
+		"Sparky",
+		"Tempest",
+		"Cirrus",
+	},
+}
+
 -- Lucky Blocks mode (MatchData.Modes): ❓ blocks to break for surprises.
 Config.Lucky = {
 	Interval = 45, -- seconds between new batches of blocks
@@ -77,6 +122,17 @@ Config.Lucky = {
 	MaxBlocks = 40,
 	Hits = 3, -- sword hits to open one
 	Size = 3.2,
+}
+
+-- 🏆 Weekend tournaments: a 1v1 bracket in the lobby's duel arena. On
+-- Saturdays and Sundays (UTC) one starts every EveryMinutes; admins can start
+-- one any time. Matches wait while a tournament is on.
+Config.Tournament = {
+	EveryMinutes = 30,
+	SignupSeconds = 60,
+	MinPlayers = 2,
+	MaxPlayers = 8,
+	Prizes = { Champion = 5000, RunnerUp = 2000, Semifinal = 750, Joined = 150 },
 }
 
 -- 1v1 duels in the castle lobby's arena (challenge people from 👥 Party).
@@ -123,7 +179,16 @@ Config.Rewards = {
 -- Kit powers (Shift in a match). Rarer kits recharge faster (StormData
 -- rarity "cooldown").
 Config.Kit = {
-	Cooldowns = { Updraft = 6, BlinkDash = 5, Surf = 5, CloudJump = 0.3, Flight = 25 },
+	Cooldowns = {
+		Updraft = 6,
+		BlinkDash = 5,
+		Surf = 5,
+		CloudJump = 0.3,
+		Flight = 25,
+		Heal = 18,
+		Bridge = 14,
+		Volley = 10,
+	},
 	UpdraftPower = 110, -- upward launch speed
 	DashDistance = 24,
 	SurfSpeed = 75,
@@ -133,6 +198,10 @@ Config.Kit = {
 	FlightSeconds = 4,
 	FlightSpeed = 45,
 	BuddyScale = 0.45, -- the kit storm floating beside you
+	HealAmount = 35, -- Healing Rain: health for you and teammates nearby
+	HealRange = 18,
+	BridgeLength = 10, -- Instant Bridge: blocks in a line ahead of you
+	VolleyArrows = 5, -- Arrow Volley: free arrows in a fan
 }
 
 -- Sparks (IncomeService).
