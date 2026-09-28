@@ -1,6 +1,7 @@
 -- 🐎 Mounts on your screen: press H (or 🐎) to ride (MountService). While
 -- you ride you sit; flying clouds go up while you hold jump and drift down
--- slowly otherwise. Every horse on screen gallops (legs swing) when it moves.
+-- slowly otherwise. Every horse on screen gallops (legs swing) when it moves,
+-- and dragons flap their wings.
 
 local CollectionService = game:GetService("CollectionService")
 local ContextActionService = game:GetService("ContextActionService")
@@ -21,7 +22,8 @@ local MountController = {}
 local SIT = "rbxassetid://2506281703" -- Roblox's own sitting pose
 
 type Leg = { weld: Weld, base: CFrame, phase: number }
-type Horse = { model: Model, legs: { Leg }, last: Vector3, speed: number, gait: number }
+type Wing = { weld: Weld, base: CFrame, side: number }
+type Horse = { model: Model, legs: { Leg }, wings: { Wing }, last: Vector3, speed: number, gait: number }
 
 local horses: { [Model]: Horse } = {}
 local sitTrack: AnimationTrack? = nil
@@ -36,15 +38,19 @@ local function addHorse(model: Instance)
 	end
 	task.wait(0.2)
 	local legs = {}
+	local wings = {}
 	for _, item in model:GetDescendants() do
 		if item:IsA("Weld") and item.Name == "Leg" then
 			local phase = item:GetAttribute("Phase")
 			table.insert(legs, { weld = item, base = item.C0, phase = if type(phase) == "number" then phase else 0 })
+		elseif item:IsA("Weld") and item.Name == "Wing" then
+			local side = item:GetAttribute("Side")
+			table.insert(wings, { weld = item, base = item.C0, side = if type(side) == "number" then side else 1 })
 		end
 	end
 	local root = model.PrimaryPart
-	if #legs > 0 and root then
-		horses[model] = { model = model, legs = legs, last = root.Position, speed = 0, gait = 0 }
+	if (#legs > 0 or #wings > 0) and root then
+		horses[model] = { model = model, legs = legs, wings = wings, last = root.Position, speed = 0, gait = 0 }
 	end
 end
 
@@ -139,6 +145,11 @@ function MountController.start()
 			horse.gait += dt * (6 + horse.speed * 0.4)
 			for _, leg in horse.legs do
 				leg.weld.C0 = leg.base * CFrame.Angles(math.sin(horse.gait + leg.phase) * 0.7 * running, 0, 0)
+			end
+			-- Wings beat slowly at rest and hard while moving.
+			local beat = math.sin(os.clock() * (2.5 + running * 5)) * (0.25 + running * 0.45)
+			for _, wing in horse.wings do
+				wing.weld.C0 = wing.base * CFrame.Angles(0, 0, wing.side * (beat + 0.15))
 			end
 		end
 	end)

@@ -7,6 +7,7 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local EventData = require(Shared.EventData)
 local Format = require(Shared.Format)
 local HolidayData = require(Shared.HolidayData)
 local MapData = require(Shared.MapData)
@@ -54,6 +55,16 @@ local function happening(): { string }
 	if event then
 		table.insert(lines, event.emoji .. " " .. event.name .. " is on!")
 	end
+	local contestRaw = workspace:GetAttribute("Contest")
+	local contestOk, contest =
+		pcall(HttpService.JSONDecode, HttpService, if type(contestRaw) == "string" then contestRaw else "{}")
+	if contestOk and type(contest) == "table" and contest.phase == "build" then
+		table.insert(lines, "🎨 Build contest on Base Island: " .. tostring(contest.theme) .. "!")
+	elseif contestOk and type(contest) == "table" and contest.phase == "vote" then
+		table.insert(lines, "🎨 Vote in the build contest now!")
+	end
+	local weekly = EventData.current(os.time())
+	table.insert(lines, "🎪 This week: " .. weekly.emoji .. " " .. weekly.name .. " in every match")
 	local abuse = workspace:GetAttribute("AbuseUntil")
 	if type(abuse) == "number" and abuse > now then
 		table.insert(lines, "👑 ADMIN ABUSE: double Sparks for " .. Format.time(abuse - now) .. "!")

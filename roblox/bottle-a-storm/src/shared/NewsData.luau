@@ -9,6 +9,17 @@ local NewsData = {}
 
 NewsData.List = {
 	{
+		version = 9,
+		title = "🎪 Weekly events, gliders and a dragon to tame!",
+		lines = {
+			"🎪 A new rule every week: low gravity, giants, one hit, speed rush or double Sparks",
+			"🪂 Gliders and ⛱️ parachutes in the match shop",
+			"🐉 Do the most damage to the Storm Dragon and you might tame it as a mount",
+			"🏆 A trophy room behind your base, 🎨 build contests with star voting",
+			"🧭 Guide Gale by the gate, 🎁 gift cosmetics to friends from 👥 Party",
+		},
+	},
+	{
 		version = 8,
 		title = "🐎 Mounts, mini-games and base building!",
 		lines = {

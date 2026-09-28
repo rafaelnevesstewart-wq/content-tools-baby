@@ -41,6 +41,8 @@ MatchService.MatchStarted = Signal.new()
 MatchService.MatchEnded = Signal.new()
 -- (killer, victim, final)
 MatchService.Killed = Signal.new()
+-- (killer, final) when a player knocks out a bot
+MatchService.BotKilled = Signal.new()
 -- (breaker, team)
 MatchService.BedBroken = Signal.new()
 -- (player) for everyone on the winning team, and everyone who played.
@@ -895,6 +897,7 @@ function MatchService.botKnockedOut(team: MatchTeam, name: string, killer: Playe
 		weapon = "Sword",
 	})
 	if killer then
+		MatchService.BotKilled:Fire(killer, final)
 		Juice.sound(killer, "kill")
 		reward(killer, if final then "FinalKill" else "Kill")
 		addStat(killer, "kills")

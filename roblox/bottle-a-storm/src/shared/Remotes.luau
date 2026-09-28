@@ -36,6 +36,7 @@ local EVENTS = {
 	"DamageShown", -- server -> client: (position, amount) you hit someone
 	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed
 	"UseGadget", -- client -> server: ("TNT" | "Fireball" | "Rocket" | potion key | "Mine", aimPoint)
+	"Glide", -- client -> server: (on) you started or stopped gliding (the wings show)
 }
 
 local FUNCTIONS = {
@@ -68,6 +69,9 @@ local FUNCTIONS = {
 	"GetTradeInventory", -- client -> server: () -> your tradeable kits, cosmetics and Sparks
 	"BuyEmote", -- client -> server: (key) -> (ok, message)
 	"ClaimChallenge", -- client -> server: ("daily" | index | "bonus") -> (ok, message)
+	"GetGifts", -- client -> server: (userId) -> what you could gift them and your Sparks
+	"SendGift", -- client -> server: (userId, cosmeticId) -> (ok, message)
+	"Contest", -- client -> server: ("info") -> contest info, or ("visit" | "vote", userId, stars) -> (ok, message)
 }
 
 local folder: Instance

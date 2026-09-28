@@ -1,5 +1,6 @@
 -- 🐎 Mounts to ride in the lobby (a cosmetic, CosmeticsData category
--- "mount"): horses with legs that gallop and flying clouds. build() returns a
+-- "mount"): horses with legs that gallop, flying clouds and the tamed Storm
+-- Dragon (wings are Welds named "Wing" with a "Side" that the client flaps). build() returns a
 -- Model whose invisible PrimaryPart "Root" sits at the middle of the body;
 -- every other part is welded to it. Legs are Welds named "Leg" (with a
 -- "Phase") that the client swings (MountController). Attributes:
@@ -219,6 +220,165 @@ local function cloud(color: Color3, storm: boolean): (Model, BasePart) -> ()
 	end
 end
 
+-- 🐉 The tamed Storm Dragon: a scaly body, a long neck and horned head, a
+-- spiked tail, four clawed legs and two big wings that flap.
+local function dragon(scales: Color3, belly: Color3, glow: Color3): (Model, BasePart) -> ()
+	return function(model, root)
+		local c = root.CFrame
+		local body = piece(model, {
+			Size = Vector3.new(2.8, 2.6, 5.6),
+			Color = scales,
+			Material = Enum.Material.Slate,
+			CFrame = c,
+			Round = true,
+		})
+		stick(root, body)
+		stick(
+			body,
+			piece(model, {
+				Size = Vector3.new(2.2, 1.4, 4.4),
+				Color = belly,
+				Material = Enum.Material.Sand,
+				CFrame = c * CFrame.new(0, -0.7, 0),
+				Round = true,
+			})
+		)
+		local neck = piece(model, {
+			Size = Vector3.new(1.3, 3.4, 1.4),
+			Color = scales,
+			Material = Enum.Material.Slate,
+			CFrame = c * CFrame.new(0, 1.5, -2.8) * CFrame.Angles(math.rad(-40), 0, 0),
+			Round = true,
+		})
+		stick(body, neck)
+		local head = piece(model, {
+			Size = Vector3.new(1.5, 1.2, 2.6),
+			Color = scales,
+			Material = Enum.Material.Slate,
+			CFrame = c * CFrame.new(0, 3, -4),
+			Round = true,
+		})
+		stick(body, head)
+		for _, side in { -1, 1 } do
+			-- Glowing eyes and swept-back horns.
+			stick(
+				head,
+				piece(model, {
+					Size = Vector3.one * 0.25,
+					Color = glow,
+					Material = Enum.Material.Neon,
+					CFrame = c * CFrame.new(side * 0.55, 3.25, -4.6),
+					Round = true,
+				})
+			)
+			stick(
+				head,
+				piece(model, {
+					ClassName = "WedgePart",
+					Size = Vector3.new(0.25, 0.5, 1.4),
+					Color = belly,
+					Material = Enum.Material.Marble,
+					CFrame = c * CFrame.new(side * 0.45, 3.75, -3.4) * CFrame.Angles(math.rad(20), math.pi, 0),
+				})
+			)
+		end
+		-- Spikes down the back and the tail.
+		for i = 0, 4 do
+			stick(
+				body,
+				piece(model, {
+					ClassName = "WedgePart",
+					Size = Vector3.new(0.2, 0.6, 0.6),
+					Color = glow,
+					Material = Enum.Material.Neon,
+					CFrame = c * CFrame.new(0, 1.35 + (if i == 0 then 0.2 else 0), -1.6 + i * 0.9),
+				})
+			)
+		end
+		for i = 1, 4 do
+			stick(
+				body,
+				piece(model, {
+					Size = Vector3.new(1.2 - i * 0.22, 1.1 - i * 0.2, 1.6),
+					Color = scales,
+					Material = Enum.Material.Slate,
+					CFrame = c * CFrame.new(0, -0.2 - i * 0.15, 2.4 + i * 1.3),
+					Round = true,
+				})
+			)
+		end
+		-- The saddle.
+		stick(
+			body,
+			piece(model, {
+				Size = Vector3.new(2.6, 0.3, 1.8),
+				Color = rgb(90, 40, 30),
+				Material = Enum.Material.Leather,
+				CFrame = c * CFrame.new(0, 1.3, 0.3),
+			})
+		)
+		local light = Instance.new("PointLight")
+		light.Color = glow
+		light.Range = 12
+		light.Parent = head
+		-- Wings on joints (the client flaps them).
+		for _, side in { -1, 1 } do
+			local shoulder = c * CFrame.new(side * 1.1, 1, -0.6)
+			local wing = piece(model, {
+				Size = Vector3.new(6, 0.2, 3.6),
+				Color = scales:Lerp(glow, 0.25),
+				Material = Enum.Material.Fabric,
+				CFrame = shoulder * CFrame.new(side * 3, 0, 0.6),
+			})
+			stick(
+				wing,
+				piece(model, {
+					Size = Vector3.new(6.2, 0.3, 0.3),
+					Color = scales,
+					Material = Enum.Material.Slate,
+					CFrame = shoulder * CFrame.new(side * 3, 0.1, -1.1),
+				})
+			)
+			local weld = Instance.new("Weld")
+			weld.Name = "Wing"
+			weld.Part0 = body
+			weld.Part1 = wing
+			weld.C0 = body.CFrame:ToObjectSpace(shoulder)
+			weld.C1 = CFrame.new(-side * 3, 0, -0.6)
+			weld:SetAttribute("Side", side)
+			weld.Parent = wing
+		end
+		-- Four short legs with claws.
+		for index, spot in { { -0.9, -1.6 }, { 0.9, -1.6 }, { -0.9, 1.6 }, { 0.9, 1.6 } } do
+			local leg = piece(model, {
+				Size = Vector3.new(0.7, 2, 0.7),
+				Color = scales,
+				Material = Enum.Material.Slate,
+				CFrame = c,
+			})
+			local hip = c * CFrame.new(spot[1], -0.9, spot[2])
+			leg.CFrame = hip * CFrame.new(0, -1, 0)
+			local weld = Instance.new("Weld")
+			weld.Name = "Leg"
+			weld.Part0 = body
+			weld.Part1 = leg
+			weld.C0 = body.CFrame:ToObjectSpace(hip)
+			weld.C1 = CFrame.new(0, 1, 0)
+			weld:SetAttribute("Phase", if index == 1 or index == 4 then 0 else math.pi)
+			weld.Parent = leg
+			stick(
+				leg,
+				piece(model, {
+					Size = Vector3.new(0.8, 0.3, 0.9),
+					Color = belly,
+					Material = Enum.Material.Marble,
+					CFrame = leg.CFrame * CFrame.new(0, -1, -0.15),
+				})
+			)
+		end
+	end
+end
+
 MountModels.Kinds = {
 	Pony = { bodyHeight = 3.2, raise = 2.4, build = horse(rgb(140, 92, 56), rgb(60, 40, 28)) },
 	NightMare = {
@@ -233,6 +393,12 @@ MountModels.Kinds = {
 	},
 	Cloud = { bodyHeight = 1.4, raise = 1.6, flies = true, build = cloud(rgb(248, 250, 255), false) },
 	StormCloud = { bodyHeight = 1.4, raise = 1.6, flies = true, build = cloud(rgb(70, 76, 96), true) },
+	Dragon = {
+		bodyHeight = 3.2,
+		raise = 2.8,
+		flies = true,
+		build = dragon(rgb(46, 58, 92), rgb(200, 190, 150), rgb(120, 220, 255)),
+	},
 } :: { [string]: Kind }
 
 function MountModels.build(kindName: string): (Model?, Kind?)

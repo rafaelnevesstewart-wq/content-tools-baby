@@ -156,8 +156,21 @@ Crystals and Lightning Cores. If nobody beats it in time, it flies away and come
 - 🏗️ **Base Island** (west): claim one of 8 plots and build with the 🔨 Builder (11 block types,
   up to 400 blocks): pick a block in the bar, click where it goes, 🧽 to remove. Your base is
   saved and comes back whenever you claim a plot. Anyone can visit.
+  Behind every claimed plot is its owner's 🏆 **Trophy Room**: a golden cup and a plaque for
+  each achievement they've earned.
+- 🎨 **Build contests** on Base Island, all day: a theme (castle, rocket, treehouse...), 10
+  minutes to build it, then 3 minutes to visit every base with 10+ blocks and give it 1-5 stars
+  (the 🎨 chip at the top right). The top 3 win Sparks; entering and voting pay a little too.
+  Winning counts toward the 🏗️ Master Builder title.
 - 🐎 **Mounts:** ride a Pony, Night Mare, Unicorn, Flying Cloud or Storm Cloud around the lobby
   (🎨 Style → Mounts; press **H** or 🐎). Horses gallop fast; clouds fly (hold jump to rise).
+  🐉 **Tame the Storm Dragon:** whoever does the most damage to the boss has a 15% chance to
+  get it as a flying mount (certain on the 10th try).
+- 🧭 **Guide Gale** by the castle gate walks new players through 8 steps (the chest, a match,
+  the shop, a knockout, a bed, Base Island...). Each step pays Sparks; finishing gives an Epic
+  kit, ⚡1,000 and the 🎓 Storm Scholar title.
+- 🎁 **Gifts:** in 👥 Party, press 🎁 Gift next to someone to buy them a Sparks cosmetic they
+  don't have yet (5 gifts = the 🎁 Generous title).
 - 📰 **News board** in the courtyard: what's on right now and the latest updates (the newest
   also pops up once after an update).
 
@@ -221,6 +234,18 @@ shiny Legendary kit, ⚡10,000 and the 🌟 Challenger title.
   weather, or Sparks for everyone. Admin Abuse also runs by itself once a week.
 - 💎 **Robux shop:** VIP, Star Booster, Sparks, Golden Kit Crate, wheel spins, Battle Pass
   Premium, tier skips and Summon Rainbow Hour. Nothing sold makes you stronger in a match.
+
+## 🎪 Weekly events
+
+Every week (from Monday, UTC) every match gets a special rule: 🌙 Low Gravity, 🦣 Giant Mode,
+💥 One Hit (every hit is a knockout), ⚡ Speed Rush or 💰 Double Sparks. The chip at the top
+right and the news board say which one is on.
+
+## 🪂 Gliders and parachutes
+
+In the match item shop: the **Glider** (10 Silver, kept until the match ends) lets you hold
+jump while falling to sail forward and sink slowly. A **Parachute** (6 Silver, carry up to 3)
+opens by itself if you fall off the map and floats you back down over your own island.
 
 ## 👑 King of the Hill
 
@@ -330,7 +355,8 @@ src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match
               (battle pass), RewardsData (daily rewards, quests), MarketData (Kit Shop,
               crates), SpinData, TitleData, HolidayData, WeatherEvents, Products, Sounds,
               SettingsData, ChallengeData, PaintData, EmoteData, PetLevels,
-              ClanPassData, BaseData, NewsData, TauntData, Remotes, Format, Signal
+              ClanPassData, BaseData, NewsData, TauntData, EventData (weekly events),
+              GuideData (Guide Gale), ContestData (build contests), Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, MatchService (rounds, teams, beds, generators), CombatService,
               GadgetService (TNT, fireballs, potions, pickaxes, axes), PartyService,
@@ -347,7 +373,9 @@ src/server/   Main.server.luau starts the services in order
               and volley powers), BossService (Storm Dragon), ClanService, TradeService,
               VoteService (map and bot votes), ChallengeService, PaintService,
               EmoteService, PetLevelService, InviteService, ZombieService, HillService,
-              NewsService, TauntService, MountService, MiniGameService, BaseService
+              NewsService, TauntService, MountService (and dragon taming), MiniGameService,
+              BaseService (and trophy rooms), EventService, GiftService, GuideService,
+              ContestService
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
               ItemModels (weapons and items), PetModels, MountModels, StormModel (kit
               storms), Effects,
@@ -362,7 +390,8 @@ src/client/   Main.client.luau starts the controllers
                after you're out), BossHUD, Challenges, Clan, Trade, BlockPhysics (slime
                and ladders), Paint, EmoteWheel, ShopStreet, ZombieHUD, HillHUD,
                NewsPopup, DayNightHUD, TauntPicker, MountController, MiniGameHUD,
-               BaseBuilder, Toasts, Sfx, UI
+               BaseBuilder, EventClient (low gravity), GlideController, GuideTracker,
+               ContestClient, Gift, Toasts, Sfx, UI
 ```
 
 ## Known limits

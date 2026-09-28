@@ -1,8 +1,8 @@
 -- The 👥 Party window: your party (leave, or remove someone if you lead it),
 -- everyone else in the server with an Invite button, and a ⚔️ Duel button to
--- challenge anyone to a 1v1 in the castle arena (LobbyService). Invites and
--- challenges pop up at the bottom. Party members always play on the same
--- team (PartyService).
+-- challenge anyone to a 1v1 in the castle arena (LobbyService), plus 🤝 Trade
+-- and 🎁 Gift buttons. Invites and challenges pop up at the bottom. Party
+-- members always play on the same team (PartyService).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -12,6 +12,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Remotes = require(Shared.Remotes)
 
+local Gift = require(script.Parent.Gift)
 local Trade = require(script.Parent.Trade)
 local UI = require(script.Parent.UI)
 
@@ -150,6 +151,14 @@ local function build()
 			row(order, other.DisplayName, "🤝 Trade", UI.Colors.Rare, function()
 				Trade.request(other.UserId)
 				window.Visible = false
+			end)
+		end
+		heading("🎁 Gift a cosmetic (you pay the Sparks)")
+		for _, other in duelable do
+			order += 1
+			row(order, other.DisplayName, "🎁 Gift", UI.Colors.Spark, function()
+				window.Visible = false
+				Gift.open(other.UserId)
 			end)
 		end
 	end

@@ -235,6 +235,8 @@ Config.Mounts = {
 	FlyUpSpeed = 24, -- clouds: holding jump
 	FallSpeed = 6, -- clouds drift down this slowly
 	MaxHeight = 120, -- clouds can't fly higher than this above the lobby
+	DragonChance = 0.15, -- 🐉 chance to tame the Storm Dragon when you do the most damage
+	DragonPity = 10, -- ...and it's certain on this try
 }
 
 -- 🎯 Games Island mini-games (MiniGameService).

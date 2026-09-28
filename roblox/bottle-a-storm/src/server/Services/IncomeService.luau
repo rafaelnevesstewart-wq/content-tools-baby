@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local EventData = require(Shared.EventData)
 local PetLevels = require(Shared.PetLevels)
 local Products = require(Shared.Products)
 
@@ -34,7 +35,8 @@ function IncomeService.multiplier(player: Player): number
 		else 1
 	local petLevel = PetLevels.levelOf(data, data.cosmetics.pet)
 	local pet = 1 + PetLevels.BonusPerLevel * (petLevel - 1)
-	return vip * style * collection * group * abuse * pet * WeatherService.sparksMultiplier()
+	local event = if EventData.is("DoubleSparks") then EventData.DoubleSparks else 1 -- 🎪 weekly event
+	return vip * style * collection * group * abuse * pet * event * WeatherService.sparksMultiplier()
 end
 
 -- Pushes the profile's numbers to attributes and leaderstats.

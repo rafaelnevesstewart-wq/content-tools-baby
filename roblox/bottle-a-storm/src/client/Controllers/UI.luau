@@ -129,4 +129,30 @@ function UI.screen(name: string, displayOrder: number?): ScreenGui
 	})
 end
 
+-- The stack of small status chips on the right, just above the kill feed
+-- (contest, guide step, weekly event, match clock). It grows upward and
+-- hidden chips take no room. Give each chip a LayoutOrder (higher = lower).
+local sideStack: Frame? = nil
+function UI.sideStack(): Frame
+	if not sideStack then
+		local screen = UI.screen("SideChips", 2)
+		sideStack = UI.new("Frame", {
+			AnchorPoint = Vector2.new(1, 1),
+			Position = UDim2.new(1, -12, 0.3, -8),
+			Size = UDim2.fromOffset(0, 0),
+			AutomaticSize = Enum.AutomaticSize.XY,
+			BackgroundTransparency = 1,
+			Parent = screen,
+		}, {
+			UI.new("UIListLayout", {
+				Padding = UDim.new(0, 4),
+				HorizontalAlignment = Enum.HorizontalAlignment.Right,
+				VerticalAlignment = Enum.VerticalAlignment.Bottom,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
+		})
+	end
+	return sideStack :: Frame
+end
+
 return UI

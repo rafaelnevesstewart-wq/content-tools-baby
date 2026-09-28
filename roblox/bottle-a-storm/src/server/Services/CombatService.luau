@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local EventData = require(Shared.EventData)
 local MatchData = require(Shared.MatchData)
 local PaintData = require(Shared.PaintData)
 local Remotes = require(Shared.Remotes)
@@ -410,7 +411,7 @@ local function damage(victim: Player, attacker: Player, amount: number, push: Ve
 	if victim ~= attacker then
 		lastWeapon[victim] = weapon or "Sword"
 	end
-	humanoid:TakeDamage(amount * taken)
+	humanoid:TakeDamage(amount * taken * (if EventData.is("OneHit") then EventData.OneHitDamage else 1))
 	local head = character:FindFirstChild("Head") :: BasePart?
 	if head then
 		Remotes.event("DamageShown"):FireClient(attacker, head.Position, math.floor(amount * taken + 0.5))
@@ -669,7 +670,7 @@ function CombatService.hurtByBot(victim: Player, amount: number, push: Vector3, 
 	local taken = math.max(0.3, armor.taken - 0.06 * protection)
 	MatchService.recordBotHit(victim, botName, botTeam)
 	lastWeapon[victim] = nil
-	humanoid:TakeDamage(amount * taken)
+	humanoid:TakeDamage(amount * taken * (if EventData.is("OneHit") then EventData.OneHitDamage else 1))
 	Juice.knock(victim, push * WeatherService.knockbackMultiplier())
 	Juice.sound(victim, "hurt")
 end

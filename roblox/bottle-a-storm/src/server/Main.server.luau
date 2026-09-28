@@ -53,6 +53,10 @@ local order = {
 	"MountService",
 	"MiniGameService",
 	"BaseService",
+	"EventService",
+	"GiftService",
+	"GuideService",
+	"ContestService",
 	"MonetizationService",
 }
 

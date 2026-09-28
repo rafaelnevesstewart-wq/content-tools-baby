@@ -436,7 +436,7 @@ local function defeated(b: Boss)
 	else
 		Notify.all("🐉 The Storm Dragon was defeated!", "rare")
 	end
-	BossService.Defeated:Fire(helpers)
+	BossService.Defeated:Fire(helpers, b.damage)
 end
 
 local function hurt(b: Boss, attacker: Player, amount: number)

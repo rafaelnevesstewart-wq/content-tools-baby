@@ -91,6 +91,16 @@ CosmeticsData.Items = {
 		mount = "Unicorn",
 		description = "A sparkling white unicorn with a golden horn.",
 	},
+	{
+		id = "MountDragon",
+		category = "mount",
+		name = "Storm Dragon",
+		emoji = "🐉",
+		cost = 0,
+		achievement = true,
+		mount = "Dragon",
+		description = "Tame it by doing the most damage to the Storm Dragon boss (a rare drop). It flies!",
+	},
 	-- Pets: they follow you everywhere, in the lobby and in matches.
 	{
 		id = "PetDuck",

@@ -736,4 +736,101 @@ function ItemModels.pearl(): Tool
 	return tool
 end
 
+---------------------------------------------------------------------------
+-- Gliders and parachutes (worn on your back, not held)
+---------------------------------------------------------------------------
+
+-- Builds `parts` (given relative to the torso) and welds them to `torso`.
+local function wear(torso: BasePart, name: string, parts: { { [string]: any } }): Model
+	local model = Instance.new("Model")
+	model.Name = name
+	for _, props in parts do
+		local offset = props.Offset :: CFrame
+		props.Offset = nil
+		local p = piece(model, props)
+		p.CanQuery = false
+		p.CFrame = torso.CFrame * offset
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = torso
+		weld.Part1 = p
+		weld.Parent = p
+	end
+	model.Parent = torso.Parent
+	return model
+end
+
+-- Hang-glider wings: a wide colored sail over your back on a steel frame.
+function ItemModels.gliderWings(torso: BasePart, color: Color3): Model
+	local parts: { { [string]: any } } = {}
+	for _, side in { -1, 1 } do
+		table.insert(parts, {
+			Name = "Sail",
+			Size = Vector3.new(5, 0.15, 3.2),
+			Offset = CFrame.new(side * 2.6, 1.6, 0.6) * CFrame.Angles(0, 0, side * math.rad(12)),
+			Color = color,
+			Material = M.Fabric,
+		})
+		table.insert(parts, {
+			Name = "Tip",
+			Size = Vector3.new(0.6, 0.2, 3.3),
+			Offset = CFrame.new(side * 5.1, 2.15, 0.6) * CFrame.Angles(0, 0, side * math.rad(12)),
+			Color = rgb(245, 245, 250),
+			Material = M.Fabric,
+		})
+	end
+	table.insert(parts, {
+		Name = "Frame",
+		Size = Vector3.new(10.5, 0.2, 0.2),
+		Offset = CFrame.new(0, 1.9, -0.9),
+		Color = STEEL,
+		Material = M.Metal,
+	})
+	table.insert(parts, {
+		Name = "Strut",
+		Size = Vector3.new(0.15, 1.6, 0.15),
+		Offset = CFrame.new(0, 1, 0.3),
+		Color = STEEL,
+		Material = M.Metal,
+	})
+	return wear(torso, "GliderWings", parts)
+end
+
+-- A parachute: a big striped canopy on strings high over your head.
+function ItemModels.parachute(torso: BasePart, color: Color3): Model
+	local parts: { { [string]: any } } = {
+		{
+			Name = "Canopy",
+			Size = Vector3.new(11, 3.5, 11),
+			Offset = CFrame.new(0, 9, 0),
+			Color = color,
+			Material = M.Fabric,
+		},
+		{
+			Name = "Stripe",
+			Size = Vector3.new(11.2, 3.2, 3),
+			Offset = CFrame.new(0, 9.1, 0),
+			Color = rgb(245, 245, 250),
+			Material = M.Fabric,
+		},
+	}
+	for _, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
+		local top = corner * 3.8 + Vector3.new(0, 8, 0)
+		local bottom = Vector3.new(corner.X * 0.8, 0.8, corner.Z * 0.4)
+		table.insert(parts, {
+			Name = "String",
+			Size = Vector3.new(0.06, 0.06, (top - bottom).Magnitude),
+			Offset = CFrame.lookAt((top + bottom) / 2, top),
+			Color = rgb(230, 230, 230),
+			Material = M.SmoothPlastic,
+		})
+	end
+	local model = wear(torso, "Parachute", parts)
+	for _, name in { "Canopy", "Stripe" } do
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = model:FindFirstChild(name)
+	end
+	return model
+end
+
 return ItemModels

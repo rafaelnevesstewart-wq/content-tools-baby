@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
@@ -19,6 +20,8 @@ local GadgetService = require(script.Parent.GadgetService)
 local MatchService = require(script.Parent.MatchService)
 
 local ItemShopService = {}
+
+ItemShopService.Bought = Signal.new() -- (player, itemKey) bought an item in a match
 
 local lastBuy: { [Player]: number } = {}
 
@@ -60,6 +63,7 @@ local function buyTool(player: Player, key: string): (boolean, string)
 	end
 	GadgetService.give(player, key)
 	Juice.sound(player, "coins")
+	ItemShopService.Bought:Fire(player, key)
 	return true, MatchData.Tools[key].emoji .. " Got the " .. tier.name .. "!"
 end
 
@@ -101,6 +105,7 @@ local function buyItem(player: Player, key: any): (boolean, string)
 		CombatService.give(player, item.key, item.amount)
 	end
 	Juice.sound(player, "coins")
+	ItemShopService.Bought:Fire(player, item.key)
 	return true, item.emoji .. " Bought " .. item.name .. "!"
 end
 

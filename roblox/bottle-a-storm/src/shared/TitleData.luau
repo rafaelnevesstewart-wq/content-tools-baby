@@ -42,6 +42,33 @@ local TitleData = {}
 
 TitleData.List = {
 	{
+		id = "MasterBuilder",
+		name = "Master Builder",
+		emoji = "🏗️",
+		color = rgb(255, 180, 90),
+		goal = "Win a build contest on Base Island",
+		target = 1,
+		progress = stat("contestWins"),
+	},
+	{
+		id = "StormScholar",
+		name = "Storm Scholar",
+		emoji = "🎓",
+		color = rgb(140, 200, 255),
+		goal = "Finish Guide Gale's steps",
+		target = 1,
+		progress = stat("guideDone"),
+	},
+	{
+		id = "Generous",
+		name = "Generous",
+		emoji = "🎁",
+		color = rgb(255, 150, 200),
+		goal = "Gift 5 cosmetics to other players",
+		target = 5,
+		progress = stat("giftsGiven"),
+	},
+	{
 		id = "LoyalLegend",
 		name = "Loyal Legend",
 		emoji = "📅",

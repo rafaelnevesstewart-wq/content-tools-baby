@@ -3,6 +3,10 @@
 -- you, you sit higher and move faster; clouds fly (MountController does the
 -- flying and the galloping on your screen). You get off automatically when
 -- a match or a duel starts.
+--
+-- 🐉 Taming the Storm Dragon: whoever does the most damage to the boss
+-- (BossService) has a Config.Mounts.DragonChance chance to tame it as a
+-- mount, and it's certain after Config.Mounts.DragonPity tries.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -16,6 +20,8 @@ local Modules = script.Parent.Parent.Modules
 local MountModels = require(Modules.MountModels)
 local Notify = require(Modules.Notify)
 
+local BossService = require(script.Parent.BossService)
+local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
 
 local MountService = {}
@@ -93,7 +99,40 @@ local function mount(player: Player)
 	player:SetAttribute("MountFlies", kind.flies == true)
 end
 
+local function tryTame(_helpers: { Player }, damage: { [Player]: number }?)
+	local best, most = nil, 0
+	local hits: { [Player]: number } = damage or {}
+	for player, amount in hits do
+		if player.Parent and amount > most then
+			best, most = player, amount
+		end
+	end
+	local data = best and DataService.get(best)
+	if not best or not data or data.cosmetics.owned.MountDragon then
+		return
+	end
+	local tries = (data.stats.dragonTries or 0) + 1
+	data.stats.dragonTries = tries
+	if tries < Config.Mounts.DragonPity and math.random() > Config.Mounts.DragonChance then
+		Notify.player(
+			best,
+			"🐉 You did the most damage, but the dragon got away... Keep trying to tame it! ("
+				.. tries
+				.. "/"
+				.. Config.Mounts.DragonPity
+				.. ")",
+			"info"
+		)
+		return
+	end
+	if CosmeticService.grant(best, "MountDragon") == nil then
+		Notify.all("🐉 " .. best.DisplayName .. " TAMED THE STORM DRAGON! It's their mount now!", "rare")
+		Notify.player(best, "🐉 The Storm Dragon is yours! Ride it in the lobby (press H). It flies!", "success")
+	end
+end
+
 function MountService.start()
+	BossService.Defeated:Connect(tryTame)
 	Remotes.event("Mount").OnServerEvent:Connect(function(player)
 		if rides[player] then
 			dismount(player)

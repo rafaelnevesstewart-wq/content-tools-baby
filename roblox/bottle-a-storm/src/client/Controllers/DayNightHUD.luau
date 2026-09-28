@@ -12,17 +12,15 @@ local player = Players.LocalPlayer
 local DayNightHUD = {}
 
 function DayNightHUD.start()
-	local screen = UI.screen("DayNight", 2)
 	local chip = UI.label({
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -12, 0.3, -40),
+		LayoutOrder = 4,
 		Size = UDim2.fromOffset(0, 28),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundColor3 = UI.Colors.Panel,
 		BackgroundTransparency = 0.25,
 		TextSize = 15,
 		Visible = false,
-		Parent = screen,
+		Parent = UI.sideStack(),
 	})
 	UI.corner(8).Parent = chip
 	UI.new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = chip })

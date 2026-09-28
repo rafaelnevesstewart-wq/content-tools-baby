@@ -61,6 +61,7 @@ local function defaultData()
 		petLevels = {}, -- 🐾 pet id -> { level, xp } (PetLevels)
 		minigames = { day = -1, prizes = 0, rangeBest = 0 }, -- 🎯 and ⏱️ (raceBest set when you finish)
 		base = { blocks = {} }, -- 🏗️ your saved base: "i,j,k,blockKey" (BaseData)
+		guide = { step = 1, done = false }, -- 🧭 Guide Gale's steps (GuideData)
 		-- 🌟 Challenges (ChallengeService fills these in).
 		challenges = { day = -1, week = -1, bonusClaimed = false },
 		level = 1, -- player level (1-100), then prestige (ProgressionData)

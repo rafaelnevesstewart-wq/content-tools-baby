@@ -1,5 +1,7 @@
 -- Bed Wars gadgets: Storm TNT, Fireballs, Rocket Launchers, the Grappling
--- Hook (the client does the pulling), potions (speed, jump, invisibility), and pickaxes and axes that break placed blocks faster and
+-- Hook (the client does the pulling), the 🪂 Glider (hold jump while falling;
+-- GlideController flies it) and Parachutes (fall off the map and one opens
+-- over your island), potions (speed, jump, invisibility), and pickaxes and axes that break placed blocks faster and
 -- dig into the ground. Everyone always has at least a Wood Pickaxe.
 -- The client only aims and asks (WeaponController, BlockController);
 -- everything is checked here.
@@ -10,6 +12,7 @@ local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local EventData = require(Shared.EventData)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
 
@@ -32,6 +35,8 @@ type Kit = {
 	fireballs: number,
 	rockets: number,
 	grapple: boolean,
+	glider: boolean,
+	parachutes: number,
 	potions: { [string]: number },
 }
 
@@ -68,7 +73,17 @@ end
 local function kitOf(player: Player): Kit
 	local kit = kits[player]
 	if not kit then
-		kit = { pickaxe = 0, axe = 0, tnt = 0, fireballs = 0, rockets = 0, grapple = false, potions = {} }
+		kit = {
+			pickaxe = 0,
+			axe = 0,
+			tnt = 0,
+			fireballs = 0,
+			rockets = 0,
+			grapple = false,
+			glider = false,
+			parachutes = 0,
+			potions = {},
+		}
 		kits[player] = kit
 	end
 	return kit
@@ -120,6 +135,8 @@ local function refreshTools(player: Player)
 	sync(player, "Rocket Launcher", kit.rockets, ItemModels.rocketLauncher)
 	sync(player, "Grappling Hook", if kit.grapple then 1 else 0, ItemModels.grapple)
 	player:SetAttribute("Rockets", if kit.rockets > 0 then kit.rockets else nil)
+	player:SetAttribute("Glider", if kit.glider then true else nil)
+	player:SetAttribute("Parachutes", if kit.parachutes > 0 then kit.parachutes else nil)
 	for key, potion in POTIONS do
 		sync(player, potion.tool, kit.potions[key] or 0, function()
 			local tool = ItemModels.potion(potion.tool, potion.color)
@@ -425,7 +442,8 @@ local function applyMovement(player: Player)
 	end
 	local active = effects[player] or {}
 	local now = os.clock()
-	humanoid.WalkSpeed = 16 * (if (active.SpeedPotion or 0) > now then Config.Match.SpeedBoost else 1)
+	local rush = if EventData.is("SpeedRush") then EventData.SpeedRush else 1 -- 🎪 weekly event
+	humanoid.WalkSpeed = 16 * rush * (if (active.SpeedPotion or 0) > now then Config.Match.SpeedBoost else 1)
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = 50 * (if (active.JumpPotion or 0) > now then Config.Match.JumpBoost else 1)
 end
@@ -565,6 +583,101 @@ local function onUse(player: Player, key: any, aim: any)
 end
 
 ---------------------------------------------------------------------------
+-- 🪂 Gliders and parachutes
+---------------------------------------------------------------------------
+
+local PARACHUTE_BELOW = -35 -- a parachute opens when you fall below this
+local lastGlide: { [Player]: number } = {}
+
+local function torsoOf(player: Player): BasePart?
+	local character = player.Character
+	local torso = character and (character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso"))
+	return if torso and torso:IsA("BasePart") then torso else nil
+end
+
+local function teamColor(player: Player): Color3
+	local team = MatchService.teamOf(player)
+	return if team then team.info.color else Color3.fromRGB(120, 200, 255)
+end
+
+local function removeWorn(player: Player, name: string)
+	local character = player.Character
+	local model = character and character:FindFirstChild(name)
+	if model then
+		model:Destroy()
+	end
+end
+
+-- Your screen says when you start and stop gliding; everyone sees the wings.
+local function onGlide(player: Player, on: any)
+	if on == true then
+		local torso = torsoOf(player)
+		if not kitOf(player).glider or not MatchService.isPlaying(player) or not torso then
+			return
+		end
+		if os.clock() - (lastGlide[player] or 0) < 0.2 or (player.Character :: Model):FindFirstChild("GliderWings") then
+			return
+		end
+		lastGlide[player] = os.clock()
+		ItemModels.gliderWings(torso, teamColor(player))
+	else
+		removeWorn(player, "GliderWings")
+	end
+end
+
+-- Falling off the map with a parachute: it opens high over your own island
+-- and you float down (your screen slows the fall while "Parachuting").
+local function openParachute(player: Player, kit: Kit)
+	local team = MatchService.teamOf(player)
+	local character = player.Character
+	local root = rootOf(player)
+	local torso = torsoOf(player)
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not team or not character or not root or not torso or not humanoid then
+		return
+	end
+	kit.parachutes -= 1
+	refreshTools(player)
+	removeWorn(player, "GliderWings")
+	root.AssemblyLinearVelocity = Vector3.zero
+	character:PivotTo(CFrame.new(team.spawn.Position + Vector3.new(0, 45, 0)) * team.spawn.Rotation)
+	player:SetAttribute("Parachuting", true)
+	ItemModels.parachute(torso, teamColor(player))
+	Juice.sound(player, "chime")
+	Notify.player(player, "🪂 Your parachute opened! Float back to your island.", "success")
+	task.spawn(function()
+		local started = os.clock()
+		task.wait(0.8)
+		while os.clock() - started < 20 and humanoid.Health > 0 and character.Parent do
+			if humanoid.FloorMaterial ~= Enum.Material.Air then
+				break
+			end
+			task.wait(0.15)
+		end
+		player:SetAttribute("Parachuting", nil)
+		removeWorn(player, "Parachute")
+	end)
+end
+
+local function watchFalls()
+	while true do
+		task.wait(0.2)
+		for player, kit in kits do
+			local root = rootOf(player)
+			if
+				kit.parachutes > 0
+				and root
+				and root.Position.Y < PARACHUTE_BELOW
+				and not player:GetAttribute("Parachuting")
+				and MatchService.isPlaying(player)
+			then
+				openParachute(player, kit)
+			end
+		end
+	end
+end
+
+---------------------------------------------------------------------------
 -- Shop hooks (used by ItemShopService)
 ---------------------------------------------------------------------------
 
@@ -578,6 +691,12 @@ function GadgetService.problem(player: Player, key: string): string?
 	if key == "GrapplingHook" and kitOf(player).grapple then
 		return "You already have a grappling hook."
 	end
+	if key == "Glider" and kitOf(player).glider then
+		return "You already have a glider."
+	end
+	if key == "Parachute" and kitOf(player).parachutes >= 3 then
+		return "You can carry 3 parachutes at most."
+	end
 	return nil
 end
 
@@ -586,6 +705,8 @@ function GadgetService.handles(key: string): boolean
 		or key == "Fireball"
 		or key == "RocketLauncher"
 		or key == "GrapplingHook"
+		or key == "Glider"
+		or key == "Parachute"
 		or POTIONS[key] ~= nil
 		or MatchData.Tools[key] ~= nil
 end
@@ -615,6 +736,10 @@ function GadgetService.give(player: Player, key: string)
 		kit.rockets += 3
 	elseif key == "GrapplingHook" then
 		kit.grapple = true
+	elseif key == "Glider" then
+		kit.glider = true
+	elseif key == "Parachute" then
+		kit.parachutes = math.min(kit.parachutes + 1, 3)
 	elseif POTIONS[key] then
 		kit.potions[key] = (kit.potions[key] or 0) + 1
 	end
@@ -623,6 +748,8 @@ end
 
 function GadgetService.start()
 	Remotes.event("UseGadget").OnServerEvent:Connect(onUse)
+	Remotes.event("Glide").OnServerEvent:Connect(onGlide)
+	task.spawn(watchFalls)
 	CombatService.Attacked:Connect(function(attacker)
 		local active = effects[attacker]
 		if active and active.InvisPotion then
@@ -638,13 +765,14 @@ function GadgetService.start()
 		kit.axe = math.max(math.min(kit.axe, 1), kit.axe - 1)
 		kit.tnt = 0
 		kit.fireballs = 0
-		kit.rockets = 0 -- (the grappling hook is kept)
+		kit.rockets = 0 -- (the grappling hook, glider and parachutes are kept)
 		kit.potions = {}
 		effects[player] = nil
 		for key in POTIONS do
 			player:SetAttribute(key .. "Ends", nil)
 		end
 		player:SetAttribute("Invisible", nil)
+		player:SetAttribute("Parachuting", nil)
 		task.wait(0.1)
 		refreshTools(player)
 		applyMovement(player)
@@ -663,6 +791,11 @@ function GadgetService.start()
 			end
 			player:SetAttribute("PickaxeTier", nil)
 			player:SetAttribute("AxeTier", nil)
+			player:SetAttribute("Glider", nil)
+			player:SetAttribute("Parachutes", nil)
+			player:SetAttribute("Parachuting", nil)
+			removeWorn(player, "GliderWings")
+			removeWorn(player, "Parachute")
 			player:SetAttribute("Invisible", nil)
 		end
 		kits = {}
@@ -673,6 +806,7 @@ function GadgetService.start()
 		effects[player] = nil
 		lastUse[player] = nil
 		lastMine[player] = nil
+		lastGlide[player] = nil
 	end)
 end
 

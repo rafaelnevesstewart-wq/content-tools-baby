@@ -8,6 +8,7 @@ local TweenService = game:GetService("TweenService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local CosmeticsData = require(Shared.CosmeticsData)
 local RewardsData = require(Shared.RewardsData)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
@@ -19,6 +20,8 @@ local DataService = require(script.Parent.DataService)
 local RewardService = require(script.Parent.RewardService)
 
 local ChestService = {}
+
+ChestService.Opened = Signal.new() -- (player) opened today's chest
 
 local rng = Random.new()
 local lid: BasePart
@@ -143,6 +146,7 @@ local function onOpen(player: Player)
 		warn("[Bottle a Storm] Mystery chest prize failed: " .. tostring(problem))
 		RewardService.grant(player, { kind = "sparks", amount = 500 })
 	end
+	ChestService.Opened:Fire(player)
 end
 
 local function build(): BasePart

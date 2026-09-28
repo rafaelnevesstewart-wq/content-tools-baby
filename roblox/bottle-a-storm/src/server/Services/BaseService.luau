@@ -3,11 +3,16 @@
 -- blocks (BaseData.Blocks, free and unlimited up to BaseData.MaxBlocks) on
 -- your plot's 10 x 10 x 10 grid. Your base is saved with your profile and
 -- comes back whenever you claim a plot again. Anyone can visit.
+--
+-- 🏆 Behind every claimed plot is its owner's Trophy Room: a wall of shelves
+-- with a golden cup and a plaque for every achievement they've earned
+-- (ProgressionData.Achievements).
 
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local BaseData = require(Shared.BaseData)
+local ProgressionData = require(Shared.ProgressionData)
 local Remotes = require(Shared.Remotes)
 
 local Modules = script.Parent.Parent.Modules
@@ -25,6 +30,9 @@ type Plot = {
 	folder: Folder,
 	signText: TextLabel,
 	cells: { [string]: BasePart }, -- "i,j,k" -> block
+	trophies: Folder,
+	wall: CFrame, -- the trophy wall's middle, at the ground, facing the plot
+	trophyCount: number, -- achievements shown (-1 = empty wall)
 }
 
 local plotOf: { [Player]: Plot } = {}
@@ -67,6 +75,148 @@ local function clearPlot(plot: Plot)
 		part:Destroy()
 	end
 	plot.cells = {}
+end
+
+---------------------------------------------------------------------------
+-- 🏆 Trophy rooms
+---------------------------------------------------------------------------
+
+local SHELVES = 3
+local PER_SHELF = 11
+local WALL_WIDTH = 28
+
+local function trophyPart(parent: Instance, props: { [string]: any }): Part
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.TopSurface = Enum.SurfaceType.Smooth
+	part.BottomSurface = Enum.SurfaceType.Smooth
+	for key, value in props do
+		(part :: any)[key] = value
+	end
+	part.Parent = parent
+	return part
+end
+
+local function surfaceText(part: BasePart, text: string, canvas: Vector2, color: Color3)
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.CanvasSize = canvas
+	gui.Parent = part
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = Enum.Font.GothamBold
+	label.TextScaled = true
+	label.TextColor3 = color
+	label.Text = text
+	label.Parent = gui
+end
+
+-- A golden cup on a dark stand.
+local function cup(parent: Instance, at: CFrame)
+	trophyPart(parent, {
+		Size = Vector3.new(0.8, 0.3, 0.8),
+		CFrame = at * CFrame.new(0, 0.15, 0),
+		Color = Color3.fromRGB(50, 40, 36),
+		Material = Enum.Material.Marble,
+	})
+	local gold = Color3.fromRGB(240, 196, 70)
+	trophyPart(parent, {
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.5, 0.2, 0.2),
+		CFrame = at * CFrame.new(0, 0.55, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = gold,
+		Material = Enum.Material.Foil,
+	})
+	trophyPart(parent, {
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.one * 0.9,
+		CFrame = at * CFrame.new(0, 1.1, 0),
+		Color = gold,
+		Material = Enum.Material.Foil,
+	})
+	for _, side in { -1, 1 } do
+		trophyPart(parent, {
+			Size = Vector3.new(0.15, 0.45, 0.15),
+			CFrame = at * CFrame.new(side * 0.55, 1.15, 0),
+			Color = gold,
+			Material = Enum.Material.Foil,
+		})
+	end
+end
+
+-- Rebuilds the plot's trophy wall for `player` (or clears it for nil).
+local function refreshTrophies(plot: Plot, player: Player?)
+	local data = if player then DataService.get(player) else nil
+	local earned = {}
+	if data then
+		for _, achievement in ProgressionData.Achievements do
+			if data.achievements[achievement.id] then
+				table.insert(earned, achievement)
+			end
+		end
+	end
+	local count = if player then #earned else -1
+	if count == plot.trophyCount then
+		return
+	end
+	plot.trophyCount = count
+	plot.trophies:ClearAllChildren()
+	if not player then
+		return
+	end
+	local wall = plot.wall
+	local height = SHELVES * 2.4 + 1
+	local brown = Color3.fromRGB(96, 64, 40)
+	trophyPart(plot.trophies, {
+		Name = "TrophyWall",
+		CanCollide = true,
+		Size = Vector3.new(WALL_WIDTH, height, 0.6),
+		CFrame = wall * CFrame.new(0, height / 2, 0),
+		Color = brown,
+		Material = Enum.Material.WoodPlanks,
+	})
+	local header = trophyPart(plot.trophies, {
+		Size = Vector3.new(14, 1.8, 0.3),
+		CFrame = wall * CFrame.new(0, height + 0.9, -0.1),
+		Color = Color3.fromRGB(60, 40, 30),
+		Material = Enum.Material.Wood,
+	})
+	surfaceText(
+		header,
+		"🏆 " .. player.DisplayName .. "'s Trophy Room  " .. #earned .. "/" .. #ProgressionData.Achievements,
+		Vector2.new(560, 72),
+		Color3.fromRGB(255, 220, 120)
+	)
+	for shelf = 1, SHELVES do
+		local y = (shelf - 1) * 2.4 + 0.4
+		trophyPart(plot.trophies, {
+			Size = Vector3.new(WALL_WIDTH - 0.4, 0.3, 1.6),
+			CFrame = wall * CFrame.new(0, y, -1.1),
+			Color = brown:Lerp(Color3.new(1, 1, 1), 0.15),
+			Material = Enum.Material.WoodPlanks,
+		})
+	end
+	local spacing = (WALL_WIDTH - 1) / PER_SHELF
+	for index, achievement in earned do
+		if index > SHELVES * PER_SHELF then
+			break
+		end
+		local shelf = (index - 1) // PER_SHELF
+		local slot = (index - 1) % PER_SHELF
+		local x = (slot - (PER_SHELF - 1) / 2) * spacing
+		local y = shelf * 2.4 + 0.55
+		cup(plot.trophies, wall * CFrame.new(x, y, -1.2))
+		local plaque = trophyPart(plot.trophies, {
+			Size = Vector3.new(spacing - 0.2, 0.55, 0.1),
+			CFrame = wall * CFrame.new(x, y - 0.35, -1.95),
+			Color = Color3.fromRGB(40, 30, 24),
+			Material = Enum.Material.SmoothPlastic,
+		})
+		surfaceText(plaque, achievement.emoji .. " " .. achievement.name, Vector2.new(200, 44), Color3.new(1, 1, 1))
+	end
 end
 
 local function saveList(plot: Plot): { string }
@@ -136,6 +286,7 @@ local function release(player: Player)
 	plot.owner = nil
 	clearPlot(plot)
 	plot.signText.Text = "🏗️ Free plot\n(claim it here!)"
+	refreshTrophies(plot, nil)
 	player:SetAttribute("BasePlot", nil)
 	removeBuilder(player)
 end
@@ -168,6 +319,7 @@ local function claim(player: Player, plot: Plot)
 		end
 	end
 	giveBuilder(player)
+	refreshTrophies(plot, player)
 	Notify.player(
 		player,
 		"🏗️ This plot is yours! Hold the 🔨 Builder and click to build. It saves by itself.",
@@ -276,7 +428,20 @@ local function buildPlots()
 		text.TextColor3 = Color3.fromRGB(255, 240, 210)
 		text.Text = "🏗️ Free plot\n(claim it here!)"
 		text.Parent = gui
-		local plot: Plot = { index = index, owner = nil, folder = folder, signText = text, cells = {} }
+		local trophies = Instance.new("Folder")
+		trophies.Name = "Trophies"
+		trophies.Parent = folder
+		local wallAt = center + Vector3.new(0, 0, -front * (size / 2 + 1.2))
+		local plot: Plot = {
+			index = index,
+			owner = nil,
+			folder = folder,
+			signText = text,
+			cells = {},
+			trophies = trophies,
+			wall = CFrame.lookAt(wallAt, wallAt + Vector3.new(0, 0, front)),
+			trophyCount = -1,
+		}
 		local prompt = Instance.new("ProximityPrompt")
 		prompt.ActionText = "Claim / Build"
 		prompt.ObjectText = "🏗️ Plot " .. index
@@ -290,6 +455,29 @@ local function buildPlots()
 	end
 end
 
+-- Everyone with a claimed plot: their plot number and how many blocks it has
+-- (the 🎨 build contest uses this).
+function BaseService.entries(): { { player: Player, plot: number, blocks: number } }
+	local list = {}
+	for player, plot in plotOf do
+		local count = 0
+		for _ in plot.cells do
+			count += 1
+		end
+		table.insert(list, { player = player, plot = plot.index, blocks = count })
+	end
+	return list
+end
+
+-- Where a visitor stands to look at a plot: out front, facing it.
+function BaseService.visitFrame(index: number): CFrame
+	local center = BaseData.plotCenter(index)
+	local front = if center.Z > BaseData.Center.Z then -1 else 1
+	local size = BaseData.Cells * BaseData.CellSize
+	local spot = center + Vector3.new(4, 3, front * (size / 2 + 5))
+	return CFrame.lookAt(spot, Vector3.new(center.X, spot.Y, center.Z))
+end
+
 function BaseService.start()
 	buildPlots()
 	Remotes.event("BaseEdit").OnServerEvent:Connect(onEdit)
@@ -300,9 +488,15 @@ function BaseService.start()
 	-- The Builder is for your plot: it goes away when you leave Base Island
 	-- (or a match starts) and comes back when you return.
 	task.spawn(function()
+		local ticks = 0
 		while true do
 			task.wait(1)
-			for player, _ in plotOf do
+			ticks += 1
+			for player, plot in plotOf do
+				-- New achievements go up on the wall.
+				if ticks % 10 == 0 then
+					refreshTrophies(plot, player)
+				end
 				local character = player.Character
 				local rootPart = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 				local near = rootPart ~= nil

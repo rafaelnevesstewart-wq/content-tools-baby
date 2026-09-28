@@ -17,6 +17,7 @@ local order = {
 	"Style",
 	"Kits",
 	"Trade",
+	"Gift",
 	"Party",
 	"Stats",
 	"Challenges",
@@ -51,6 +52,10 @@ local order = {
 	"MountController",
 	"MiniGameHUD",
 	"BaseBuilder",
+	"EventClient",
+	"GlideController",
+	"GuideTracker",
+	"ContestClient",
 	"EmoteWheel",
 	"ShopStreet",
 }
