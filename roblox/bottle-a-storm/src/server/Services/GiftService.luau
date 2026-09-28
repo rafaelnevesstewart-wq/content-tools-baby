@@ -14,6 +14,7 @@ local Remotes = require(Shared.Remotes)
 local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
@@ -87,6 +88,7 @@ local function sendGift(player: Player, userId: any, id: any): (boolean, string)
 		return false, problem
 	end
 	data.stats.giftsGiven = (data.stats.giftsGiven or 0) + 1
+	Usage.track("gift", player)
 	Notify.player(
 		receiver,
 		"🎁 " .. player.DisplayName .. " gave you " .. item.emoji .. " " .. item.name .. "! It's on you now.",

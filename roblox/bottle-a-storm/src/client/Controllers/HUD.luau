@@ -1,8 +1,8 @@
 -- Always-on screen info, kept tidy:
 --   top:  your Sparks (and your match Sparks bonus), then a row of small chips:
 --         match weather and events (Admin Abuse, holidays)
---   left: an icon bar (Rewards, Battle Pass, Kits, Kit Market, Style, Party,
---         Robux, Stats, Challenges, Clan, Settings, Admin)
+--   left: a small icon bar (Rewards, Battle Pass, 📋 Menu, Settings, Admin);
+--         everything else is in the 📋 Menu (Menu)
 -- The match itself (timer, teams, beds, resources) is in MatchHUD.
 
 local Players = game:GetService("Players")
@@ -13,17 +13,10 @@ local ProgressionData = require(Shared.ProgressionData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local AdminPanel = require(script.Parent.AdminPanel)
-local Kits = require(script.Parent.Kits)
-local Market = require(script.Parent.Market)
-local Party = require(script.Parent.Party)
+local Menu = require(script.Parent.Menu)
 local Rewards = require(script.Parent.Rewards)
 local Season = require(script.Parent.Season)
 local Settings = require(script.Parent.Settings)
-local Stats = require(script.Parent.Stats)
-local Challenges = require(script.Parent.Challenges)
-local Clan = require(script.Parent.Clan)
-local Shop = require(script.Parent.Shop)
-local Style = require(script.Parent.Style)
 local UI = require(script.Parent.UI)
 
 local player = Players.LocalPlayer
@@ -252,15 +245,8 @@ function HUD.start()
 	local passButton = iconButton(bar, 1, "🎟️", "Pass", Color3.fromRGB(255, 205, 90))
 	passButton.Activated:Connect(Season.toggle)
 	badge(passButton, "SeasonClaimable")
-	iconButton(bar, 2, "🌪️", "Kits", Color3.fromRGB(150, 200, 255)).Activated:Connect(Kits.toggle)
-	iconButton(bar, 3, "🏪", "Market", Color3.fromRGB(96, 170, 210)).Activated:Connect(Market.toggle)
-	iconButton(bar, 4, "🎨", "Style", Color3.fromRGB(255, 170, 220)).Activated:Connect(Style.toggle)
-	iconButton(bar, 5, "👥", "Party", Color3.fromRGB(140, 220, 200)).Activated:Connect(Party.toggle)
-	iconButton(bar, 6, "💎", "Robux", UI.Colors.Robux).Activated:Connect(Shop.toggle)
-	iconButton(bar, 7, "📊", "Stats", Color3.fromRGB(150, 190, 255)).Activated:Connect(Stats.toggle)
-	iconButton(bar, 9, "🌟", "Challenges", Color3.fromRGB(255, 225, 120)).Activated:Connect(Challenges.toggle)
-	iconButton(bar, 10, "🛡️", "Clan", Color3.fromRGB(190, 160, 255)).Activated:Connect(Clan.toggle)
-	iconButton(bar, 8, "⚙️", "Settings", Color3.fromRGB(190, 196, 210)).Activated:Connect(Settings.toggle)
+	iconButton(bar, 2, "📋", "Menu", Color3.fromRGB(120, 150, 220)).Activated:Connect(Menu.toggle)
+	iconButton(bar, 3, "⚙️", "Settings", Color3.fromRGB(190, 196, 210)).Activated:Connect(Settings.toggle)
 	local adminButton = iconButton(bar, 20, "👑", "Admin", UI.Colors.Spark)
 	adminButton.Activated:Connect(AdminPanel.toggle)
 	local function refreshAdmin()

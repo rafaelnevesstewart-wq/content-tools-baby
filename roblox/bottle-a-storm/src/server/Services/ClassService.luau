@@ -15,6 +15,7 @@ local Remotes = require(Shared.Remotes)
 local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local BlockService = require(script.Parent.BlockService)
 local CombatService = require(script.Parent.CombatService)
@@ -108,6 +109,7 @@ local function onPick(player: Player, key: any)
 	end
 	data.class = class.key
 	publish(player)
+	Usage.track("class:" .. class.key, player)
 	Notify.player(player, "🧙 You're a " .. class.emoji .. " " .. class.name .. " next match!", "success")
 end
 

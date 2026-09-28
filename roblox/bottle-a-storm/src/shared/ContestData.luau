@@ -7,7 +7,6 @@ local ContestData = {}
 
 ContestData.BuildSeconds = 10 * 60
 ContestData.VoteSeconds = 3 * 60
-ContestData.BreakSeconds = 5 * 60
 ContestData.MinBlocks = 10 -- a base needs this many blocks to enter
 
 ContestData.Themes = {

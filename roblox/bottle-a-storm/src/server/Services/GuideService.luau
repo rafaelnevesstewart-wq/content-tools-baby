@@ -16,6 +16,7 @@ local Effects = require(Modules.Effects)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 local WorldBuilder = require(Modules.WorldBuilder)
+local Usage = require(Modules.Usage)
 
 local ChestService = require(script.Parent.ChestService)
 local DataService = require(script.Parent.DataService)
@@ -57,6 +58,7 @@ local function finish(player: Player, data: any)
 	local guide = guideOf(data)
 	guide.done = true
 	data.stats.guideDone = 1
+	Usage.track("guideFinished", player)
 	data.sparks += GuideData.FinalSparks
 	IncomeService.sync(player)
 	RewardService.grant(player, { kind = "kit", rarity = GuideData.FinalKitRarity })
@@ -221,6 +223,15 @@ local function build()
 			end)
 		end
 	end)
+end
+
+-- Starts someone's guide steps over (admins, for testing).
+function GuideService.restart(player: Player)
+	local data = DataService.get(player)
+	if data then
+		data.guide = { step = 1, done = false }
+		publish(player, data)
+	end
 end
 
 function GuideService.start()

@@ -1,9 +1,10 @@
--- 🎭 Costume parties in the lobby, every so often: a theme is picked and
--- everyone has a few minutes to dress up (🎨 Style: hats, trails, auras...)
--- and get on the stage at the end of 🛍️ Shop Street. Everyone on the stage
--- when time's up is in; then players vote 1-5 stars on each costume (the
--- 🎭 window's 👀 Look takes you next to them). The best average wins Sparks
--- and counts toward the 🎭 Fashion Star title.
+-- 🎭 Costume parties in the lobby (taking turns with the other lobby events,
+-- LobbyEventService): a theme is picked and everyone has a few minutes to
+-- dress up (🎨 Style: hats, trails, auras...) and get on the stage at the end
+-- of 🛍️ Shop Street. Everyone on the stage when time's up is in; then players
+-- vote 1-5 stars on each costume (the 🎭 window's 👀 Look takes you next to
+-- them). The best average wins Sparks and counts toward the 🎭 Fashion Star
+-- title.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -16,6 +17,7 @@ local Remotes = require(Shared.Remotes)
 local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
@@ -24,7 +26,6 @@ local CostumeService = {}
 
 local DRESS_SECONDS = 3 * 60
 local VOTE_SECONDS = 90
-local BREAK_SECONDS = 12 * 60
 local PRIZES = { 1500, 800, 400 }
 local ENTRY_SPARKS = 150
 local VOTER_SPARKS = 40
@@ -77,6 +78,22 @@ local function onStage(player: Player): boolean
 		and math.abs(offset.Z) <= STAGE_SIZE.Z / 2 + 1
 		and offset.Y > -1
 		and offset.Y < 10
+end
+
+-- Waits `seconds`, or less if an admin skips ahead (🧪 Test).
+local skipping = false
+local function waitPhase(seconds: number)
+	local ends = os.clock() + seconds
+	skipping = false
+	while os.clock() < ends and not skipping do
+		task.wait(0.5)
+	end
+	skipping = false
+end
+
+-- Ends the current phase early (admins, for testing).
+function CostumeService.skip()
+	skipping = true
 end
 
 local function tally()
@@ -138,10 +155,11 @@ local function runParty()
 			.. ". Dress up in 🎨 Style and get on the stage at the end of 🛍️ Shop Street!",
 		"rare"
 	)
-	task.wait(DRESS_SECONDS)
+	waitPhase(DRESS_SECONDS)
 	for _, player in Players:GetPlayers() do
 		if onStage(player) then
 			entries[player.UserId] = { player = player, name = player.DisplayName }
+			Usage.track("costumeEntry", player)
 		end
 	end
 	local count = 0
@@ -156,7 +174,7 @@ local function runParty()
 	endsAt = workspace:GetServerTimeNow() + VOTE_SECONDS
 	publish()
 	Notify.all("🎭 Vote on the costumes! Open 🎭 at the top right and give stars.", "rare")
-	task.wait(VOTE_SECONDS)
+	waitPhase(VOTE_SECONDS)
 	tally()
 end
 
@@ -288,26 +306,38 @@ local function buildStage()
 	folder.Parent = workspace
 end
 
+local running = false
+
+-- Starts a costume party now (LobbyEventService takes turns with the other
+-- lobby events; admins can start one from 🧪 Test). False if one is on.
+function CostumeService.startNow(): boolean
+	if running then
+		return false
+	end
+	running = true
+	task.spawn(function()
+		local ok, problem = pcall(runParty)
+		if not ok then
+			warn("[Bottle a Storm] Costume party failed: " .. tostring(problem))
+		end
+		phase = "break"
+		entries = {}
+		votes = {}
+		endsAt = 0
+		publish()
+		running = false
+	end)
+	return true
+end
+
+function CostumeService.isRunning(): boolean
+	return running
+end
+
 function CostumeService.start()
 	buildStage()
 	Remotes.func("Costume").OnServerInvoke = onAction
-	endsAt = workspace:GetServerTimeNow() + 300
 	publish()
-	task.spawn(function()
-		task.wait(300) -- the first one a few minutes after the server starts
-		while true do
-			local ok, problem = pcall(runParty)
-			if not ok then
-				warn("[Bottle a Storm] Costume party failed: " .. tostring(problem))
-			end
-			phase = "break"
-			entries = {}
-			votes = {}
-			endsAt = workspace:GetServerTimeNow() + BREAK_SECONDS
-			publish()
-			task.wait(BREAK_SECONDS)
-		end
-	end)
 	Players.PlayerRemoving:Connect(function(player)
 		lastAction[player] = nil
 	end)

@@ -27,11 +27,17 @@ local function show()
 		Name = "Window",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(460, 0),
+		Size = UDim2.new(0.92, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = UI.Colors.Panel,
 		Parent = screen,
-	}, { UI.corner(18), UI.stroke(UI.Colors.Spark, 3), UI.padding(16), UI.list(8) })
+	}, {
+		UI.corner(18),
+		UI.stroke(UI.Colors.Spark, 3),
+		UI.padding(16),
+		UI.list(8),
+		UI.new("UISizeConstraint", { MaxSize = Vector2.new(460, math.huge) }),
+	})
 	UI.label({
 		LayoutOrder = 1,
 		Size = UDim2.new(1, 0, 0, 30),

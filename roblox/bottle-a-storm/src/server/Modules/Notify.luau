@@ -1,4 +1,6 @@
 -- Toast messages on the player's screen. Kinds: "info", "success", "warn", "rare".
+-- Messages for everyone are marked as such, so players with 🔕 Fewer pop-ups
+-- only see them in their 📜 Messages log (Toasts).
 
 local Players = game:GetService("Players")
 
@@ -14,13 +16,13 @@ function Notify.player(player: Player, text: string, kind: string?)
 end
 
 function Notify.all(text: string, kind: string?)
-	notifyEvent:FireAllClients(text, kind or "info")
+	notifyEvent:FireAllClients(text, kind or "info", true)
 end
 
 function Notify.allExcept(except: Player, text: string, kind: string?)
 	for _, player in Players:GetPlayers() do
 		if player ~= except then
-			notifyEvent:FireClient(player, text, kind or "info")
+			notifyEvent:FireClient(player, text, kind or "info", true)
 		end
 	end
 end

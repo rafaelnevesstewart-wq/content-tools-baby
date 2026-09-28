@@ -9,6 +9,17 @@ local NewsData = {}
 
 NewsData.List = {
 	{
+		version = 13,
+		title = "📋 A tidier, faster Bottle a Storm!",
+		lines = {
+			"📋 Everything is in the new Menu (press M), 🏅 an Achievement Book",
+			"🔕 Fewer pop-ups option and a 📜 message log",
+			"📅 Lobby events take turns: see what's next at the top right",
+			"⚡ Faster mode in ⚙️ Settings for slow devices",
+			"🎁 A welcome gift for new players",
+		},
+	},
+	{
 		version = 12,
 		title = "🐍 A Sea Serpent, player shops and a 2v2 cup!",
 		lines = {

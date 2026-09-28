@@ -17,6 +17,7 @@ local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
@@ -147,6 +148,7 @@ local function wish(player: Player, star: BasePart, wished: { [Player]: boolean 
 	wished[player] = true
 	data.wishes.count += 1
 	data.stats.wishes = (data.stats.wishes or 0) + 1
+	Usage.track("wish", player)
 	local ok, what = pcall(pickPrize().give, player, data)
 	Effects.confetti(star.Position, 30)
 	Juice.sound(player, "chime")
@@ -265,6 +267,11 @@ local function shootingStar()
 		wish(player, star, wished)
 	end)
 	Debris:AddItem(star, STAR_SECONDS)
+end
+
+-- Sends a shooting star right now, night or not (admins, for testing).
+function WishService.starNow()
+	task.spawn(shootingStar)
 end
 
 function WishService.start()

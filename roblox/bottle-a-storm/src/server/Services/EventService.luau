@@ -14,9 +14,19 @@ local MatchService = require(script.Parent.MatchService)
 
 local EventService = {}
 
--- This week's event, unless a private server's owner picked another rule
--- (🎟️ CustomData) or none.
+-- An admin's pick for testing (🧪 Test), or nil for the normal one.
+local forced: string? = nil
+
+-- This week's event, unless an admin or a private server's owner picked
+-- another rule (🎟️ CustomData) or none.
 local function active(): EventData.WeeklyEvent?
+	if forced then
+		for _, event in EventData.List do
+			if event.key == forced then
+				return event
+			end
+		end
+	end
 	local custom = CustomData.get("event")
 	if custom == "None" then
 		return nil
@@ -35,6 +45,13 @@ local function publish()
 	if workspace:GetAttribute("WeeklyEvent") ~= key then
 		workspace:SetAttribute("WeeklyEvent", key)
 	end
+end
+
+-- Makes `key` the special rule (nil goes back to normal; admins, for
+-- testing). It applies right away.
+function EventService.force(key: string?)
+	forced = key
+	publish()
 end
 
 function EventService.start()

@@ -5,7 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local EVENTS = {
-	"Notify", -- server -> client: (text, kind)
+	"Notify", -- server -> client: (text, kind, broadcast)
 	"DevPurchase", -- client -> server, Studio only: (itemKey)
 	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake, pop-ups
 	"CrateOpened", -- server -> client: (result) a Kit Crate opened, for the opening animation
@@ -37,6 +37,7 @@ local EVENTS = {
 	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed
 	"UseGadget", -- client -> server: ("TNT" | "Fireball" | "Rocket" | potion key | "Mine", aimPoint)
 	"Glide", -- client -> server: (on) you started or stopped gliding (the wings show)
+	"ClaimStarter", -- client -> server: () claim the 🎁 starter pack
 	"ArenaCupAction", -- client -> server: ("join" | "leave") the 🏟️ 2v2 Arena Cup sign-ups
 	"BoatAction", -- client -> server: ("stop") quit the 🚤 Sky Boat Race
 	"PickClass", -- client -> server: (classKey) your 🧙 class for the next match

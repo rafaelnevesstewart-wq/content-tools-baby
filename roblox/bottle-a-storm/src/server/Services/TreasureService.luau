@@ -14,6 +14,7 @@ local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
@@ -60,6 +61,7 @@ local function dig(player: Player, index: number)
 		return
 	end
 	treasure.found = index
+	Usage.track("treasureDig", player)
 	local spot = spots[index]
 	Effects.confetti(spot.position + Vector3.new(0, 2, 0), 30)
 	Juice.sound(player, "coins")
@@ -163,6 +165,15 @@ local function refreshDay()
 	spots = TreasureData.forDay(today)
 	build()
 	for _, player in Players:GetPlayers() do
+		publish(player)
+	end
+end
+
+-- Starts someone's treasure hunt for today over (admins, for testing).
+function TreasureService.restart(player: Player)
+	local data = DataService.get(player)
+	if data then
+		treasureOf(data).found = 0
 		publish(player)
 	end
 end

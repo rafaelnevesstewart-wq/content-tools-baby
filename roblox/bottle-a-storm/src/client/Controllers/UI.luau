@@ -151,6 +151,17 @@ function UI.sideStack(): Frame
 				SortOrder = Enum.SortOrder.LayoutOrder,
 			}),
 		})
+		-- Smaller chips on narrow (phone) screens.
+		local scale = UI.new("UIScale", { Parent = sideStack })
+		local function fit()
+			local camera = workspace.CurrentCamera
+			local width = if camera then camera.ViewportSize.X else 1000
+			scale.Scale = math.clamp(width / 900, 0.7, 1)
+		end
+		fit()
+		if workspace.CurrentCamera then
+			workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit)
+		end
 	end
 	return sideStack :: Frame
 end

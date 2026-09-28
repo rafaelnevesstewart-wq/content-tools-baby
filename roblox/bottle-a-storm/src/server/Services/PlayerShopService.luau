@@ -16,6 +16,7 @@ local Remotes = require(Shared.Remotes)
 local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
@@ -168,6 +169,7 @@ local function buy(player: Player, id: any): (boolean, string)
 	end
 	data.cosmetics.owned[item.id] = true
 	sellerData.stats.shopSales = (sellerData.stats.shopSales or 0) + 1
+	Usage.track("marketSale", player)
 	for _, who in { player, seller } do
 		IncomeService.sync(who)
 		CosmeticService.refreshAll(who)

@@ -291,6 +291,11 @@ local function cycleButton(order: number, label: () -> string, onClick: () -> ()
 	return button
 end
 
+-- Opens photo mode (the 📋 Menu's tile uses this).
+function PhotoMode.open()
+	setActive(true)
+end
+
 function PhotoMode.start()
 	screen = UI.screen("PhotoMode", 20)
 	screen.IgnoreGuiInset = true

@@ -16,6 +16,7 @@ local Effects = require(Modules.Effects)
 local Juice = require(Modules.Juice)
 local MountModels = require(Modules.MountModels)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local DataService = require(script.Parent.DataService)
 local MiniGameService = require(script.Parent.MiniGameService)
@@ -87,6 +88,7 @@ local function finish(player: Player, race: Race)
 		data.minigames.boatBest = math.floor(time * 10) / 10
 	end
 	data.stats.boatRaces = (data.stats.boatRaces or 0) + 1
+	Usage.track("boatRace", player)
 	local sparks = math.max(BoatData.MinSparks, math.floor(BoatData.StartSparks - time * 5))
 	local root = rootOf(player)
 	if root then

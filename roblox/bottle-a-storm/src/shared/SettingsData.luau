@@ -65,6 +65,20 @@ SettingsData.List = {
 		default = true,
 	},
 	{
+		key = "quietMessages",
+		name = "🔕 Fewer pop-up messages",
+		hint = "News for everyone goes to 📜 Messages (📋 Menu) instead of popping up. Warnings still pop up.",
+		kind = "toggle",
+		default = false,
+	},
+	{
+		key = "lowDetail",
+		name = "⚡ Faster mode (less detail)",
+		hint = "Hides flowers, bushes and little decorations so the game runs smoother on slow devices.",
+		kind = "toggle",
+		default = false,
+	},
+	{
 		key = "damageNumbers",
 		name = "💥 Damage numbers",
 		hint = "Numbers pop up when you hit someone.",

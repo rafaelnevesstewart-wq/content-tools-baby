@@ -7,6 +7,11 @@
         "$path": "src/shared"
       }
     },
+    "ReplicatedFirst": {
+      "Loading": {
+        "$path": "src/first"
+      }
+    },
     "ServerScriptService": {
       "Server": {
         "$path": "src/server"
@@ -26,7 +31,7 @@
     },
     "Lighting": {
       "$properties": {
-        "Technology": "Future",
+        "Technology": "ShadowMap",
         "GlobalShadows": true
       }
     },

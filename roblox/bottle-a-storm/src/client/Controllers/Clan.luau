@@ -227,10 +227,15 @@ local function showInvite(clanId: string, clanName: string, tag: string, fromNam
 	local card = UI.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -270),
-		Size = UDim2.fromOffset(380, 96),
+		Size = UDim2.new(0.92, 0, 0, 96),
 		BackgroundColor3 = UI.Colors.Panel,
 		Parent = screen,
-	}, { UI.corner(14), UI.stroke(UI.Colors.Rare, 3), UI.padding(10) })
+	}, {
+		UI.corner(14),
+		UI.stroke(UI.Colors.Rare, 3),
+		UI.padding(10),
+		UI.new("UISizeConstraint", { MaxSize = Vector2.new(380, 96) }),
+	})
 	UI.label({
 		Size = UDim2.new(1, 0, 0, 30),
 		Text = "🛡️ " .. fromName .. " invited you to [" .. tag .. "] " .. clanName .. "!",

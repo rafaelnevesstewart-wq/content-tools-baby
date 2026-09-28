@@ -21,6 +21,7 @@ local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local BlockService = require(script.Parent.BlockService)
 local MatchService = require(script.Parent.MatchService)
@@ -173,6 +174,7 @@ local function run(key: string, myRound: number)
 		return round == myRound and MatchService.phase() == "playing"
 	end
 	Notify.all(kind.emoji .. " " .. kind.name .. "! " .. kind.warning, "warn")
+	Usage.track("disaster:" .. key)
 	workspace:SetAttribute("Disaster", key)
 	task.wait(settings.Warning)
 	if not stillOn() then
@@ -217,6 +219,16 @@ local function run(key: string, myRound: number)
 	if round == myRound then
 		workspace:SetAttribute("Disaster", nil)
 	end
+end
+
+-- Starts a disaster right now ("Meteors", "Quake" or "Flood"; admins, for
+-- testing). False outside a match or for an unknown one.
+function DisasterService.runNow(key: string): boolean
+	if not KINDS[key] or MatchService.phase() ~= "playing" then
+		return false
+	end
+	task.spawn(run, key, round)
+	return true
 end
 
 function DisasterService.start()

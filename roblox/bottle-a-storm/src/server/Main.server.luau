@@ -72,6 +72,9 @@ local order = {
 	"PlayerShopService",
 	"WishService",
 	"ArenaCupService",
+	"LobbyEventService",
+	"UsageService",
+	"StarterService",
 	"MonetizationService",
 }
 

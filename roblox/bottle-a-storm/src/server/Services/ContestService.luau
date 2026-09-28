@@ -1,8 +1,9 @@
--- 🎨 Build contests on Base Island, all day long (ContestData): a theme is
--- picked and everyone with a plot has 10 minutes to build it. Then every base
--- with enough blocks is entered and players vote 1-5 stars on each (visit
--- them from the 🎨 window). The best average wins Sparks and counts toward the
--- 🏗️ Master Builder title; everyone who entered or voted gets a little too.
+-- 🎨 Build contests on Base Island (taking turns with the other lobby events,
+-- LobbyEventService; ContestData): a theme is picked and everyone with a plot
+-- has 10 minutes to build it. Then every base with enough blocks is entered
+-- and players vote 1-5 stars on each (visit them from the 🎨 window). The best
+-- average wins Sparks and counts toward the 🏗️ Master Builder title; everyone
+-- who entered or voted gets a little too.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -15,6 +16,7 @@ local Remotes = require(Shared.Remotes)
 local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local BaseService = require(script.Parent.BaseService)
 local DataService = require(script.Parent.DataService)
@@ -46,6 +48,22 @@ local function pay(player: Player, amount: number)
 	if player.Parent then
 		IncomeService.addSparks(player, amount)
 	end
+end
+
+-- Waits `seconds`, or less if an admin skips ahead (🧪 Test).
+local skipping = false
+local function waitPhase(seconds: number)
+	local ends = os.clock() + seconds
+	skipping = false
+	while os.clock() < ends and not skipping do
+		task.wait(0.5)
+	end
+	skipping = false
+end
+
+-- Ends the current phase early (admins, for testing).
+function ContestService.skip()
+	skipping = true
 end
 
 local function tally()
@@ -115,9 +133,9 @@ local function runContest()
 			.. " minutes!",
 		"rare"
 	)
-	task.wait(ContestData.BuildSeconds - 60)
+	waitPhase(ContestData.BuildSeconds - 60)
 	Notify.all("🎨 1 minute left to build " .. theme .. "!", "info")
-	task.wait(60)
+	waitPhase(60)
 	for _, entry in BaseService.entries() do
 		if entry.blocks >= ContestData.MinBlocks then
 			entries[entry.player.UserId] = {
@@ -126,6 +144,7 @@ local function runContest()
 				plot = entry.plot,
 				blocks = entry.blocks,
 			}
+			Usage.track("contestEntry", entry.player)
 		end
 	end
 	if next(entries) == nil then
@@ -136,7 +155,7 @@ local function runContest()
 	endsAt = workspace:GetServerTimeNow() + ContestData.VoteSeconds
 	publish()
 	Notify.all("🎨 Time to vote! Open 🎨 Contest, visit each base and give it stars.", "rare")
-	task.wait(ContestData.VoteSeconds)
+	waitPhase(ContestData.VoteSeconds)
 	tally()
 end
 
@@ -201,25 +220,37 @@ local function onAction(player: Player, action: any, userId: any, stars: any): a
 	return false, "Can't do that."
 end
 
+local running = false
+
+-- Starts a contest now (LobbyEventService takes turns with the other lobby
+-- events; admins can start one from 🧪 Test). False if one is already on.
+function ContestService.startNow(): boolean
+	if running then
+		return false
+	end
+	running = true
+	task.spawn(function()
+		local ok, problem = pcall(runContest)
+		if not ok then
+			warn("[Bottle a Storm] Build contest failed: " .. tostring(problem))
+		end
+		phase = "break"
+		entries = {}
+		votes = {}
+		endsAt = 0
+		publish()
+		running = false
+	end)
+	return true
+end
+
+function ContestService.isRunning(): boolean
+	return running
+end
+
 function ContestService.start()
 	Remotes.func("Contest").OnServerInvoke = onAction
-	endsAt = workspace:GetServerTimeNow() + 90
 	publish()
-	task.spawn(function()
-		task.wait(90) -- the first one starts soon after the server does
-		while true do
-			local ok, problem = pcall(runContest)
-			if not ok then
-				warn("[Bottle a Storm] Build contest failed: " .. tostring(problem))
-			end
-			phase = "break"
-			entries = {}
-			votes = {}
-			endsAt = workspace:GetServerTimeNow() + ContestData.BreakSeconds
-			publish()
-			task.wait(ContestData.BreakSeconds)
-		end
-	end)
 	Players.PlayerRemoving:Connect(function(player)
 		lastAction[player] = nil
 	end)

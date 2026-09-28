@@ -729,6 +729,16 @@ local function step(b: Boss, dt: number)
 	place(b, t)
 end
 
+-- Brings the boss in right now (admins, for testing). False outside a match
+-- or if one is already here.
+function BossService.spawnNow(): boolean
+	if boss or MatchService.phase() ~= "playing" then
+		return false
+	end
+	spawnBoss()
+	return boss ~= nil
+end
+
 function BossService.start()
 	if not Config.Boss.Enabled then
 		return

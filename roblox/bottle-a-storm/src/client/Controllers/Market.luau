@@ -237,10 +237,16 @@ local function playOpening(result: any)
 	local reveal = UI.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.45),
-		Size = UDim2.fromOffset(380, 220),
+		Size = UDim2.new(0.9, 0, 0, 220),
 		BackgroundColor3 = UI.Colors.Panel,
 		Parent = dim,
-	}, { UI.corner(18), UI.stroke(color, 4), UI.padding(12), UI.list(6) })
+	}, {
+		UI.corner(18),
+		UI.stroke(color, 4),
+		UI.padding(12),
+		UI.list(6),
+		UI.new("UISizeConstraint", { MaxSize = Vector2.new(380, 220) }),
+	})
 	local scale = UI.new("UIScale", { Scale = 0.2, Parent = reveal })
 	UI.label({
 		LayoutOrder = 1,

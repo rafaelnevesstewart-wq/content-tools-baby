@@ -19,6 +19,7 @@ local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
@@ -105,6 +106,7 @@ local function claim(player: Player, key: string)
 		return
 	end
 	puzzles.done[key] = true
+	Usage.track("puzzle:" .. key, player)
 	data.sparks += PuzzleData.Sparks
 	local message = "🧩 You solved the " .. PuzzleData.Names[key] .. "! +⚡" .. PuzzleData.Sparks
 	if puzzles.done.Maze and puzzles.done.Bridge and puzzles.done.Code then

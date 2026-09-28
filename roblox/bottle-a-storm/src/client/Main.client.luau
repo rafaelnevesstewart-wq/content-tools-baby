@@ -70,6 +70,11 @@ local order = {
 	"CostumeClient",
 	"PlayerShop",
 	"ArenaCupClient",
+	"LobbyEventChip",
+	"AchievementBook",
+	"Menu",
+	"StarterPack",
+	"LowDetail",
 	"EmoteWheel",
 	"ShopStreet",
 }

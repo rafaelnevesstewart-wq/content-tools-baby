@@ -373,6 +373,8 @@ local function squashedBall(parent: Instance, name: string, size: Vector3, cfram
 		Material = if name == "Bush" then Enum.Material.LeafyGrass else Enum.Material.SmoothPlastic,
 		CanCollide = false,
 		CanQuery = false,
+		CanTouch = false,
+		CastShadow = false, -- (small things: shadows cost more than they add)
 		Parent = parent,
 	})
 	local mesh = Instance.new("SpecialMesh")
@@ -506,6 +508,8 @@ local function mushroom(parent: Instance, ground: Vector3, rng: Random)
 		Material = Enum.Material.Sand,
 		CanCollide = false,
 		CanQuery = false,
+		CanTouch = false,
+		CastShadow = false,
 		Parent = parent,
 	})
 	local capColor = if rng:NextNumber() < 0.4 then Color3.fromRGB(176, 48, 40) else Color3.fromRGB(150, 110, 78)
@@ -579,7 +583,7 @@ local function decoratePlot(island: Model, frame: CFrame, rng: Random)
 		island,
 		frame,
 		rng,
-		{ trees = 6, flowers = 8, mushrooms = 4, bushes = 4 },
+		{ trees = 6, flowers = 4, mushrooms = 2, bushes = 3 },
 		{ treeMin = 45, treeMax = Config.World.PlotRadius - 5, max = Config.World.PlotRadius - 3 },
 		plotBlocked
 	)
@@ -1205,7 +1209,7 @@ local function shopStreet(world: Instance, rng: Random)
 		end
 	end
 	-- A few trees around the back.
-	scatter(island, CFrame.new(STREET), rng, { trees = 6, flowers = 10, mushrooms = 3, bushes = 6 }, {
+	scatter(island, CFrame.new(STREET), rng, { trees = 5, flowers = 6, mushrooms = 2, bushes = 4 }, {
 		treeMin = 28,
 		treeMax = radius - 5,
 		max = radius - 4,
@@ -1265,7 +1269,7 @@ local function sideIslands(world: Instance, rng: Random)
 			center - Vector3.new(side * (radius - 4), 0, 0)
 		)
 		-- A few trees round the edge.
-		scatter(island, CFrame.new(center), rng, { trees = 8, flowers = 10, mushrooms = 3, bushes = 6 }, {
+		scatter(island, CFrame.new(center), rng, { trees = 7, flowers = 6, mushrooms = 2, bushes = 4 }, {
 			treeMin = radius - 14,
 			treeMax = radius - 5,
 			max = radius - 4,
@@ -1310,7 +1314,7 @@ local function lobbyIsland(world: Instance, rng: Random)
 		return lobbyBlocked(p)
 	end
 	boulders(frame, Config.Lobby.Radius, 6, rng, blocked)
-	scatter(island, frame, rng, { trees = 16, flowers = 20, mushrooms = 8, bushes = 10 }, {
+	scatter(island, frame, rng, { trees = 14, flowers = 12, mushrooms = 5, bushes = 8 }, {
 		treeMin = 56,
 		treeMax = Config.Lobby.Radius - 6,
 		max = Config.Lobby.Radius - 4,
@@ -1393,7 +1397,7 @@ function WorldBuilder.build(): { PlotInfo }
 	terrain:SetMaterialColor(Enum.Material.LeafyGrass, Color3.fromRGB(78, 112, 52))
 	local wild = floatingIsland(world, "WildSkies", center, Config.World.CenterRadius, rng)
 	boulders(CFrame.new(center), Config.World.CenterRadius, 14, rng, wildBlocked)
-	scatter(wild, CFrame.new(center), rng, { trees = 32, flowers = 55, mushrooms = 20, bushes = 22 }, {
+	scatter(wild, CFrame.new(center), rng, { trees = 26, flowers = 28, mushrooms = 10, bushes = 14 }, {
 		treeMin = Config.World.CenterRadius * 0.72,
 		treeMax = Config.World.CenterRadius - 6,
 		max = Config.World.CenterRadius - 4,

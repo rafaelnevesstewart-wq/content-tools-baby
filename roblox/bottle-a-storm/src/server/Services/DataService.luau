@@ -1,6 +1,12 @@
 -- Loads and saves each player's profile with a session lock, so the same
 -- profile is never open on two servers at once (no duplicated kits or Sparks).
 --
+-- 🛡️ Save safety: a save that fails is tried again a few times; a profile
+-- that looks broken is never written over a good one; and every so often
+-- (and when you leave) a copy goes into a separate backup store, keeping the
+-- last few. Admins can look players up and restore a backup (👑 Admin →
+-- 🗂️ Players).
+--
 -- In Studio without "Enable Studio Access to API Services", it falls back to
 -- memory-only profiles and warns once.
 
@@ -13,6 +19,10 @@ local Config = require(Shared.Config)
 local Signal = require(Shared.Signal)
 
 local STORE_NAME = "BottleAStorm_Profiles_v1"
+local BACKUP_STORE_NAME = "BottleAStorm_Backups_v1"
+local BACKUP_EVERY = 600 -- seconds between backups of a profile
+local BACKUPS_KEPT = 3
+local SAVE_ATTEMPTS = 3
 local LOCK_TIMEOUT = 300 -- a lock older than this belongs to a crashed server
 local LOAD_ATTEMPTS = 6
 local RETRY_SECONDS = 5
@@ -35,7 +45,9 @@ type Profile = {
 
 local profiles: { [Player]: Profile } = {}
 local store: DataStore? = nil
+local backups: DataStore? = nil
 local memoryMode = false
+local lastBackup: { [string]: number } = {}
 
 local function defaultData()
 	return {
@@ -234,25 +246,72 @@ local function loadRecord(key: string): (boolean, any)
 	return false, nil
 end
 
+-- Whether a profile looks whole enough to save (never write a broken one
+-- over a good one).
+local function looksSane(data: any): boolean
+	return type(data) == "table"
+		and type(data.sparks) == "number"
+		and data.sparks == data.sparks -- not NaN
+		and type(data.cosmetics) == "table"
+		and type(data.cosmetics.owned) == "table"
+		and type(data.stats) == "table"
+		and type(data.storms) == "table"
+end
+
+-- Keeps the last few copies of a profile in the backup store.
+local function backup(key: string, data: any)
+	if memoryMode or not backups or not looksSane(data) then
+		return
+	end
+	lastBackup[key] = os.time()
+	local ok, err = pcall(function()
+		(backups :: DataStore):UpdateAsync(key, function(old)
+			local list = if type(old) == "table" then old else {}
+			table.insert(list, 1, { time = os.time(), data = data })
+			while #list > BACKUPS_KEPT do
+				table.remove(list)
+			end
+			return list
+		end)
+	end)
+	if not ok then
+		warn("[DataService] Backup failed for " .. key .. ": " .. tostring(err))
+	end
+end
+
 local function writeRecord(key: string, data: any, release: boolean): boolean
 	if memoryMode or not store then
 		return true
 	end
-	local ok, err = pcall(function()
-		(store :: DataStore):UpdateAsync(key, function(old)
-			local lock = type(old) == "table" and old.lock
-			if lock and lock.jobId ~= game.JobId then
-				-- Another server took over this profile. Never overwrite it.
-				return nil
-			end
-			return {
-				data = data,
-				lock = if release then nil else { jobId = game.JobId, time = os.time() },
-			}
+	if not looksSane(data) then
+		warn("[DataService] Not saving " .. key .. ": the profile looks broken.")
+		return false
+	end
+	local ok, err = false, nil
+	for attempt = 1, SAVE_ATTEMPTS do
+		ok, err = pcall(function()
+			(store :: DataStore):UpdateAsync(key, function(old)
+				local lock = type(old) == "table" and old.lock
+				if lock and lock.jobId ~= game.JobId then
+					-- Another server took over this profile. Never overwrite it.
+					return nil
+				end
+				return {
+					data = data,
+					lock = if release then nil else { jobId = game.JobId, time = os.time() },
+				}
+			end)
 		end)
-	end)
-	if not ok then
-		warn("[DataService] Save failed for " .. key .. ": " .. tostring(err))
+		if ok then
+			break
+		end
+		warn("[DataService] Save failed for " .. key .. " (try " .. attempt .. "): " .. tostring(err))
+		if attempt < SAVE_ATTEMPTS then
+			task.wait(attempt * 2)
+		end
+	end
+	if ok and (release or os.time() - (lastBackup[key] or 0) >= BACKUP_EVERY) then
+		task.spawn(backup, key, data)
 	end
 	return ok
 end
@@ -294,6 +353,7 @@ local function releaseProfile(player: Player)
 	end
 	writeRecord(profile.key, profile.data, true)
 	profiles[player] = nil
+	lastBackup[profile.key] = nil
 end
 
 -- Returns the live profile data, or nil if it's not loaded (or being released).
@@ -333,6 +393,50 @@ function DataService.isMemoryMode(): boolean
 	return memoryMode
 end
 
+---------------------------------------------------------------------------
+-- 🗂️ Admin tools
+---------------------------------------------------------------------------
+
+-- A player's saved profile, read without taking it over (for looking up
+-- players who aren't in this server). Nil if there is none or no access.
+function DataService.peek(userId: number): any
+	if memoryMode or not store then
+		return nil
+	end
+	local ok, record = pcall(function()
+		return (store :: DataStore):GetAsync("player_" .. userId)
+	end)
+	return if ok and type(record) == "table" then record.data else nil
+end
+
+-- The saved backups of a player's profile, newest first: { time, data }.
+function DataService.backupsOf(userId: number): { any }
+	if memoryMode or not backups then
+		return {}
+	end
+	local ok, list = pcall(function()
+		return (backups :: DataStore):GetAsync("player_" .. userId)
+	end)
+	return if ok and type(list) == "table" then list else {}
+end
+
+-- Puts a backup (1 = newest) in place of an online player's profile and
+-- saves it. They're asked to rejoin so everything reloads from it.
+function DataService.restore(player: Player, index: number): (boolean, string)
+	local profile = profiles[player]
+	if not profile or profile.released then
+		return false, "Their profile isn't loaded."
+	end
+	local entry = DataService.backupsOf(player.UserId)[index]
+	if not entry or not looksSane(entry.data) then
+		return false, "There's no good backup there."
+	end
+	profile.data = reconcile(deepCopy(entry.data), defaultData())
+	releaseProfile(player)
+	player:Kick("Your progress was restored from a backup. Please rejoin!")
+	return true, "Restored the backup from " .. os.date("!%Y-%m-%d %H:%M UTC", entry.time) .. "."
+end
+
 function DataService.init()
 	if game.PlaceId == 0 then
 		enterMemoryMode("place is not published")
@@ -345,6 +449,10 @@ function DataService.init()
 		else
 			enterMemoryMode(tostring(result))
 		end
+		local backupOk, backupStore = pcall(function()
+			return DataStoreService:GetDataStore(BACKUP_STORE_NAME)
+		end)
+		backups = if backupOk then backupStore else nil
 	end
 end
 

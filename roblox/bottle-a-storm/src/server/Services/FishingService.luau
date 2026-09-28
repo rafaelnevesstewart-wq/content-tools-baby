@@ -19,6 +19,7 @@ local Effects = require(Modules.Effects)
 local ItemModels = require(Modules.ItemModels)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
+local Usage = require(Modules.Usage)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
@@ -118,6 +119,7 @@ local function land(player: Player)
 		book.best[fish.id] = math.floor(weight * 10 + 0.5) / 10
 	end
 	data.stats.fishCaught = (data.stats.fishCaught or 0) + 1
+	Usage.track("fishCaught", player)
 	-- Sparks, up to the daily limit.
 	local today = RewardsData.today(os.time())
 	if book.day ~= today then

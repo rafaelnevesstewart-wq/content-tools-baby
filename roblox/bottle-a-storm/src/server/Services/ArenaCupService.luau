@@ -1,5 +1,5 @@
--- 🏟️ The 2v2 Arena Cup: every so often (between matches, when no 1v1
--- tournament is on) sign-ups open for a minute. Players join from the chip
+-- 🏟️ The 2v2 Arena Cup: every so often (LobbyEventService, between matches,
+-- when no 1v1 tournament is on) sign-ups open for a minute. Players join from the chip
 -- at the top right; party members are paired together, everyone else is
 -- paired in the order they joined. Teams of two fight in the castle's duel
 -- arena, one fight at a time, in a knockout bracket: knock both enemies out
@@ -16,6 +16,7 @@ local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 local WorldBuilder = require(Modules.WorldBuilder)
+local Usage = require(Modules.Usage)
 
 local CombatService = require(script.Parent.CombatService)
 local DataService = require(script.Parent.DataService)
@@ -25,7 +26,6 @@ local MatchService = require(script.Parent.MatchService)
 
 local ArenaCupService = {}
 
-local EVERY_MINUTES = 20
 local SIGNUP_SECONDS = 60
 local FIGHT_SECONDS = 90
 local MAX_PLAYERS = 8
@@ -39,7 +39,6 @@ local signupEndsAt = 0
 local signups: { Player } = {}
 local rounds: { { Fight } } = {}
 local current: Fight? = nil
-local lastSlot = -1
 -- The fight going on: who's on which side, and who's still standing.
 local side: { [Player]: Team } = {}
 local standing: { [Player]: boolean } = {}
@@ -356,11 +355,30 @@ local function onAction(player: Player, action: any)
 			return
 		end
 		table.insert(signups, player)
+		Usage.track("arenaCupJoin", player)
 		Notify.player(player, "🏟️ You're in! The cup starts when sign-ups close.", "success")
 	elseif action == "leave" and index then
 		table.remove(signups, index)
 	end
 	publish()
+end
+
+-- Opens sign-ups now (LobbyEventService takes turns with the other lobby
+-- events; admins can start one from 🧪 Test). False if it can't right now:
+-- one is on, a match is playing, or a 1v1 tournament has the arena.
+function ArenaCupService.startNow(): boolean
+	local phase = MatchService.phase()
+	local tournament = workspace:GetAttribute("Tournament")
+	local tournamentOn = type(tournament) == "string" and not string.find(tournament, '"state":"idle"', 1, true)
+	if state ~= "idle" or phase == "playing" or phase == "ended" or tournamentOn then
+		return false
+	end
+	openSignup()
+	return true
+end
+
+function ArenaCupService.isRunning(): boolean
+	return state ~= "idle"
 end
 
 function ArenaCupService.start()
@@ -384,18 +402,7 @@ function ArenaCupService.start()
 	task.spawn(function()
 		while true do
 			task.wait(5)
-			if state == "idle" then
-				local now = os.time()
-				local slot = math.floor(now / (EVERY_MINUTES * 60))
-				local phase = MatchService.phase()
-				local tournament = workspace:GetAttribute("Tournament")
-				local tournamentOn = type(tournament) == "string"
-					and not string.find(tournament, '"state":"idle"', 1, true)
-				if slot ~= lastSlot and phase ~= "playing" and phase ~= "ended" and not tournamentOn then
-					lastSlot = slot
-					openSignup()
-				end
-			elseif state == "signup" and workspace:GetServerTimeNow() >= signupEndsAt then
+			if state == "signup" and workspace:GetServerTimeNow() >= signupEndsAt then
 				local ok, problem = pcall(run)
 				if not ok then
 					warn("[Bottle a Storm] Arena Cup failed: " .. tostring(problem))

@@ -443,8 +443,52 @@ Lobby and Match lists.
 ## ⚙️ Settings
 
 Music volume, camera follows the mouse, over-the-shoulder view, big phone buttons, sound effects volume,
-sky extras, damage numbers, kill feed, fancy effects (turn off on slow devices) and other
-players' pets. Saved with your profile.
+sky extras, 🔕 fewer pop-up messages, ⚡ faster mode (hides small decorations on slow devices),
+damage numbers, kill feed, fancy effects and other players' pets. Saved with your profile.
+
+## 📋 Menu, messages and the Achievement Book
+
+- The icon bar on the left is small now: 🎁 Rewards, 🎟️ Pass, 📋 **Menu** and ⚙️ Settings (and
+  👑 Admin for you). The Menu (or **M**) has a tile for every window: Style, Kits, Class,
+  Challenges, Achievements, Party, Clan, Stats, both markets, Fish Book, Emotes, Photo Mode,
+  Messages, the Robux shop and Settings.
+- Pop-ups merge repeats ("×2") and only a few show at once. With 🔕 *Fewer pop-up messages*,
+  news meant for everyone only goes to 📜 **Messages** (warnings still pop up). Every message
+  is kept in 📜 Messages (Menu).
+- 🏅 **Achievement Book** (Menu): every achievement and title with progress bars, "Almost
+  there" first; wear titles right from it.
+
+## 📅 Lobby events
+
+The 🎨 Build Contest, 🎭 Costume Party and 🏟️ 2v2 Arena Cup take turns, one at a time, with a
+4-minute break between them. When nothing is on, a chip at the top right says what's next and
+when.
+
+## 🎁 Starter pack
+
+Brand-new players (no matches yet) get a welcome window with a gift (⚡1,000, a Rare kit and a
+🦆 Duckling pet) and a short list of what to do first. Players who already played never see
+it.
+
+## 👑 Admin panel
+
+Four tabs (only you, the game's owner, see it; anyone in Studio):
+- ⚔️ **Match:** start or end a match, a 1v1 tournament, Admin Abuse, any weather, Sparks for
+  everyone.
+- 🧪 **Test:** start the boss now (in a match), any disaster, a build contest, a costume party,
+  the Arena Cup, skip a contest/party phase, night for 3 minutes, a shooting star, any special
+  rule, and start your own guide, treasure hunt, puzzles, wishes and starter pack over.
+- 🗂️ **Players:** look anyone up by name or user id (even offline), give someone Sparks, and
+  restore an online player's newest backup (tap twice).
+- 📈 **Stats:** what people did today or in the last 7 days (matches by mode and map, fish,
+  boat races, puzzles, events, market sales…). The same counts go to Roblox's Creator
+  Dashboard → Analytics → Custom events.
+
+## 🛡️ Saving
+
+Profiles are session-locked (never open on two servers). A failed save is retried, a profile
+that looks broken is never saved over a good one, and the last 3 copies of every profile are
+kept in a separate backup store (every 10 minutes and when you leave).
 
 ## Setup
 
@@ -463,6 +507,8 @@ players' pets. Saved with your profile.
 
 - Press **Play**: a match starts after 15 seconds with just you. Use 👑 Admin → *Start match
   now* / *End match* to skip waiting, and the weather buttons to try each event.
+- 👑 Admin → 🧪 **Test** starts every timed feature right away (boss, disasters, lobby events,
+  night, shooting stars...).
 - Use **Test → Clients and Servers** with 2+ players to fight and break beds.
 - Robux items are free in Studio, so you can try every cosmetic and the battle pass premium.
 - Set `Config.Holiday.StudioEvent` to try a holiday event.
@@ -512,12 +558,14 @@ src/server/   Main.server.luau starts the services in order
               CustomMatchService, TreasureService (ZombieService also runs Castle Defense),
               ClassService, DisasterService, BountyService, PuzzleService, BoatService,
               CostumeService, LegendsService, PlayerShopService, WishService,
-              ArenaCupService (BossService also runs the Sea Serpent)
+              ArenaCupService (BossService also runs the Sea Serpent), LobbyEventService,
+              UsageService (play stats), StarterService
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
               ItemModels (weapons and items), PetModels, MountModels (and the sky boat),
               FurnitureModels, StormModel (kit
               storms), Effects,
-              Juice, Notify, Codes
+              Juice, Notify, Codes, Usage (play stats)
+src/first/    LoadingScreen (runs first: the loading screen)
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, MatchHUD (and the mode vote), CameraController, ItemShop, Kits, Party, KitController (Shift powers), KitFollower,
                WeaponController, BlockController, Aim, Shop, Market, HolidayShop, Style,
@@ -531,7 +579,9 @@ src/client/   Main.client.luau starts the controllers
                BaseBuilder, EventClient (low gravity), GlideController, GuideTracker,
                ContestClient, Gift, FishingController, FishBook, MonthlyChip, PetHelpChip,
                CustomMatch, TreasureChip, PhotoMode, ClassPicker, DisasterChip, PuzzleCode,
-               BoatController, CostumeClient, PlayerShop, ArenaCupClient, Toasts, Sfx, UI
+               BoatController, CostumeClient, PlayerShop, ArenaCupClient, LobbyEventChip,
+               AchievementBook, Menu, StarterPack, LowDetail (faster mode), Toasts
+               (and the 📜 Messages log), Sfx, UI
 ```
 
 ## Known limits
