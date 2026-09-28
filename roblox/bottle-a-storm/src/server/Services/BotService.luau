@@ -12,6 +12,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local CustomData = require(Shared.CustomData)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
 
@@ -555,7 +556,8 @@ end
 
 function BotService.start()
 	MatchService.botTeamsFor = function(_players: number, teams: number): number
-		if not Config.Bots.Enabled or workspace:GetAttribute("MatchMode") == "Zombies" then
+		local mode = MatchData.mode(workspace:GetAttribute("MatchMode"))
+		if not Config.Bots.Enabled or (mode and mode.coop) or CustomData.get("bots") == "Off" then
 			return 0
 		end
 		return math.max(0, Config.Bots.MinTeams - teams)
@@ -591,7 +593,11 @@ function BotService.start()
 		clearAll()
 		local myRound = round
 		matchStartedAt = os.clock()
+		local custom = CustomData.get("bots") -- 🎟️ a private server's pick
 		local difficulty = VoteService.winner("bots") or "Normal"
+		if Config.Bots.Difficulties[custom] then
+			difficulty = custom
+		end
 		level = Config.Bots.Difficulties[difficulty] or Config.Bots.Difficulties.Normal
 		workspace:SetAttribute("BotDifficulty", difficulty)
 		local newFolder = Instance.new("Folder")

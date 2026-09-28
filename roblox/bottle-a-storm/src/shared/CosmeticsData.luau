@@ -109,7 +109,7 @@ CosmeticsData.Items = {
 		emoji = "🦆",
 		cost = 400,
 		pet = "Ducks",
-		description = "A little mallard that waddles after you.",
+		description = "A little mallard that waddles after you. In matches it heals you.",
 	},
 	{
 		id = "PetBunny",
@@ -118,7 +118,7 @@ CosmeticsData.Items = {
 		emoji = "🐰",
 		cost = 1200,
 		pet = "Bunnies",
-		description = "Hops along behind you.",
+		description = "Hops along behind you. In matches it brings you wool.",
 	},
 	{
 		id = "PetCat",
@@ -127,7 +127,7 @@ CosmeticsData.Items = {
 		emoji = "🐱",
 		cost = 2500,
 		pet = "Cat",
-		description = "A curious tabby with a swishy tail.",
+		description = "A curious tabby with a swishy tail. In matches it finds Copper.",
 	},
 	{
 		id = "PetCorgi",
@@ -136,7 +136,7 @@ CosmeticsData.Items = {
 		emoji = "🐶",
 		cost = 4500,
 		pet = "Corgi",
-		description = "Short legs, big heart, never leaves your side.",
+		description = "Short legs, big heart, never leaves your side. In matches it fetches Silver.",
 	},
 	{
 		id = "PetSheep",
@@ -145,7 +145,7 @@ CosmeticsData.Items = {
 		emoji = "🐑",
 		cost = 8000,
 		pet = "CloudSheep",
-		description = "So fluffy it could be a cloud.",
+		description = "So fluffy it could be a cloud. In matches it brings you lots of wool.",
 	},
 	{
 		id = "PetFox",
@@ -154,7 +154,7 @@ CosmeticsData.Items = {
 		emoji = "🦊",
 		cost = 15000,
 		pet = "Fox",
-		description = "A clever red fox with a bushy tail.",
+		description = "A clever red fox with a bushy tail. In matches it warns you when enemies sneak up on your bed.",
 	},
 	{
 		id = "PetDeer",
@@ -164,7 +164,7 @@ CosmeticsData.Items = {
 		cost = 0,
 		robux = true,
 		pet = "Deer",
-		description = "A graceful deer with antlers.",
+		description = "A graceful deer with antlers. In matches it heals you (a lot).",
 	},
 	{
 		id = "PetDragon",
@@ -174,7 +174,7 @@ CosmeticsData.Items = {
 		cost = 0,
 		robux = true,
 		pet = "StormDragon",
-		description = "A little dragon that flies over your shoulder.",
+		description = "A little dragon that flies over your shoulder. In matches it breathes fire at enemies!",
 	},
 	-- Hats
 	{

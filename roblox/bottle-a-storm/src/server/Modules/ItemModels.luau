@@ -736,6 +736,37 @@ function ItemModels.pearl(): Tool
 	return tool
 end
 
+-- A fishing rod: a long bamboo pole with a reel, a line guide and a "Tip"
+-- attachment at the end (the fishing line starts there).
+function ItemModels.fishingRod(): Tool
+	local tool, handle = newTool("Fishing Rod", "Click the water to cast, click again when a fish bites", {
+		Size = Vector3.new(0.3, 0.3, 1.4),
+		Color = rgb(60, 44, 32),
+		Material = M.Fabric,
+	})
+	local pole = piece(tool, {
+		Name = "Pole",
+		Size = Vector3.new(0.16, 0.16, 5),
+		CFrame = CFrame.new(0, 0.9, 2.9) * CFrame.Angles(math.rad(22), 0, 0),
+		Color = rgb(200, 170, 100),
+		Material = M.Wood,
+	})
+	piece(tool, {
+		Name = "Reel",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.3, 0.5, 0.5),
+		CFrame = CFrame.new(0.28, -0.1, 0.3),
+		Color = STEEL,
+		Material = M.Metal,
+	})
+	local tip = Instance.new("Attachment")
+	tip.Name = "Tip"
+	tip.Position = Vector3.new(0, 0, 2.5)
+	tip.Parent = pole
+	weldAll(tool, handle)
+	return tool
+end
+
 ---------------------------------------------------------------------------
 -- Gliders and parachutes (worn on your back, not held)
 ---------------------------------------------------------------------------

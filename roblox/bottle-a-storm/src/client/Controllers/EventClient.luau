@@ -1,5 +1,6 @@
 -- 🎪 The Weekly Event on your screen: Low Gravity (your own screen runs your
--- character's physics, so the gravity is set here while you're in a match)
+-- character's physics, so the gravity is set here while you're in a match;
+-- a map can make it lighter too, "MapGravity")
 -- and a small banner in the lobby saying what this week's event is.
 
 local Players = game:GetService("Players")
@@ -46,7 +47,11 @@ function EventClient.start()
 			chip.Text = "🎪 This week: " .. event.emoji .. " " .. event.name
 		end
 		local inMatch = player:GetAttribute("InMatch") == true
-		local gravity = if inMatch and key == "LowGravity" then EventData.LowGravity else NORMAL_GRAVITY
+		local mapGravity = workspace:GetAttribute("MapGravity") -- 🌊 Bubble Reef is floaty
+		local gravity = if inMatch and key == "LowGravity"
+			then EventData.LowGravity
+			elseif inMatch and type(mapGravity) == "number" then mapGravity
+			else NORMAL_GRAVITY
 		if workspace.Gravity ~= gravity then
 			workspace.Gravity = gravity
 		end

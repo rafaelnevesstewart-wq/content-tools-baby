@@ -8,6 +8,7 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local CustomData = require(Shared.CustomData)
 local MapData = require(Shared.MapData)
 
 local Modules = script.Parent.Parent.Modules
@@ -357,6 +358,108 @@ local PROPS: { [string]: (Instance, CFrame) -> () } = {
 			glow(board, board.Color, 12)
 		end
 	end,
+	reef = function(parent, at)
+		local roll = rng:NextNumber()
+		if roll < 0.35 then
+			-- Coral: bright branches and knobs.
+			local color = Color3.fromHSV(rng:NextNumber(0.85, 1.08) % 1, 0.65, 1)
+			for _ = 1, rng:NextInteger(3, 6) do
+				local height = rng:NextNumber(2, 5)
+				local lean = CFrame.Angles(rng:NextNumber(-0.5, 0.5), 0, rng:NextNumber(-0.5, 0.5))
+				local base = at * CFrame.new(rng:NextNumber(-1.2, 1.2), 0, rng:NextNumber(-1.2, 1.2)) * lean
+				piece(parent, {
+					Shape = Enum.PartType.Cylinder,
+					Size = Vector3.new(height, 0.6, 0.6),
+					CFrame = base * CFrame.new(0, height / 2, 0) * CFrame.Angles(0, 0, math.rad(90)),
+					Color = color,
+					Material = Enum.Material.Pebble,
+				})
+				piece(parent, {
+					Shape = Enum.PartType.Ball,
+					Size = Vector3.one * 1,
+					CFrame = base * CFrame.new(0, height, 0),
+					Color = color:Lerp(Color3.new(1, 1, 1), 0.3),
+					Material = Enum.Material.Pebble,
+					CanCollide = false,
+				})
+			end
+		elseif roll < 0.6 then
+			-- Swaying seaweed (tall green ribbons).
+			for _ = 1, rng:NextInteger(3, 5) do
+				local height = rng:NextNumber(4, 9)
+				piece(parent, {
+					Size = Vector3.new(0.5, height, 0.15),
+					CFrame = at
+						* CFrame.new(rng:NextNumber(-1.5, 1.5), height / 2, rng:NextNumber(-1.5, 1.5))
+						* CFrame.Angles(0, rng:NextNumber(0, math.pi), rng:NextNumber(-0.2, 0.2)),
+					Color = Color3.fromRGB(40, rng:NextInteger(130, 170), 80),
+					Material = Enum.Material.Grass,
+					CanCollide = false,
+				})
+			end
+		elseif roll < 0.75 then
+			-- A giant clam with a glowing pearl.
+			local shell = Color3.fromRGB(230, 200, 220)
+			piece(parent, {
+				Shape = Enum.PartType.Cylinder,
+				Size = Vector3.new(0.8, 4, 4),
+				CFrame = at * CFrame.new(0, 0.4, 0) * CFrame.Angles(0, 0, math.rad(90)),
+				Color = shell,
+				Material = Enum.Material.Marble,
+			})
+			piece(parent, {
+				Shape = Enum.PartType.Cylinder,
+				Size = Vector3.new(0.6, 4, 4),
+				CFrame = at * CFrame.new(0, 1.6, 1.2) * CFrame.Angles(math.rad(-50), 0, math.rad(90)),
+				Color = shell,
+				Material = Enum.Material.Marble,
+			})
+			local pearl = piece(parent, {
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.one * 1.1,
+				CFrame = at * CFrame.new(0, 1.3, 0),
+				Color = Color3.fromRGB(245, 245, 255),
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+			})
+			glow(pearl, Color3.fromRGB(200, 230, 255), 10)
+		elseif roll < 0.9 then
+			-- A bubble vent: bubbles stream up out of a rock.
+			local vent = piece(parent, {
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.new(2.4, 2.4, 2.4),
+				CFrame = at * CFrame.new(0, 0.4, 0),
+				Color = Color3.fromRGB(70, 80, 96),
+				Material = Enum.Material.Slate,
+			})
+			local bubbles = Instance.new("ParticleEmitter")
+			bubbles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+			bubbles.Color = ColorSequence.new(Color3.fromRGB(210, 240, 255))
+			bubbles.Size = NumberSequence.new(0.4, 0.9)
+			bubbles.Transparency = NumberSequence.new(0.2, 1)
+			bubbles.Lifetime = NumberRange.new(3, 5)
+			bubbles.Rate = 8
+			bubbles.Speed = NumberRange.new(3, 6)
+			bubbles.SpreadAngle = Vector2.new(12, 12)
+			bubbles.EmissionDirection = Enum.NormalId.Top
+			bubbles.Parent = vent
+		else
+			-- A little school of fish hanging in the water.
+			local color = Color3.fromHSV(rng:NextNumber(), 0.7, 1)
+			for i = 1, 5 do
+				local fish = piece(parent, {
+					Size = Vector3.new(0.4, 0.6, 1.2),
+					CFrame = at * CFrame.new(i * 0.9 - 2.7, rng:NextNumber(6, 9), rng:NextNumber(-1, 1)),
+					Color = color,
+					Material = Enum.Material.Neon,
+					CanCollide = false,
+				})
+				local mesh = Instance.new("SpecialMesh")
+				mesh.MeshType = Enum.MeshType.Sphere
+				mesh.Parent = fish
+			end
+		end
+	end,
 	space = function(parent, at)
 		local height = rng:NextNumber(3, 7)
 		local crystal = piece(parent, {
@@ -458,7 +561,8 @@ function MapService.apply(islands: { WorldBuilder.PlotInfo })
 		end
 	end
 	-- The map with the most votes in the lobby, or a random new one.
-	local voted = MapData.get(VoteService.winner("map"))
+	local voted = MapData.get(CustomData.get("map")) -- 🎟️ a private server's pick
+		or MapData.get(VoteService.winner("map"))
 	-- Zombie Survival is spooky unless someone voted for a map.
 	if not voted and workspace:GetAttribute("MatchMode") == "Zombies" then
 		voted = MapData.get("Haunted")
@@ -495,9 +599,32 @@ function MapService.apply(islands: { WorldBuilder.PlotInfo })
 			end
 			scatter(folder, CFrame.new(), Config.World.CenterRadius, 30, map.props, true)
 		end
+		-- Glass bubbles over the islands (you can walk right through them).
+		if map.domes then
+			local function dome(center: Vector3, radius: number)
+				piece(folder, {
+					Name = "BubbleDome",
+					Shape = Enum.PartType.Ball,
+					Size = Vector3.one * radius * 2,
+					CFrame = CFrame.new(center),
+					Color = Color3.fromRGB(180, 230, 255),
+					Material = Enum.Material.Glass,
+					Transparency = 0.85,
+					CanCollide = false,
+					CanQuery = false,
+					CanTouch = false,
+					CastShadow = false,
+				})
+			end
+			for _, info in islands do
+				dome(info.cframe.Position, Config.World.PlotRadius + 12)
+			end
+			dome(Vector3.zero, Config.World.CenterRadius + 14)
+		end
 		folder.Parent = workspace
 		props = folder
 	end
+	workspace:SetAttribute("MapGravity", map.gravity)
 	Notify.all("🗺️ This match's map: " .. map.emoji .. " " .. map.name .. "!", "info")
 end
 
@@ -517,6 +644,7 @@ function MapService.reset()
 	end
 	tint(nil)
 	workspace:SetAttribute("FixedClock", nil)
+	workspace:SetAttribute("MapGravity", nil)
 	workspace:SetAttribute("MapTheme", "Meadow")
 end
 

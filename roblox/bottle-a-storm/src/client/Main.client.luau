@@ -56,6 +56,13 @@ local order = {
 	"GlideController",
 	"GuideTracker",
 	"ContestClient",
+	"FishingController",
+	"FishBook",
+	"MonthlyChip",
+	"PetHelpChip",
+	"CustomMatch",
+	"TreasureChip",
+	"PhotoMode",
 	"EmoteWheel",
 	"ShopStreet",
 }

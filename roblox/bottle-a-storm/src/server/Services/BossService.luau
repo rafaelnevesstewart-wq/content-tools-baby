@@ -12,6 +12,7 @@ local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local CustomData = require(Shared.CustomData)
 local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
 
@@ -571,8 +572,9 @@ function BossService.start()
 	MatchService.MatchStarted:Connect(function()
 		round += 1
 		local myRound = round
-		if workspace:GetAttribute("MatchMode") == "Zombies" then
-			return -- the zombies are enough trouble
+		local mode = workspace:GetAttribute("MatchMode")
+		if mode == "Zombies" or mode == "Castle" or CustomData.get("boss") == "Off" then
+			return -- the monsters are enough trouble (or the private server turned it off)
 		end
 		task.spawn(function()
 			task.wait(Config.Boss.FirstAt)

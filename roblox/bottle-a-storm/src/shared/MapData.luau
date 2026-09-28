@@ -14,6 +14,8 @@ export type Map = {
 	tint: Color3?, -- a color wash over the whole screen
 	props: string?, -- what MapService scatters on the islands
 	clock: number?, -- time of day during the match (nil: afternoon)
+	gravity: number?, -- lighter gravity on this map (normal is 196.2)
+	domes: boolean?, -- a big glass bubble over every island
 }
 
 local rgb = Color3.fromRGB
@@ -93,6 +95,22 @@ MapData.List = {
 		colors = { [M.Concrete] = rgb(196, 196, 192), [M.Brick] = rgb(150, 92, 72), [M.Rock] = rgb(120, 120, 126) },
 		tint = rgb(240, 246, 255),
 		props = "city",
+	},
+	{
+		key = "Reef",
+		name = "Bubble Reef",
+		emoji = "🌊",
+		grass = M.LeafyGrass, -- sea moss
+		dirt = M.Sandstone,
+		colors = {
+			[M.LeafyGrass] = rgb(64, 150, 138),
+			[M.Sandstone] = rgb(222, 206, 166),
+			[M.Rock] = rgb(60, 84, 110),
+		},
+		tint = rgb(176, 222, 255),
+		props = "reef",
+		gravity = 130, -- a little floaty, like swimming
+		domes = true,
 	},
 } :: { Map }
 

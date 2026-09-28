@@ -50,6 +50,9 @@ MatchData.Modes = {
 	-- Everyone on one team: defend your bed from waves of zombies
 	-- (ZombieService).
 	{ key = "Zombies", name = "Zombie Survival", emoji = "🧟", size = 8, coop = true },
+	-- Everyone on one team inside a castle: hold off storm monsters
+	-- (ZombieService).
+	{ key = "Castle", name = "Castle Defense", emoji = "🏰", size = 8, coop = true },
 	-- Duos, plus a hill on the middle island: hold it alone to score, first
 	-- team to the target wins (HillService). Beds still count.
 	{ key = "Hill", name = "King of the Hill", emoji = "👑", size = 2 },

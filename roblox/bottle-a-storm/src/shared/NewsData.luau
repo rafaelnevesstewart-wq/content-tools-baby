@@ -9,6 +9,17 @@ local NewsData = {}
 
 NewsData.List = {
 	{
+		version = 10,
+		title = "🏰 Castle Defense, fishing and a monthly season!",
+		lines = {
+			"🏰 Castle Defense: hold your castle against 8 waves of storm monsters",
+			"🎣 A fishing pond on Games Island with 14 fish to catch",
+			"🏅 A monthly leaderboard: the top 100 win prizes",
+			"🐾 Pets now help in matches, 🌊 new Bubble Reef map",
+			"🗺️ Daily treasure hunt, 📸 photo mode (P), 🎟️ private match rules",
+		},
+	},
+	{
 		version = 9,
 		title = "🎪 Weekly events, gliders and a dragon to tame!",
 		lines = {

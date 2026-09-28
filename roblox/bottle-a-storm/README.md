@@ -235,6 +235,51 @@ shiny Legendary kit, ⚡10,000 and the 🌟 Challenger title.
 - 💎 **Robux shop:** VIP, Star Booster, Sparks, Golden Kit Crate, wheel spins, Battle Pass
   Premium, tier skips and Summon Rainbow Hour. Nothing sold makes you stronger in a match.
 
+## 🏰 Castle Defense
+
+A co-op mode (everyone on one team). Your bed starts inside a stone castle with towers and a
+gate. Storm monsters attack in 8 waves: ⛈️ Storm Imps, fast 🌪️ Twisters, big ⛰️ Storm
+Golems and, in the last wave, the 👑 Storm King. They smash through walls to reach your bed.
+After each wave everyone gets Sparks and 12 Stone Bricks to fix the walls. Beat every wave to
+win.
+
+## 🎣 Fishing
+
+On the east side of Games Island there's a pond. Take a rod at the dock, click the water to
+cast, and click again quickly when the bobber dips. There are 14 catches (from an Old Boot to
+the Mythic 🐉 Storm Serpent). Each pays Sparks, up to 5,000 a day. The 📖 Fish Book stand
+shows what you've caught and your heaviest of each. Catching 100 earns 🎣 Master Angler.
+
+## 🏅 Monthly season
+
+Matches earn Season Points (finish 2, win 10, knockout 1, final knockout +2, bed 3). The board
+by the castle gate shows this month's world top 10; your points show at the top right. When
+the month ends, the top 100 win prizes the next time they join (#1: ⚡25,000, a Legendary kit
+and the 🥇 Monthly Champion title).
+
+## 🐾 Pets that help
+
+The pet you bring helps in matches, and higher pet levels make it stronger: the Duckling and
+Deer heal you, the Bunny and Cloud Sheep bring wool, the Cat finds Copper, the Corgi fetches
+Silver, the Fox warns you when enemies are near your bed, and the Storm Dragon breathes fire
+at enemies.
+
+## 🗺️ Treasure hunt
+
+Every day 5 treasures are buried around the lobby islands (the same for everyone). Your next
+clue shows at the top right; find the dirt mound with a red ❌ and hold E to dig. Each pays
+Sparks and finding all 5 gives a Rare kit. Finish 5 hunts for 🏴‍☠️ Treasure Hunter.
+
+## 📸 Photo mode
+
+In the lobby press 📸 (or P): the screen clears and the camera circles you (drag to turn,
+scroll to zoom). Pick a pose, a frame and a filter, then 📷 Snap.
+
+## 🎟️ Private match rules
+
+In a private server its owner gets a 🎟️ button to pick the mode, map, special rule,
+generator speed, bots and the dragon boss for every match (in Studio anyone can try it).
+
 ## 🎪 Weekly events
 
 Every week (from Monday, UTC) every match gets a special rule: 🌙 Low Gravity, 🦣 Giant Mode,
@@ -356,7 +401,9 @@ src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match
               crates), SpinData, TitleData, HolidayData, WeatherEvents, Products, Sounds,
               SettingsData, ChallengeData, PaintData, EmoteData, PetLevels,
               ClanPassData, BaseData, NewsData, TauntData, EventData (weekly events),
-              GuideData (Guide Gale), ContestData (build contests), Remotes, Format, Signal
+              GuideData (Guide Gale), ContestData (build contests), FishData, MonthlyData,
+              PetHelpers, CustomData (private match rules), TreasureData, Remotes, Format,
+              Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, MatchService (rounds, teams, beds, generators), CombatService,
               GadgetService (TNT, fireballs, potions, pickaxes, axes), PartyService,
@@ -375,7 +422,8 @@ src/server/   Main.server.luau starts the services in order
               EmoteService, PetLevelService, InviteService, ZombieService, HillService,
               NewsService, TauntService, MountService (and dragon taming), MiniGameService,
               BaseService (and trophy rooms), EventService, GiftService, GuideService,
-              ContestService
+              ContestService, FishingService, MonthlyService, PetHelperService,
+              CustomMatchService, TreasureService (ZombieService also runs Castle Defense)
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
               ItemModels (weapons and items), PetModels, MountModels, StormModel (kit
               storms), Effects,
@@ -391,7 +439,8 @@ src/client/   Main.client.luau starts the controllers
                and ladders), Paint, EmoteWheel, ShopStreet, ZombieHUD, HillHUD,
                NewsPopup, DayNightHUD, TauntPicker, MountController, MiniGameHUD,
                BaseBuilder, EventClient (low gravity), GlideController, GuideTracker,
-               ContestClient, Gift, Toasts, Sfx, UI
+               ContestClient, Gift, FishingController, FishBook, MonthlyChip, PetHelpChip,
+               CustomMatch, TreasureChip, PhotoMode, Toasts, Sfx, UI
 ```
 
 ## Known limits

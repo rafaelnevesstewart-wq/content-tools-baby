@@ -1,10 +1,12 @@
 -- 🛍️ The shop street's sellers: pressing a stall's prompt opens that shop's
--- window (WorldBuilder puts an "OpenWindow" attribute on each prompt).
+-- window (WorldBuilder puts an "OpenWindow" attribute on each prompt; other
+-- prompts like the 📖 Fish Book stand use it too).
 
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local EmoteWheel = require(script.Parent.EmoteWheel)
+local FishBook = require(script.Parent.FishBook)
 local Kits = require(script.Parent.Kits)
 local Market = require(script.Parent.Market)
 local Paint = require(script.Parent.Paint)
@@ -29,6 +31,7 @@ local OPEN: { [string]: () -> () } = {
 		Rewards.open("Spin")
 	end,
 	Robux = Shop.toggle,
+	FishBook = FishBook.toggle, -- 🎣 the stand by the fishing pond
 }
 
 function ShopStreet.start()

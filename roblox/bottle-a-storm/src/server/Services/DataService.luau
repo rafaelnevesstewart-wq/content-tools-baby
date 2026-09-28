@@ -62,6 +62,9 @@ local function defaultData()
 		minigames = { day = -1, prizes = 0, rangeBest = 0 }, -- 🎯 and ⏱️ (raceBest set when you finish)
 		base = { blocks = {} }, -- 🏗️ your saved base: "i,j,k,blockKey" (BaseData)
 		guide = { step = 1, done = false }, -- 🧭 Guide Gale's steps (GuideData)
+		fish = { caught = {}, best = {}, day = -1, paid = 0 }, -- 🎣 Fish Book (FishData)
+		monthly = { month = "", points = 0, paid = "" }, -- 🏅 this month's Season Points (MonthlyData)
+		treasure = { day = -1, found = 0 }, -- 🗺️ today's treasure hunt (TreasureData)
 		-- 🌟 Challenges (ChallengeService fills these in).
 		challenges = { day = -1, week = -1, bonusClaimed = false },
 		level = 1, -- player level (1-100), then prestige (ProgressionData)

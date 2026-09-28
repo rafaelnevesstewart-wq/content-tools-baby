@@ -13,6 +13,7 @@ local HttpService = game:GetService("HttpService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local CustomData = require(Shared.CustomData)
 local Format = require(Shared.Format)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
@@ -744,12 +745,13 @@ end
 local function tierMultiplier(): number
 	local elapsed = now() - startedAt
 	local tiers = Config.Match.TierUpAt
+	local custom = tonumber(CustomData.get("generators")) or 1 -- 🎟️ private match rules
 	if elapsed >= tiers[2] then
-		return 2
+		return 2 * custom
 	elseif elapsed >= tiers[1] then
-		return 1.5
+		return 1.5 * custom
 	end
-	return 1
+	return custom
 end
 
 local function runGenerator(generator: Generator, dt: number, speed: number)
@@ -1073,6 +1075,11 @@ end
 -- The team size with the most votes among `players` (nil when nobody voted).
 local function pickMode(players: { Player })
 	local counts: { [string]: number } = {}
+	-- 🎟️ A private server's owner can choose the mode.
+	local forced = MatchData.mode(CustomData.get("mode"))
+	if forced then
+		return forced, counts
+	end
 	for _, player in players do
 		local vote = player:GetAttribute("ModeVote")
 		if type(vote) == "string" and MatchData.mode(vote) then

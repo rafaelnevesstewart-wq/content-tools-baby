@@ -198,6 +198,34 @@ Config.Invite = {
 	MaxRewards = 25, -- invites that pay Sparks (they still count after)
 }
 
+-- 🏰 Castle Defense mode (ZombieService, like Zombie Survival but with a
+-- castle and storm monsters). Same fields as Config.Zombies, plus the castle.
+Config.Castle = {
+	Waves = 8,
+	FirstDelay = 30,
+	BreakSeconds = 20,
+	BaseCount = 5,
+	PerWave = 2,
+	PerPlayer = 2,
+	Health = 70,
+	HealthPerWave = 20,
+	BruteHealth = 5,
+	Damage = 9,
+	DamagePerWave = 1.5,
+	Speed = 10,
+	SpeedPerWave = 0.4,
+	Reach = 5.5,
+	HitCooldown = 1.1,
+	SightRange = 22, -- they mostly go for the castle, not for you
+	BedBreakSeconds = 6,
+	KillCopper = 3,
+	WaveSparks = 70,
+	NightSpeed = 2,
+	WallHalf = 5, -- the walls are this many blocks from the bed each way
+	WallHeight = 3,
+	RepairBlocks = 12, -- Stone Bricks for everyone after each wave
+}
+
 -- 🧟 Zombie Survival mode (ZombieService).
 Config.Zombies = {
 	Waves = 10,

@@ -1,5 +1,6 @@
--- 🧟 Zombie Survival on your screen: the wave, zombies left, and the
--- countdown to the next wave (ZombieService shares them as attributes).
+-- 🧟 Zombie Survival and 🏰 Castle Defense on your screen: the wave, monsters
+-- left, and the countdown to the next wave (ZombieService shares them as
+-- attributes).
 
 local RunService = game:GetService("RunService")
 
@@ -39,10 +40,26 @@ function ZombieHUD.start()
 		local breakUntil = workspace:GetAttribute("ZombieBreakUntil")
 		local left = workspace:GetAttribute("ZombiesLeft") or 0
 		local wait = if type(breakUntil) == "number" then breakUntil - workspace:GetServerTimeNow() else 0
+		local castle = workspace:GetAttribute("HordeKind") == "Castle"
+		local icon = if castle then "⛈️" else "🧟"
 		if wait > 0 then
-			label.Text = "🧟 Wave " .. wave + 1 .. "/" .. total .. " in " .. math.ceil(wait) .. "s: build walls!"
+			label.Text = icon
+				.. " Wave "
+				.. wave + 1
+				.. "/"
+				.. total
+				.. " in "
+				.. math.ceil(wait)
+				.. (if castle then "s: fix the walls!" else "s: build walls!")
 		else
-			label.Text = "🧟 Wave " .. wave .. "/" .. total .. "  ·  " .. left .. " zombies left"
+			label.Text = icon
+				.. " Wave "
+				.. wave
+				.. "/"
+				.. total
+				.. "  ·  "
+				.. left
+				.. (if castle then " storm monsters left" else " zombies left")
 		end
 	end)
 end

@@ -37,6 +37,7 @@ local EVENTS = {
 	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed
 	"UseGadget", -- client -> server: ("TNT" | "Fireball" | "Rocket" | potion key | "Mine", aimPoint)
 	"Glide", -- client -> server: (on) you started or stopped gliding (the wings show)
+	"Fish", -- client -> server: ("cast", aimPoint) or ("reel") with the Fishing Rod
 }
 
 local FUNCTIONS = {
@@ -71,6 +72,8 @@ local FUNCTIONS = {
 	"ClaimChallenge", -- client -> server: ("daily" | index | "bonus") -> (ok, message)
 	"GetGifts", -- client -> server: (userId) -> what you could gift them and your Sparks
 	"SendGift", -- client -> server: (userId, cosmeticId) -> (ok, message)
+	"CustomRules", -- client -> server: ("get") -> the rules, or ("set", optionKey, choice) -> ok (private server owner)
+	"GetFish", -- client -> server: () -> your Fish Book (caught counts, best weights)
 	"Contest", -- client -> server: ("info") -> contest info, or ("visit" | "vote", userId, stars) -> (ok, message)
 }
 

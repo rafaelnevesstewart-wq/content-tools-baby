@@ -218,13 +218,31 @@ function MatchHUD.start()
 		Parent = top,
 	}, { UI.list(6, Enum.FillDirection.Horizontal) })
 
+	-- The mode buttons wrap onto a second line on narrow (phone) screens.
 	voteRow = UI.new("Frame", {
 		LayoutOrder = 3,
-		Size = UDim2.fromOffset(0, 34),
-		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(700, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		Parent = top,
-	}, { UI.list(6, Enum.FillDirection.Horizontal) })
+	}, {
+		UI.new("UIListLayout", {
+			Padding = UDim.new(0, 6),
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Wraps = true,
+		}),
+	})
+	local function fitVoteRow()
+		local camera = workspace.CurrentCamera
+		local width = if camera then camera.ViewportSize.X - 24 else 700
+		voteRow.Size = UDim2.fromOffset(math.clamp(width, 260, 1100), 0)
+	end
+	fitVoteRow()
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitVoteRow)
+	end
 	UI.label({
 		LayoutOrder = 0,
 		Size = UDim2.fromOffset(0, 34),

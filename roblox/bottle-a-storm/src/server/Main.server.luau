@@ -57,6 +57,11 @@ local order = {
 	"GiftService",
 	"GuideService",
 	"ContestService",
+	"FishingService",
+	"MonthlyService",
+	"PetHelperService",
+	"CustomMatchService",
+	"TreasureService",
 	"MonetizationService",
 }
 

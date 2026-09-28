@@ -640,6 +640,7 @@ WorldBuilder.LobbySpots = {
 	chest = CFrame.lookAt(lobbyPoint(-20, 0, -22), lobbyPoint(0, 0, 0)),
 	bracket = CFrame.lookAt(lobbyPoint(28, 0, -8), lobbyPoint(28, 0, 10)),
 	guide = CFrame.lookAt(lobbyPoint(10, 0, 30), lobbyPoint(0, 0, 26)),
+	monthly = CFrame.lookAt(lobbyPoint(-38, 0, 26), lobbyPoint(0, 0, 26)),
 }
 
 -- Keeps trees and holiday decor out of the castle, off the path from the
@@ -1265,6 +1266,7 @@ local function sideIslands(world: Instance, rng: Random)
 		}, function(p: Vector3): boolean
 			return math.abs(p.Z) < 10 -- keep the bridge end clear
 				or (side == -1 and math.abs(p.X) < 72 and math.abs(p.Z) < 38) -- the building plots
+				or (side == 1 and Vector3.new(p.X - 38, 0, p.Z).Magnitude < 17) -- the fishing pond
 		end)
 	end
 	-- Signposts outside the main gate pointing the way.

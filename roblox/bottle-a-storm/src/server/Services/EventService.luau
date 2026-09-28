@@ -4,6 +4,7 @@
 -- GadgetService, Double Sparks in IncomeService, and Giant Mode here.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local CustomData = require(Shared.CustomData)
 local EventData = require(Shared.EventData)
 
 local Modules = script.Parent.Parent.Modules
@@ -13,10 +14,26 @@ local MatchService = require(script.Parent.MatchService)
 
 local EventService = {}
 
+-- This week's event, unless a private server's owner picked another rule
+-- (🎟️ CustomData) or none.
+local function active(): EventData.WeeklyEvent?
+	local custom = CustomData.get("event")
+	if custom == "None" then
+		return nil
+	end
+	for _, event in EventData.List do
+		if event.key == custom then
+			return event
+		end
+	end
+	return EventData.current(os.time())
+end
+
 local function publish()
-	local event = EventData.current(os.time())
-	if workspace:GetAttribute("WeeklyEvent") ~= event.key then
-		workspace:SetAttribute("WeeklyEvent", event.key)
+	local event = active()
+	local key = if event then event.key else nil
+	if workspace:GetAttribute("WeeklyEvent") ~= key then
+		workspace:SetAttribute("WeeklyEvent", key)
 	end
 end
 
@@ -28,9 +45,12 @@ function EventService.start()
 			publish()
 		end
 	end)
+	workspace:GetAttributeChangedSignal("CustomRules"):Connect(publish)
 	MatchService.MatchStarted:Connect(function()
-		local event = EventData.current(os.time())
-		Notify.all("🎪 Weekly Event: " .. event.emoji .. " " .. event.name .. "! " .. event.description, "rare")
+		local event = active()
+		if event then
+			Notify.all("🎪 Special rule: " .. event.emoji .. " " .. event.name .. "! " .. event.description, "rare")
+		end
 	end)
 	-- Giant Mode: everyone in the match is bigger.
 	MatchService.PlayerSpawned:Connect(function(player)

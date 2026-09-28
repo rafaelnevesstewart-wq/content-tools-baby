@@ -49,7 +49,8 @@ local function happening(): { string }
 	end
 	local wave = workspace:GetAttribute("ZombieWave")
 	if type(wave) == "number" and wave > 0 then
-		table.insert(lines, "🧟 Zombie wave " .. wave .. "!")
+		local castle = workspace:GetAttribute("HordeKind") == "Castle"
+		table.insert(lines, (if castle then "🏰 Castle Defense: storm wave " else "🧟 Zombie wave ") .. wave .. "!")
 	end
 	local event = WeatherEvents.get(workspace:GetAttribute("WeatherEvent"))
 	if event then
@@ -63,8 +64,12 @@ local function happening(): { string }
 	elseif contestOk and type(contest) == "table" and contest.phase == "vote" then
 		table.insert(lines, "🎨 Vote in the build contest now!")
 	end
-	local weekly = EventData.current(os.time())
-	table.insert(lines, "🎪 This week: " .. weekly.emoji .. " " .. weekly.name .. " in every match")
+	table.insert(lines, "🗺️ New treasure hunt clues every day (top right)!")
+	for _, weekly in EventData.List do
+		if EventData.is(weekly.key) then
+			table.insert(lines, "🎪 Special rule: " .. weekly.emoji .. " " .. weekly.name .. " in every match")
+		end
+	end
 	local abuse = workspace:GetAttribute("AbuseUntil")
 	if type(abuse) == "number" and abuse > now then
 		table.insert(lines, "👑 ADMIN ABUSE: double Sparks for " .. Format.time(abuse - now) .. "!")

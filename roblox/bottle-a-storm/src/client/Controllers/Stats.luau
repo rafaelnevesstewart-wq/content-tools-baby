@@ -114,6 +114,8 @@ local function show(stats: any)
 		{ "🎯", "Rank points", n(stats.rankPoints) },
 		{ "🤺", "Duels won", n(stats.duelsWon) },
 		{ "🧟", "Zombies", n(stats.zombiesKilled or 0) },
+		{ "⛈️", "Storm monsters", n(stats.stormsKilled or 0) },
+		{ "🎣", "Fish caught", n(stats.fishCaught or 0) },
 		{ "🏔️", "Parkour clears", n(stats.obbyClears) },
 		{ "⚡", "Sparks earned", n(stats.sparksEarned) },
 	})
