@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local ClassData = require(Shared.ClassData)
 local Config = require(Shared.Config)
 local EventData = require(Shared.EventData)
 local MatchData = require(Shared.MatchData)
@@ -406,7 +407,9 @@ local function damage(victim: Player, attacker: Player, amount: number, push: Ve
 	end
 	local armor = MatchData.Armor[gearOf(victim).armor]
 	local protection = MatchService.upgradeLevel(victim, "Protection")
-	local taken = math.max(0.3, armor.taken - 0.06 * protection)
+	-- 🧙 Classes: Knights take less, Archers' arrows and Knights' swords hit harder.
+	local taken = math.max(0.3, armor.taken - 0.06 * protection) * ClassData.taken(victim)
+	amount *= ClassData.dealt(attacker, weapon)
 	MatchService.recordHit(victim, attacker)
 	if victim ~= attacker then
 		lastWeapon[victim] = weapon or "Sword"
@@ -667,7 +670,7 @@ function CombatService.hurtByBot(victim: Player, amount: number, push: Vector3, 
 	end
 	local armor = MatchData.Armor[gearOf(victim).armor]
 	local protection = MatchService.upgradeLevel(victim, "Protection")
-	local taken = math.max(0.3, armor.taken - 0.06 * protection)
+	local taken = math.max(0.3, armor.taken - 0.06 * protection) * ClassData.taken(victim)
 	MatchService.recordBotHit(victim, botName, botTeam)
 	lastWeapon[victim] = nil
 	humanoid:TakeDamage(amount * taken * (if EventData.is("OneHit") then EventData.OneHitDamage else 1))

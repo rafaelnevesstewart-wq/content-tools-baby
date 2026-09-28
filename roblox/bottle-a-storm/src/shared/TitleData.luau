@@ -42,6 +42,42 @@ local TitleData = {}
 
 TitleData.List = {
 	{
+		id = "FashionStar",
+		name = "Fashion Star",
+		emoji = "🎭",
+		color = rgb(255, 130, 220),
+		goal = "Win a costume party",
+		target = 1,
+		progress = stat("costumeWins"),
+	},
+	{
+		id = "SkyCaptain",
+		name = "Sky Captain",
+		emoji = "🚤",
+		color = rgb(90, 200, 255),
+		goal = "Finish the Sky Boat Race 10 times",
+		target = 10,
+		progress = stat("boatRaces"),
+	},
+	{
+		id = "PuzzleMaster",
+		name = "Puzzle Master",
+		emoji = "🧩",
+		color = rgb(150, 120, 255),
+		goal = "Solve all three puzzle rooms on 7 days",
+		target = 7,
+		progress = stat("puzzleDays"),
+	},
+	{
+		id = "BountyHunter",
+		name = "Bounty Hunter",
+		emoji = "🎯",
+		color = rgb(230, 80, 60),
+		goal = "Claim 10 bounties",
+		target = 10,
+		progress = stat("bountiesClaimed"),
+	},
+	{
 		id = "TreasureHunter",
 		name = "Treasure Hunter",
 		emoji = "🏴‍☠️",

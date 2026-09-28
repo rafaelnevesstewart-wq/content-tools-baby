@@ -1,6 +1,7 @@
 -- 🔨 Building your base (BaseService): hold the Builder on Base Island, pick
 -- a block (or 🧽 Remove) in the bar at the bottom, and click where it goes.
--- A see-through ghost shows the spot first.
+-- A see-through ghost shows the spot first. 🪑 switches the bar to furniture;
+-- 🔄 (or R) turns furniture a quarter turn.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -23,6 +24,9 @@ local ghost: Part
 local palette: Frame
 local buttons: { [string]: TextButton } = {}
 local lastTouch: Vector2? = nil
+local furnitureMode = false
+local turn = 0
+local turnButton: TextButton
 
 local function holding(): Tool?
 	local character = player.Character
@@ -33,6 +37,9 @@ end
 local function refreshButtons()
 	for key, button in buttons do
 		local on = if key == "Remove" then removing else (not removing and key == selected)
+		if key == "Tab" or key == "Turn" then
+			on = false
+		end
 		button.BackgroundColor3 = if on then UI.Colors.Good else UI.Colors.PanelLight
 	end
 end
@@ -96,7 +103,7 @@ function BaseBuilder.start()
 		Visible = false,
 		Parent = screen,
 	}, { UI.corner(12), UI.stroke(UI.Colors.Stroke, 2), UI.padding(5), UI.list(4, Enum.FillDirection.Horizontal) })
-	local function addButton(order: number, key: string, text: string, color: Color3?, onClick: () -> ())
+	local function addButton(order: number, key: string, text: string, color: Color3?, onClick: () -> ()): TextButton
 		local button = UI.button({
 			LayoutOrder = order,
 			Size = UDim2.fromOffset(46, 46),
@@ -116,14 +123,57 @@ function BaseBuilder.start()
 		end
 		button.Activated:Connect(onClick)
 		buttons[key] = button
+		return button
 	end
+	local blockButtons: { TextButton } = {}
+	local furnitureButtons: { TextButton } = {}
 	for order, block in BaseData.Blocks do
-		addButton(order, block.key, block.emoji, block.color, function()
-			selected = block.key
+		table.insert(
+			blockButtons,
+			addButton(order, block.key, block.emoji, block.color, function()
+				selected = block.key
+				removing = false
+				refreshButtons()
+			end)
+		)
+	end
+	for order, item in BaseData.Furniture do
+		local button = addButton(20 + order, item.key, item.emoji, item.color, function()
+			selected = item.key
 			removing = false
 			refreshButtons()
 		end)
+		button.Visible = false
+		table.insert(furnitureButtons, button)
 	end
+	-- 🪑 / 🧱 switches between blocks and furniture.
+	local tab: TextButton
+	tab = addButton(0, "Tab", "🪑", nil, function()
+		furnitureMode = not furnitureMode
+		for _, button in blockButtons do
+			button.Visible = not furnitureMode
+		end
+		for _, button in furnitureButtons do
+			button.Visible = furnitureMode
+		end
+		tab.Text = if furnitureMode then "🧱" else "🪑"
+		turnButton.Visible = furnitureMode
+		selected = if furnitureMode then BaseData.Furniture[1].key else BaseData.Blocks[1].key
+		removing = false
+		refreshButtons()
+	end)
+	local function rotate()
+		turn = (turn + 1) % 4
+		turnButton.Text = "🔄" .. turn * 90 .. "°"
+	end
+	turnButton = addButton(49, "Turn", "🔄0°", nil, rotate)
+	turnButton.TextSize = 13
+	turnButton.Visible = false
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if not processed and input.KeyCode == Enum.KeyCode.R and furnitureMode and holding() then
+			rotate()
+		end
+	end)
 	addButton(50, "Remove", "🧽", nil, function()
 		removing = not removing
 		refreshButtons()
@@ -164,7 +214,7 @@ function BaseBuilder.start()
 					if removing then
 						Remotes.event("BaseEdit"):FireServer("remove", cell[1], cell[2], cell[3])
 					else
-						Remotes.event("BaseEdit"):FireServer("place", cell[1], cell[2], cell[3], selected)
+						Remotes.event("BaseEdit"):FireServer("place", cell[1], cell[2], cell[3], selected, turn)
 					end
 				end
 			end)
@@ -172,10 +222,13 @@ function BaseBuilder.start()
 		target = aim(plot)
 		if target then
 			ghost.CFrame = CFrame.new(BaseData.cellPosition(plot, target[1], target[2], target[3]))
+				* CFrame.Angles(0, turn * math.pi / 2, 0)
 			local block = BaseData.block(selected)
+			local item = BaseData.furniture(selected)
 			ghost.Color = if removing
 				then Color3.fromRGB(255, 80, 80)
 				elseif block then block.color
+				elseif item then item.color
 				else Color3.new(1, 1, 1)
 			ghost.Parent = workspace
 		else

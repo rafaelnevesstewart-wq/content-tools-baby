@@ -63,6 +63,11 @@ local order = {
 	"CustomMatch",
 	"TreasureChip",
 	"PhotoMode",
+	"ClassPicker",
+	"DisasterChip",
+	"PuzzleCode",
+	"BoatController",
+	"CostumeClient",
 	"EmoteWheel",
 	"ShopStreet",
 }

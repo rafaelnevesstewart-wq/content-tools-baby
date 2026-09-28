@@ -58,7 +58,11 @@ local boss = option("boss", "🐉 Storm Dragon boss")
 add(boss, "On", "✅ On")
 add(boss, "Off", "🚫 Off")
 
-CustomData.Options = { mode, map, event, generators, bots, boss } :: { Option }
+local disasters = option("disasters", "🌋 Disasters")
+add(disasters, "On", "✅ On")
+add(disasters, "Off", "🚫 Off")
+
+CustomData.Options = { mode, map, event, generators, bots, boss, disasters } :: { Option }
 
 function CustomData.option(key: string): Option?
 	for _, o in CustomData.Options do

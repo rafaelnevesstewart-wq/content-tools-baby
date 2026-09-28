@@ -272,6 +272,16 @@ function BlockService.explode(center: Vector3, radius: number, hits: number, imm
 	end
 end
 
+-- Shakes a random share (`chance`, 0 to 1) of all placed blocks, taking
+-- `hits` off each (the 🌋 earthquake disaster).
+function BlockService.quake(chance: number, hits: number)
+	for _, part in folder:GetChildren() do
+		if part:IsA("BasePart") and math.random() < chance and part:GetAttribute("BlockKey") ~= "Obsidian" then
+			damageBlock(part, hits)
+		end
+	end
+end
+
 function BlockService.init()
 	folder = Instance.new("Folder")
 	folder.Name = "Blocks"

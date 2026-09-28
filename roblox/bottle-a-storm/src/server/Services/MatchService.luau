@@ -44,6 +44,8 @@ MatchService.MatchEnded = Signal.new()
 MatchService.Killed = Signal.new()
 -- (killer, final) when a player knocks out a bot
 MatchService.BotKilled = Signal.new()
+-- (player) whenever someone in the match is knocked out, by anyone or anything
+MatchService.Died = Signal.new()
 -- (breaker, team)
 MatchService.BedBroken = Signal.new()
 -- (player) for everyone on the winning team, and everyone who played.
@@ -958,6 +960,7 @@ local function onDied(player: Player)
 		end
 		MatchService.Killed:Fire(killer, player, final)
 	end
+	MatchService.Died:Fire(player)
 	if final then
 		Notify.player(player, "💀 You're out! Watch the rest of the match from the sky box.", "warn")
 	end

@@ -17,6 +17,7 @@ local Remotes = require(Shared.Remotes)
 
 local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
+local FurnitureModels = require(Modules.FurnitureModels)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 
@@ -43,7 +44,37 @@ local function cellKey(i: number, j: number, k: number): string
 	return i .. "," .. j .. "," .. k
 end
 
-local function makeBlock(plot: Plot, i: number, j: number, k: number, key: string): BasePart?
+-- 🏠 Furniture: an invisible cell-sized root with the model's pieces inside
+-- it (so removing the root removes it all). Every piece knows its cell.
+local function makeFurniture(plot: Plot, i: number, j: number, k: number, key: string, turn: number): BasePart?
+	if not BaseData.furniture(key) then
+		return nil
+	end
+	local cell = CFrame.new(BaseData.cellPosition(plot.index, i, j, k)) * CFrame.Angles(0, turn * math.pi / 2, 0)
+	local holder = Instance.new("Part")
+	holder.Name = "BaseFurniture"
+	holder.Anchored = true
+	holder.CanCollide = false
+	holder.Transparency = 1
+	holder.Size = Vector3.one * (BaseData.CellSize - 0.1)
+	holder.CFrame = cell
+	FurnitureModels.build(holder, key, cell)
+	for _, part in holder:GetDescendants() do
+		if part:IsA("BasePart") then
+			part:SetAttribute("Cell", cellKey(i, j, k))
+		end
+	end
+	holder:SetAttribute("Cell", cellKey(i, j, k))
+	holder:SetAttribute("Turn", turn)
+	holder.Parent = plot.folder
+	plot.cells[cellKey(i, j, k)] = holder
+	return holder
+end
+
+local function makeBlock(plot: Plot, i: number, j: number, k: number, key: string, turn: number?): BasePart?
+	if BaseData.furniture(key) then
+		return makeFurniture(plot, i, j, k, key, turn or 0)
+	end
 	local block = BaseData.block(key)
 	if not block then
 		return nil
@@ -223,8 +254,10 @@ local function saveList(plot: Plot): { string }
 	local list = {}
 	for key, part in plot.cells do
 		local block = part:GetAttribute("Block")
+		local turn = part:GetAttribute("Turn")
 		if type(block) == "string" then
-			table.insert(list, key .. "," .. block)
+			local extra = if type(turn) == "number" and turn > 0 then "," .. turn else ""
+			table.insert(list, key .. "," .. block .. extra)
 		end
 	end
 	return list
@@ -309,10 +342,10 @@ local function claim(player: Player, plot: Plot)
 	player:SetAttribute("BasePlot", plot.index)
 	-- Bring back the saved base.
 	for _, entry in data.base.blocks do
-		local i, j, k, key = string.match(entry, "^(%-?%d+),(%-?%d+),(%-?%d+),(%w+)$")
+		local i, j, k, key, turn = string.match(entry, "^(%-?%d+),(%-?%d+),(%-?%d+),(%w+),?(%d?)$")
 		local ci, cj, ck = tonumber(i), tonumber(j), tonumber(k)
 		if ci and cj and ck and key and BaseData.inside(ci, cj, ck) then
-			local part = makeBlock(plot, ci, cj, ck, key)
+			local part = makeBlock(plot, ci, cj, ck, key, tonumber(turn) or 0)
 			if part then
 				part:SetAttribute("Block", key)
 			end
@@ -327,7 +360,7 @@ local function claim(player: Player, plot: Plot)
 	)
 end
 
-local function onEdit(player: Player, action: any, i: any, j: any, k: any, key: any)
+local function onEdit(player: Player, action: any, i: any, j: any, k: any, key: any, turn: any)
 	local plot = plotOf[player]
 	local data = DataService.get(player)
 	if not plot or not data or type(i) ~= "number" or type(j) ~= "number" or type(k) ~= "number" then
@@ -343,7 +376,7 @@ local function onEdit(player: Player, action: any, i: any, j: any, k: any, key: 
 	end
 	local id = cellKey(i, j, k)
 	if action == "place" then
-		if plot.cells[id] or type(key) ~= "string" or not BaseData.block(key) then
+		if plot.cells[id] or type(key) ~= "string" or not (BaseData.block(key) or BaseData.furniture(key)) then
 			return
 		end
 		local count = 0
@@ -354,7 +387,8 @@ local function onEdit(player: Player, action: any, i: any, j: any, k: any, key: 
 			Notify.player(player, "🏗️ Your base is full (" .. BaseData.MaxBlocks .. " blocks)!", "error")
 			return
 		end
-		local part = makeBlock(plot, i, j, k, key)
+		local quarter = if type(turn) == "number" then math.floor(turn) % 4 else 0
+		local part = makeBlock(plot, i, j, k, key, quarter)
 		if part then
 			part:SetAttribute("Block", key)
 			Juice.sound(player, "pop")

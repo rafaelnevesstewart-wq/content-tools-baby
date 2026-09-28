@@ -62,6 +62,13 @@ local order = {
 	"PetHelperService",
 	"CustomMatchService",
 	"TreasureService",
+	"ClassService",
+	"DisasterService",
+	"BountyService",
+	"PuzzleService",
+	"BoatService",
+	"CostumeService",
+	"LegendsService",
 	"MonetizationService",
 }
 

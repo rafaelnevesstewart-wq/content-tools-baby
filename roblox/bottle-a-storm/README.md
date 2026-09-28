@@ -235,6 +235,59 @@ shiny Legendary kit, ⚡10,000 and the 🌟 Challenger title.
 - 💎 **Robux shop:** VIP, Star Booster, Sparks, Golden Kit Crate, wheel spins, Battle Pass
   Premium, tier skips and Summon Rainbow Hour. Nothing sold makes you stronger in a match.
 
+## 🧙 Classes
+
+Before a match press **Class** (next to the mode vote) and pick one. It's saved for next
+time.
+- 🛡️ **Knight:** takes 15% less damage, swords hit 10% harder, spawns with a Stone Sword.
+- 🏹 **Archer:** bow damage +25%, spawns with a Bow and 8 arrows.
+- 🧱 **Builder:** spawns with 16 Cloud Wool and a better pickaxe.
+- 💚 **Healer:** heals itself and teammates close by every 2 seconds; swords hit 10% softer.
+
+## 🌋 Disasters
+
+A few minutes into normal matches (not the co-op modes), and every few minutes after:
+☄️ **Meteor Shower** (red circles warn where they land; they break blocks and throw people),
+🌋 **Earthquake** (the islands shake and placed blocks crumble) or 🌊 **Flood** (knee-deep
+water everywhere for 30 seconds; falling off is safe while it lasts). A private server can
+turn them off.
+
+## 🎯 Bounties
+
+Knock out 3 in a row without going down and a 🎯 bounty sign appears over you for everyone to
+see. It grows with every knockout. Whoever knocks you out claims it (Sparks and Silver).
+Claiming 10 earns the 🎯 Bounty Hunter title.
+
+## 🏠 Base furniture
+
+In the Builder bar press 🪑 to switch to furniture (chair, table, bed, sofa, lamp, plant,
+bookshelf, TV, rug, painting, fireplace, aquarium). 🔄 or **R** turns it. It's saved with
+your base.
+
+## 🧩 Puzzle rooms
+
+On Base Island's south side, new every day: a 🌀 hedge maze (with a glass roof), a 🪟 glass
+bridge (one glass in each pair breaks) and a 🔐 code door (the code's symbols are by the door;
+each symbol's number is on a painting somewhere around the rooms). Each chest pays ⚡300 once
+a day; all three pay a ⚡700 bonus. 7 full days earn 🧩 Puzzle Master.
+
+## 🚤 Sky Boat Race
+
+At the dock outside the castle gate, press **Race!**. Your boat flies where you look while you
+hold forward. Fly through all 16 rings in order (the next one glows gold, with a line pointing
+to it). Finishing pays a Games Island prize and the dock's board shows the best times.
+
+## 🎭 Costume parties
+
+Every 15 minutes or so a theme is announced (Spooky, Royal, Pirate...). Dress up in 🎨 Style and
+stand on the stage at the end of Shop Street when time's up. Then everyone votes 1-5 stars on
+each costume (🎭 at the top right, 👀 Look takes you to them). Winning earns 🎭 Fashion Star.
+
+## 🌟 Hall of Legends
+
+A marble hall outside the castle (back left) with golden statues of the world's #1 for wins,
+knockouts, beds and rank, and plaques for every monthly champion.
+
 ## 🏰 Castle Defense
 
 A co-op mode (everyone on one team). Your bed starts inside a stone castle with towers and a
@@ -402,8 +455,8 @@ src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match
               SettingsData, ChallengeData, PaintData, EmoteData, PetLevels,
               ClanPassData, BaseData, NewsData, TauntData, EventData (weekly events),
               GuideData (Guide Gale), ContestData (build contests), FishData, MonthlyData,
-              PetHelpers, CustomData (private match rules), TreasureData, Remotes, Format,
-              Signal
+              PetHelpers, CustomData (private match rules), TreasureData, ClassData,
+              PuzzleData, BoatData, Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, MatchService (rounds, teams, beds, generators), CombatService,
               GadgetService (TNT, fireballs, potions, pickaxes, axes), PartyService,
@@ -423,9 +476,12 @@ src/server/   Main.server.luau starts the services in order
               NewsService, TauntService, MountService (and dragon taming), MiniGameService,
               BaseService (and trophy rooms), EventService, GiftService, GuideService,
               ContestService, FishingService, MonthlyService, PetHelperService,
-              CustomMatchService, TreasureService (ZombieService also runs Castle Defense)
+              CustomMatchService, TreasureService (ZombieService also runs Castle Defense),
+              ClassService, DisasterService, BountyService, PuzzleService, BoatService,
+              CostumeService, LegendsService
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
-              ItemModels (weapons and items), PetModels, MountModels, StormModel (kit
+              ItemModels (weapons and items), PetModels, MountModels (and the sky boat),
+              FurnitureModels, StormModel (kit
               storms), Effects,
               Juice, Notify, Codes
 src/client/   Main.client.luau starts the controllers
@@ -440,7 +496,8 @@ src/client/   Main.client.luau starts the controllers
                NewsPopup, DayNightHUD, TauntPicker, MountController, MiniGameHUD,
                BaseBuilder, EventClient (low gravity), GlideController, GuideTracker,
                ContestClient, Gift, FishingController, FishBook, MonthlyChip, PetHelpChip,
-               CustomMatch, TreasureChip, PhotoMode, Toasts, Sfx, UI
+               CustomMatch, TreasureChip, PhotoMode, ClassPicker, DisasterChip, PuzzleCode,
+               BoatController, CostumeClient, Toasts, Sfx, UI
 ```
 
 ## Known limits

@@ -52,6 +52,9 @@ local function dismount(player: Player)
 end
 
 local function mount(player: Player)
+	if player:GetAttribute("Boating") then
+		return -- you're in the 🚤 boat race
+	end
 	local data = DataService.get(player)
 	local character = player.Character
 	local humanoid = humanoidOf(player)

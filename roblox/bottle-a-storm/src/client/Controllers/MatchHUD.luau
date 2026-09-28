@@ -14,6 +14,7 @@ local MapData = require(Shared.MapData)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
 
+local ClassPicker = require(script.Parent.ClassPicker)
 local UI = require(script.Parent.UI)
 local Vote = require(script.Parent.Vote)
 
@@ -275,6 +276,19 @@ function MatchHUD.start()
 		Parent = voteRow,
 	}).Activated
 		:Connect(Vote.toggle)
+	local classButton = UI.button({
+		LayoutOrder = 100,
+		Size = UDim2.fromOffset(150, 34),
+		Text = "Class: " .. ClassPicker.label(),
+		TextSize = 15,
+		BackgroundColor3 = Color3.fromRGB(60, 120, 90),
+		Parent = voteRow,
+	})
+	classButton.Activated:Connect(ClassPicker.toggle)
+	player:GetAttributeChangedSignal("Class"):Connect(function()
+		classButton.Text = "Class: " .. ClassPicker.label()
+	end)
+	classButton.Text = "Class: " .. ClassPicker.label()
 	workspace:GetAttributeChangedSignal("ModeVotes"):Connect(refreshVotes)
 	workspace:GetAttributeChangedSignal("MatchPhase"):Connect(refreshVotes)
 	player:GetAttributeChangedSignal("ModeVote"):Connect(refreshVotes)

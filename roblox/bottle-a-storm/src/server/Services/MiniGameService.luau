@@ -113,6 +113,9 @@ local function prize(player: Player, sparks: number, best: boolean, what: string
 	)
 end
 
+-- (The 🚤 Sky Boat Race shares the daily prizes.)
+MiniGameService.prize = prize
+
 ---------------------------------------------------------------------------
 -- 🎯 Target Range
 ---------------------------------------------------------------------------

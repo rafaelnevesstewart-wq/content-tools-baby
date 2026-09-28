@@ -9,6 +9,17 @@ local NewsData = {}
 
 NewsData.List = {
 	{
+		version = 11,
+		title = "🧙 Classes, disasters and a boat race!",
+		lines = {
+			"🧙 Pick Knight, Archer, Builder or Healer before each match",
+			"🌋 Meteor showers, earthquakes and floods in matches, 🎯 bounties",
+			"🏠 Furniture for your base, 🧩 daily puzzle rooms on Base Island",
+			"🚤 Sky Boat Race from the dock by the gate, 🎭 costume parties",
+			"🌟 The Hall of Legends: statues of the best players ever",
+		},
+	},
+	{
 		version = 10,
 		title = "🏰 Castle Defense, fishing and a monthly season!",
 		lines = {

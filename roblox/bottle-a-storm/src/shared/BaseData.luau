@@ -1,7 +1,8 @@
 --!strict
 -- 🏗️ Base Island (BaseService): where the plots are and what you can build
 -- with. Every plot is a 10 x 10 x 10 grid of 3-stud cells; cells are saved as
--- "i,j,k,key" (i, j across the plot, k up).
+-- "i,j,k,key" (i, j across the plot, k up), or "i,j,k,key,turn" for
+-- furniture (turn 0-3, quarter turns).
 
 local Config = require(script.Parent.Config)
 
@@ -45,6 +46,35 @@ BaseData.Blocks = {
 	{ key = "Black", name = "Black Wool", emoji = "⬛", material = M.Fabric, color = rgb(40, 40, 44) },
 	{ key = "Neon", name = "Glow Block", emoji = "💡", material = M.Neon, color = rgb(150, 230, 255) },
 } :: { BaseBlock }
+
+-- 🏠 Furniture: fills one cell like a block, but it's a little model you
+-- can turn (FurnitureModels on the server builds them). `color` is for the
+-- builder bar.
+export type Furniture = { key: string, name: string, emoji: string, color: Color3 }
+
+BaseData.Furniture = {
+	{ key = "Chair", name = "Chair", emoji = "🪑", color = rgb(150, 105, 65) },
+	{ key = "Table", name = "Table", emoji = "🍽️", color = rgb(160, 115, 70) },
+	{ key = "Bed", name = "Bed", emoji = "🛏️", color = rgb(200, 70, 80) },
+	{ key = "Sofa", name = "Sofa", emoji = "🛋️", color = rgb(80, 110, 190) },
+	{ key = "Lamp", name = "Lamp", emoji = "💡", color = rgb(255, 225, 150) },
+	{ key = "Plant", name = "Plant", emoji = "🪴", color = rgb(70, 150, 70) },
+	{ key = "Bookshelf", name = "Bookshelf", emoji = "📚", color = rgb(120, 80, 50) },
+	{ key = "TV", name = "TV", emoji = "📺", color = rgb(40, 40, 50) },
+	{ key = "Rug", name = "Rug", emoji = "🟥", color = rgb(180, 60, 60) },
+	{ key = "Painting", name = "Painting", emoji = "🖼️", color = rgb(230, 190, 90) },
+	{ key = "Fireplace", name = "Fireplace", emoji = "🔥", color = rgb(160, 90, 60) },
+	{ key = "Aquarium", name = "Aquarium", emoji = "🐠", color = rgb(90, 180, 230) },
+} :: { Furniture }
+
+function BaseData.furniture(key: string?): Furniture?
+	for _, item in BaseData.Furniture do
+		if item.key == key then
+			return item
+		end
+	end
+	return nil
+end
 
 function BaseData.block(key: string?): BaseBlock?
 	for _, block in BaseData.Blocks do

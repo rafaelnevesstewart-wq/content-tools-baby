@@ -379,6 +379,68 @@ local function dragon(scales: Color3, belly: Color3, glow: Color3): (Model, Base
 	end
 end
 
+-- 🚤 A sky boat for the boat race: a wooden hull with a white sail and a
+-- little propeller (it isn't a cosmetic; BoatService hands it out).
+local function skyBoat(): (Model, BasePart) -> ()
+	return function(model, root)
+		local c = root.CFrame
+		local wood = rgb(150, 100, 60)
+		local hull = piece(model, {
+			Size = Vector3.new(3.4, 1.4, 6),
+			Color = wood,
+			Material = Enum.Material.WoodPlanks,
+			CFrame = c,
+		})
+		stick(root, hull)
+		local bow = piece(model, {
+			ClassName = "WedgePart",
+			Size = Vector3.new(3.4, 1.4, 2.4),
+			Color = wood,
+			Material = Enum.Material.WoodPlanks,
+			CFrame = c * CFrame.new(0, 0, -4.2) * CFrame.Angles(0, math.pi, 0),
+		})
+		stick(hull, bow)
+		stick(
+			hull,
+			piece(model, {
+				Size = Vector3.new(3.6, 0.3, 6.2),
+				Color = rgb(230, 184, 70),
+				Material = Enum.Material.Foil,
+				CFrame = c * CFrame.new(0, 0.75, 0),
+			})
+		)
+		stick(
+			hull,
+			piece(model, {
+				Size = Vector3.new(0.3, 5, 0.3),
+				Color = rgb(110, 76, 44),
+				Material = Enum.Material.Wood,
+				CFrame = c * CFrame.new(0, 3.2, -1),
+			})
+		)
+		stick(
+			hull,
+			piece(model, {
+				Size = Vector3.new(0.15, 3.4, 2.6),
+				Color = rgb(245, 245, 245),
+				Material = Enum.Material.Fabric,
+				CFrame = c * CFrame.new(0, 3.6, 0.4),
+			})
+		)
+		for _, angle in { 0, 90 } do
+			stick(
+				hull,
+				piece(model, {
+					Size = Vector3.new(2.2, 0.3, 0.15),
+					Color = rgb(190, 194, 202),
+					Material = Enum.Material.Metal,
+					CFrame = c * CFrame.new(0, 0, 3.1) * CFrame.Angles(0, 0, math.rad(angle)),
+				})
+			)
+		end
+	end
+end
+
 MountModels.Kinds = {
 	Pony = { bodyHeight = 3.2, raise = 2.4, build = horse(rgb(140, 92, 56), rgb(60, 40, 28)) },
 	NightMare = {
@@ -393,6 +455,7 @@ MountModels.Kinds = {
 	},
 	Cloud = { bodyHeight = 1.4, raise = 1.6, flies = true, build = cloud(rgb(248, 250, 255), false) },
 	StormCloud = { bodyHeight = 1.4, raise = 1.6, flies = true, build = cloud(rgb(70, 76, 96), true) },
+	SkyBoat = { bodyHeight = 1.2, raise = 1.4, flies = true, build = skyBoat() },
 	Dragon = {
 		bodyHeight = 3.2,
 		raise = 2.8,

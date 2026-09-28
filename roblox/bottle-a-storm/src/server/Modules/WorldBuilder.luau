@@ -647,6 +647,12 @@ WorldBuilder.LobbySpots = {
 -- gate and away from the first parkour steps. `p` is relative to the lobby
 -- island's center.
 local function lobbyBlocked(p: Vector3): boolean
+	if Vector3.new(p.X - 62, 0, p.Z - 48).Magnitude < 12 then
+		return true -- the 🚤 boat dock
+	end
+	if math.abs(p.X + 58) < 14 and math.abs(p.Z + 50) < 11 then
+		return true -- the 🌟 Hall of Legends
+	end
 	local half = Config.Lobby.CastleHalf + 9
 	if math.abs(p.X) < half and math.abs(p.Z) < half then
 		return true
@@ -1267,6 +1273,7 @@ local function sideIslands(world: Instance, rng: Random)
 			return math.abs(p.Z) < 10 -- keep the bridge end clear
 				or (side == -1 and math.abs(p.X) < 72 and math.abs(p.Z) < 38) -- the building plots
 				or (side == 1 and Vector3.new(p.X - 38, 0, p.Z).Magnitude < 17) -- the fishing pond
+				or (side == -1 and math.abs(p.X) < 46 and p.Z > 34) -- the puzzle rooms
 		end)
 	end
 	-- Signposts outside the main gate pointing the way.

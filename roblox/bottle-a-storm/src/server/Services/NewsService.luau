@@ -65,6 +65,12 @@ local function happening(): { string }
 		table.insert(lines, "🎨 Vote in the build contest now!")
 	end
 	table.insert(lines, "🗺️ New treasure hunt clues every day (top right)!")
+	local costumeRaw = workspace:GetAttribute("Costume")
+	local costumeOk, costume =
+		pcall(HttpService.JSONDecode, HttpService, if type(costumeRaw) == "string" then costumeRaw else "{}")
+	if costumeOk and type(costume) == "table" and costume.phase == "dress" then
+		table.insert(lines, "🎭 Costume party: " .. tostring(costume.theme) .. "! Stage at the end of Shop Street")
+	end
 	for _, weekly in EventData.List do
 		if EventData.is(weekly.key) then
 			table.insert(lines, "🎪 Special rule: " .. weekly.emoji .. " " .. weekly.name .. " in every match")

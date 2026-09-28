@@ -198,6 +198,20 @@ Config.Invite = {
 	MaxRewards = 25, -- invites that pay Sparks (they still count after)
 }
 
+-- 🌋 Disasters in matches (DisasterService): not in the co-op modes.
+Config.Disasters = {
+	Enabled = true,
+	FirstAfter = { 150, 210 }, -- seconds into a match (random between)
+	Every = { 180, 260 }, -- seconds between disasters
+	Warning = 5, -- seconds of warning first
+	Meteors = 18, -- ☄️ how many fall
+	MeteorRadius = 8,
+	MeteorDamage = 28,
+	QuakeSeconds = 10, -- 🌋
+	QuakeChance = 0.08, -- share of placed blocks shaken each second
+	FloodSeconds = 30, -- 🌊 the islands flood knee-deep (falling off is safe then!)
+}
+
 -- 🏰 Castle Defense mode (ZombieService, like Zombie Survival but with a
 -- castle and storm monsters). Same fields as Config.Zombies, plus the castle.
 Config.Castle = {
