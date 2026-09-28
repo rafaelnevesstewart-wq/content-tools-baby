@@ -136,8 +136,31 @@ local function onPlace(player: Player, blockKey: any, point: any)
 	BlockService.Placed:Fire(player)
 end
 
--- A sword swing at `aim`: damages the placed block nearest to it, if any.
-function BlockService.hit(player: Player, aim: Vector3)
+local function damageBlock(block: BasePart, amount: number)
+	local current = block:GetAttribute("Hits")
+	local hits = (if type(current) == "number" then current else 1) - amount
+	if hits <= 0 then
+		placed[key(block.Position)] = nil
+		Effects.confetti(block.Position, 12)
+		block:Destroy()
+	else
+		block:SetAttribute("Hits", hits)
+		block.Transparency = math.min(0.5, block.Transparency + 0.08)
+	end
+end
+
+-- The grid cell a point falls in, and whether a block (or TNT) can go there.
+function BlockService.snap(point: Vector3): Vector3
+	return snap(point)
+end
+
+function BlockService.canPlace(cell: Vector3): boolean
+	return not blocked(cell)
+end
+
+-- A swing at `aim` (sword power 1, or a pickaxe/axe): damages the placed
+-- block nearest to it, if any. The axe does double on wood and wool.
+function BlockService.hit(player: Player, aim: Vector3, power: number?, axe: boolean?)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root or (aim - root.Position).Magnitude > Config.Match.SwordRange + SIZE then
 		return
@@ -156,14 +179,23 @@ function BlockService.hit(player: Player, aim: Vector3)
 		return
 	end
 	local block = best :: BasePart
-	local hits = (block:GetAttribute("Hits") or 1) - 1
-	if hits <= 0 then
-		placed[key(block.Position)] = nil
-		Effects.confetti(block.Position, 12)
-		block:Destroy()
-	else
-		block:SetAttribute("Hits", hits)
-		block.Transparency = math.min(0.5, block.Transparency + 0.08)
+	local amount = power or 1
+	if axe and MatchData.AxeBlocks[block:GetAttribute("BlockKey")] then
+		amount *= 2
+	end
+	damageBlock(block, amount)
+end
+
+-- An explosion: every placed block within `radius` takes `hits` damage
+-- (math.huge breaks it), except kinds in `immune`.
+function BlockService.explode(center: Vector3, radius: number, hits: number, immune: { [string]: boolean }?)
+	for _, part in folder:GetChildren() do
+		if part:IsA("BasePart") and (part.Position - center).Magnitude <= radius then
+			local kind = part:GetAttribute("BlockKey")
+			if not (immune and immune[kind]) then
+				damageBlock(part, hits)
+			end
+		end
 	end
 end
 

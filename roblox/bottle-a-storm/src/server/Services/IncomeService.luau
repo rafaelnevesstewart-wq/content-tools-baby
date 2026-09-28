@@ -1,7 +1,8 @@
 -- Your Sparks wallet. Sparks come from Bed Wars matches (knockouts, beds,
 -- wins, playing), rewards and purchases. This keeps the numbers the client
--- UI reads (player attributes) and the leaderboard columns (Sparks, Wins,
--- Kills) up to date, and works out the Sparks bonus for match rewards.
+-- UI reads (player attributes) and the leaderboard columns (Wins, Kills; the
+-- Level column is ProgressionService's) up to date, and works out the Sparks
+-- bonus for match rewards.
 
 local Players = game:GetService("Players")
 
@@ -50,7 +51,6 @@ function IncomeService.sync(player: Player)
 				holder.Value = math.floor(math.min(value, 2 ^ 53))
 			end
 		end
-		set("Sparks", data.sparks)
 		set("Wins", data.stats.wins or 0)
 		set("Kills", data.stats.kills or 0)
 	end
@@ -71,7 +71,7 @@ local function createLeaderstats(player: Player)
 	end
 	local folder = Instance.new("Folder")
 	folder.Name = "leaderstats"
-	for _, name in { "Wins", "Kills", "Sparks" } do
+	for _, name in { "Level", "Wins", "Kills" } do
 		local value = Instance.new("IntValue")
 		value.Name = name
 		value.Parent = folder

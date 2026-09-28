@@ -1,5 +1,6 @@
--- The Bed Wars Item Shop on every team island: blocks, swords, armor, bows and
--- items bought with the resources you carry, plus team upgrades bought with
+-- The Bed Wars Item Shop on every team island: blocks, swords, armor, bows,
+-- tools (pickaxes, axes), TNT, fireballs, potions and other items bought with
+-- the resources you carry, plus team upgrades bought with
 -- Storm Crystals. The client window is ItemShop; this checks and pays.
 
 local Players = game:GetService("Players")
@@ -14,6 +15,7 @@ local Notify = require(Modules.Notify)
 
 local BlockService = require(script.Parent.BlockService)
 local CombatService = require(script.Parent.CombatService)
+local GadgetService = require(script.Parent.GadgetService)
 local MatchService = require(script.Parent.MatchService)
 
 local ItemShopService = {}
@@ -37,7 +39,37 @@ local function tooFast(player: Player): boolean
 	return false
 end
 
+local function pay(player: Player, cost: number, currency: string): string?
+	local have = MatchService.resource(player, currency)
+	if have < cost then
+		return "You need " .. cost - have .. " more " .. resourceEmoji(currency) .. " " .. currency .. "."
+	end
+	MatchService.spend(player, currency, cost)
+	return nil
+end
+
+-- Pickaxes and axes: each purchase is the next tier.
+local function buyTool(player: Player, key: string): (boolean, string)
+	local tier = GadgetService.nextTool(player, key)
+	if not tier then
+		return false, "You already have the best one!"
+	end
+	local problem = pay(player, tier.cost, tier.currency)
+	if problem then
+		return false, problem
+	end
+	GadgetService.give(player, key)
+	Juice.sound(player, "coins")
+	return true, MatchData.Tools[key].emoji .. " Got the " .. tier.name .. "!"
+end
+
 local function buyItem(player: Player, key: any): (boolean, string)
+	if type(key) == "string" and MatchData.Tools[key] then
+		if not MatchService.isPlaying(player) or tooFast(player) then
+			return false, "You can only shop during a match."
+		end
+		return buyTool(player, key)
+	end
 	local item = type(key) == "string" and MatchData.shopItem(key)
 	if not item or not MatchService.isPlaying(player) or tooFast(player) then
 		return false, "You can only shop during a match."
@@ -49,7 +81,8 @@ local function buyItem(player: Player, key: any): (boolean, string)
 	end
 	-- Check it can be given before paying.
 	local isBlock = MatchData.Blocks[item.key] ~= nil
-	if not isBlock then
+	local isGadget = GadgetService.handles(item.key)
+	if not isBlock and not isGadget then
 		local problem = CombatService.check(player, item.key)
 		if problem then
 			return false, problem
@@ -58,6 +91,8 @@ local function buyItem(player: Player, key: any): (boolean, string)
 	MatchService.spend(player, item.currency, item.cost)
 	if isBlock then
 		BlockService.add(player, item.key, item.amount or 1)
+	elseif isGadget then
+		GadgetService.give(player, item.key)
 	else
 		CombatService.give(player, item.key, item.amount)
 	end

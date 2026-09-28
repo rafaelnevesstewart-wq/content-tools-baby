@@ -8,12 +8,14 @@
 
 export type Item = {
 	id: string,
-	category: string, -- hat, trail, back, aura, bed, sword, fx, ko
+	category: string, -- hat, trail, back, aura, bed, sword, fx, ko, dance
 	name: string,
 	emoji: string,
 	cost: number, -- Sparks; 0 = free
 	robux: boolean?, -- bought with Robux instead (see Products.Cosmetics)
 	season: string?, -- only from this season's battle pass (see SeasonData)
+	achievement: boolean?, -- only from an achievement (see ProgressionData)
+	emote: string?, -- dances: the Roblox emote your character plays
 	description: string,
 }
 
@@ -34,6 +36,7 @@ CosmeticsData.Categories = {
 	{ key = "sword", name = "Sword Skins", emoji = "🗡️" },
 	{ key = "fx", name = "Arrow Effects", emoji = "🏹" },
 	{ key = "ko", name = "Knockout Effects", emoji = "💥" },
+	{ key = "dance", name = "Victory Dances", emoji = "💃" },
 } :: { Category }
 
 CosmeticsData.Items = {
@@ -755,6 +758,100 @@ CosmeticsData.Items = {
 		season = "SummerHeatwave",
 		description = "A blinding burst of sunlight.",
 	},
+
+	-- Victory dances: your character dances when your team wins.
+	{
+		id = "Cheer",
+		category = "dance",
+		name = "Cheer",
+		emoji = "🙌",
+		cost = 0,
+		emote = "cheer",
+		description = "Throw your arms up when your team wins.",
+	},
+	{
+		id = "Wave",
+		category = "dance",
+		name = "Wave",
+		emoji = "👋",
+		cost = 150,
+		emote = "wave",
+		description = "Wave goodbye to the losers.",
+	},
+	{
+		id = "Point",
+		category = "dance",
+		name = "Point",
+		emoji = "👉",
+		cost = 250,
+		emote = "point",
+		description = "Point at the beaten teams.",
+	},
+	{
+		id = "Laugh",
+		category = "dance",
+		name = "Laugh",
+		emoji = "😂",
+		cost = 500,
+		emote = "laugh",
+		description = "Laugh it up after the win.",
+	},
+	{
+		id = "Dance1",
+		category = "dance",
+		name = "Groove",
+		emoji = "🕺",
+		cost = 1500,
+		emote = "dance",
+		description = "A classic victory groove.",
+	},
+	{
+		id = "Dance2",
+		category = "dance",
+		name = "Spin Move",
+		emoji = "💃",
+		cost = 4000,
+		emote = "dance2",
+		description = "Show off your best spin.",
+	},
+	{
+		id = "Dance3",
+		category = "dance",
+		name = "Robot",
+		emoji = "🤖",
+		cost = 10000,
+		emote = "dance3",
+		description = "Do the robot. Legendary.",
+	},
+
+	-- Achievement rewards (see ProgressionData): only from achievements.
+	{
+		id = "ChampionTrail",
+		category = "trail",
+		name = "Champion Trail",
+		emoji = "🏆",
+		cost = 0,
+		achievement = true,
+		description = "Gold and violet light. Win 200 matches to earn it.",
+	},
+	{
+		id = "VeteranBed",
+		category = "bed",
+		name = "Veteran Bed",
+		emoji = "🎖️",
+		cost = 0,
+		achievement = true,
+		description = "A medal-gold bed. Play 500 matches to earn it.",
+	},
+	{
+		id = "LegendKO",
+		category = "ko",
+		name = "Legend Strike",
+		emoji = "⚡",
+		cost = 0,
+		achievement = true,
+		description = "A golden lightning storm. 1,000 knockouts to earn it.",
+	},
 } :: { Item }
 
 -- What you have when nothing else is picked (free, always owned).
@@ -763,6 +860,7 @@ CosmeticsData.Defaults = {
 	sword = "ClassicBlade",
 	fx = "ClassicZap",
 	ko = "Poof",
+	dance = "Cheer",
 } :: { [string]: string }
 
 -- Rarity tiers. Every cosmetic you wear or place adds its tier's bonus to
@@ -784,7 +882,7 @@ function CosmeticsData.tierOf(item: Item): Tier
 		return tiers.Mythic
 	elseif item.cost <= 0 then
 		return tiers.Basic
-	elseif item.season then
+	elseif item.season or item.achievement then
 		return tiers.Epic
 	elseif item.cost < 500 then
 		return tiers.Common

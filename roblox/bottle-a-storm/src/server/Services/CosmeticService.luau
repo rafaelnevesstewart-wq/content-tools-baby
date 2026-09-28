@@ -724,6 +724,23 @@ local TRAILS: { [string]: TrailStyle } = {
 			spin = 160,
 		},
 	},
+	ChampionTrail = {
+		colors = { rgb(255, 215, 90), rgb(190, 110, 255), rgb(255, 215, 90) },
+		width = 1.8,
+		lifetime = 0.8,
+		emission = 1,
+		glow = { colors = { rgb(255, 200, 120) }, width = 3.6, lifetime = 0.5 },
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 230, 140), rgb(210, 160, 255) },
+			size = 0.45,
+			rate = 20,
+			lifetime = 0.9,
+			speed = 2,
+			emission = 1,
+		},
+		light = rgb(255, 210, 120),
+	},
 	SunbeamTrail = {
 		colors = { rgb(255, 245, 170), rgb(255, 200, 60) },
 		width = 1.6,
@@ -1229,6 +1246,13 @@ local BEDS: { [string]: CloudSkin } = {
 			spin = 160,
 		},
 	},
+	VeteranBed = {
+		colors = { rgb(255, 205, 80), rgb(200, 150, 50) },
+		material = Enum.Material.Foil,
+		wisp = rgb(255, 230, 150),
+		light = rgb(255, 210, 110),
+		bolts = rgb(255, 230, 140),
+	},
 	BeachBed = {
 		colors = { rgb(255, 225, 140), rgb(255, 245, 200) },
 		material = Enum.Material.Neon,
@@ -1490,6 +1514,14 @@ local KNOCKOUTS: { [string]: (Vector3) -> () } = {
 		}):Play()
 		burst(position, { rgb(160, 80, 255), rgb(90, 40, 140) }, 16, 6)
 	end,
+	LegendKO = function(position)
+		for i = 1, 3 do
+			task.delay((i - 1) * 0.15, function()
+				bolt(position + Vector3.new(rng:NextNumber(-3, 3), 0, rng:NextNumber(-3, 3)), rgb(255, 225, 120))
+			end)
+		end
+		burst(position, { rgb(255, 215, 90), rgb(255, 255, 255) }, 24, 9)
+	end,
 	-- Battle pass knockouts.
 	PumpkinKO = function(position)
 		burst(position, { rgb(255, 140, 30), rgb(90, 160, 60), rgb(255, 200, 80) }, 20, 8)
@@ -1511,6 +1543,13 @@ local KNOCKOUTS: { [string]: (Vector3) -> () } = {
 	end,
 }
 
+-- The emote a winner dances (Roblox's built-in emotes: cheer, wave, dance...).
+function CosmeticService.danceOf(player: Player): string
+	local data = DataService.get(player)
+	local item = CosmeticsData.get(data and data.cosmetics.dance or CosmeticsData.Defaults.dance)
+	return if item and item.emote then item.emote else "cheer"
+end
+
 -- The killer's knockout effect at the spot where someone was knocked out.
 function CosmeticService.knockout(killer: Player, position: Vector3)
 	local data = DataService.get(killer)
@@ -1524,13 +1563,19 @@ end
 ---------------------------------------------------------------------------
 
 -- The Style Bonus: every cosmetic you use adds its tier's bonus.
-local SLOTS = { "hat", "trail", "back", "aura", "bed", "sword", "fx", "ko" }
+local SLOTS = { "hat", "trail", "back", "aura", "bed", "sword", "fx", "ko", "dance" }
 
 local function styleBonus(cosmetics: any): number
 	local total = 0
 	for _, key in SLOTS do
 		local item = CosmeticsData.get(cosmetics[key])
-		if item and (cosmetics.owned[item.id] or (item.cost <= 0 and not item.robux and not item.season)) then
+		if
+			item
+			and (
+				cosmetics.owned[item.id]
+				or (item.cost <= 0 and not item.robux and not item.season and not item.achievement)
+			)
+		then
 			total += CosmeticsData.tierOf(item).bonus
 		end
 	end
@@ -1562,7 +1607,8 @@ local function refreshFor(player: Player, data: any, category: string)
 end
 
 local function owns(cosmetics: any, item: CosmeticsData.Item): boolean
-	return cosmetics.owned[item.id] == true or (item.cost <= 0 and not item.robux and not item.season)
+	return cosmetics.owned[item.id] == true
+		or (item.cost <= 0 and not item.robux and not item.season and not item.achievement)
 end
 
 -- Unlocks a cosmetic (Sparks, Robux or a battle pass reward) and puts it on.
@@ -1603,6 +1649,9 @@ local function onAction(player: Player, action: any, a: any): (boolean, string)
 		end
 		if item.season then
 			return false, "That's a battle pass reward!"
+		end
+		if item.achievement then
+			return false, "That's an achievement reward!"
 		end
 		if data.sparks < item.cost then
 			return false, "You need ⚡" .. Format.number(item.cost - data.sparks) .. " more Sparks."

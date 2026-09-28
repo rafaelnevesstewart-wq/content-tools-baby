@@ -13,6 +13,11 @@ local EVENTS = {
 	"ShootBow", -- client -> server: (aimPoint)
 	"UseItem", -- client -> server: (itemKey, aimPoint) Storm Apple / Wind Pearl
 	"PlaceBlock", -- client -> server: (blockKey, point)
+	"VoteMode", -- client -> server: ("Solo" | "Duo" | "Squad")
+	"PartyAction", -- client -> server: ("invite" | "accept" | "decline" | "leave" | "kick", userId)
+	"PartyInvite", -- server -> client: (fromUserId, fromName)
+	"Victory", -- server -> client: (teamKey) your team won: dance!
+	"UseGadget", -- client -> server: ("TNT" | "Fireball" | potion key | "Mine", aimPoint)
 }
 
 local FUNCTIONS = {
@@ -37,6 +42,7 @@ local FUNCTIONS = {
 	"BuyUpgrade", -- client -> server: (upgradeKey) -> (ok, message)
 	"GetKits", -- client -> server: () -> your storms and the chosen kit
 	"ChooseKit", -- client -> server: (uid) -> (ok, message)
+	"GetAchievements", -- client -> server: () -> achievements and your progress
 }
 
 local folder: Instance

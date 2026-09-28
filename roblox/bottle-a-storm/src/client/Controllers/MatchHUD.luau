@@ -1,7 +1,8 @@
 -- Bed Wars on your screen: the match banner (waiting / countdown / timer /
--- winner), every team with its bed ✅ or ❌ and players left, and the
--- resources you carry. It also hides the "Break the bed" prompt on your own
--- team's bed.
+-- winner, the map and team size), the Solos / Duos / Squads vote in the
+-- lobby, every team with its bed ✅ or ❌ and players left, and the resources
+-- you carry (plus potion timers). It also hides the "Break the bed" prompt on
+-- your own team's bed.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -9,7 +10,9 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
+local MapData = require(Shared.MapData)
 local MatchData = require(Shared.MatchData)
+local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
 
@@ -22,6 +25,32 @@ local teamRow: Frame
 local wallet: TextLabel
 local spectating: TextLabel
 local teamChips: { TextLabel } = {}
+local voteRow: Frame
+local voteButtons: { [string]: TextButton } = {}
+
+local POTIONS = {
+	{ key = "SpeedPotion", emoji = "💨" },
+	{ key = "JumpPotion", emoji = "🦘" },
+	{ key = "InvisPotion", emoji = "👻" },
+}
+
+local function refreshVotes()
+	local phase = workspace:GetAttribute("MatchPhase")
+	voteRow.Visible = phase == "waiting" or phase == "starting"
+	local raw = workspace:GetAttribute("ModeVotes")
+	local ok, counts = pcall(HttpService.JSONDecode, HttpService, if type(raw) == "string" then raw else "{}")
+	if not ok or type(counts) ~= "table" then
+		counts = {}
+	end
+	local mine = player:GetAttribute("ModeVote")
+	for _, mode in MatchData.Modes do
+		local button = voteButtons[mode.key]
+		if button then
+			button.Text = mode.emoji .. " " .. mode.name .. " (" .. (counts[mode.key] or 0) .. ")"
+			button.BackgroundColor3 = if mine == mode.key then UI.Colors.Good else UI.Colors.PanelLight
+		end
+	end
+end
 
 local function teamInfo(key: string): MatchData.TeamInfo?
 	for _, info in MatchData.Teams do
@@ -94,7 +123,12 @@ local function refreshBanner()
 	elseif phase == "playing" then
 		local startedAt = workspace:GetAttribute("MatchStartedAt") or now
 		local elapsed = now - startedAt
-		local text = "⚔️ " .. Format.time(math.max(0, elapsed))
+		local map = MapData.get(workspace:GetAttribute("MapTheme"))
+		local mode = MatchData.mode(workspace:GetAttribute("MatchMode"))
+		local text = (if map then map.emoji .. " " .. map.name .. "  ·  " else "")
+			.. (if mode then mode.name .. "  ·  " else "")
+			.. "⚔️ "
+			.. Format.time(math.max(0, elapsed))
 		local tiers = Config.Match.TierUpAt
 		if elapsed < tiers[1] then
 			text ..= "  ·  💎 Faster generators in " .. Format.time(tiers[1] - elapsed)
@@ -123,6 +157,13 @@ local function refreshWallet()
 		for _, info in MatchData.Resources do
 			local value = player:GetAttribute("Res_" .. info.key)
 			table.insert(parts, info.emoji .. " " .. (if type(value) == "number" then value else 0))
+		end
+		local now = workspace:GetServerTimeNow()
+		for _, potion in POTIONS do
+			local ends = player:GetAttribute(potion.key .. "Ends")
+			if type(ends) == "number" and ends > now then
+				table.insert(parts, potion.emoji .. " " .. math.ceil(ends - now) .. "s")
+			end
 		end
 		wallet.Text = table.concat(parts, "    ")
 	end
@@ -176,6 +217,39 @@ function MatchHUD.start()
 		Parent = top,
 	}, { UI.list(6, Enum.FillDirection.Horizontal) })
 
+	voteRow = UI.new("Frame", {
+		LayoutOrder = 3,
+		Size = UDim2.fromOffset(0, 34),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundTransparency = 1,
+		Parent = top,
+	}, { UI.list(6, Enum.FillDirection.Horizontal) })
+	UI.label({
+		LayoutOrder = 0,
+		Size = UDim2.fromOffset(0, 34),
+		AutomaticSize = Enum.AutomaticSize.X,
+		Text = "Vote:",
+		TextSize = 16,
+		TextStrokeTransparency = 0.4,
+		Parent = voteRow,
+	})
+	for order, mode in MatchData.Modes do
+		local button = UI.button({
+			LayoutOrder = order,
+			Size = UDim2.fromOffset(150, 34),
+			TextSize = 15,
+			Parent = voteRow,
+		})
+		button.Activated:Connect(function()
+			Remotes.event("VoteMode"):FireServer(mode.key)
+		end)
+		voteButtons[mode.key] = button
+	end
+	workspace:GetAttributeChangedSignal("ModeVotes"):Connect(refreshVotes)
+	workspace:GetAttributeChangedSignal("MatchPhase"):Connect(refreshVotes)
+	player:GetAttributeChangedSignal("ModeVote"):Connect(refreshVotes)
+	refreshVotes()
+
 	wallet = UI.label({
 		Name = "Resources",
 		AnchorPoint = Vector2.new(0.5, 1),
@@ -223,6 +297,7 @@ function MatchHUD.start()
 		while true do
 			refreshBanner()
 			refreshBedPrompts()
+			refreshWallet()
 			task.wait(0.25)
 		end
 	end)

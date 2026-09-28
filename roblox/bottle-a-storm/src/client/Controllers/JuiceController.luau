@@ -85,7 +85,31 @@ local function shake(strength: number)
 	shakeUntil = os.clock() + 0.35
 end
 
+-- Your team won: your character plays its victory dance (a built-in Roblox
+-- emote picked in 🎨 Style → Victory Dances) a few times.
+local function victory(emote: string)
+	task.spawn(function()
+		for _ = 1, 3 do
+			local character = Players.LocalPlayer.Character
+			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+			if not humanoid or humanoid.Health <= 0 then
+				return
+			end
+			pcall(function()
+				humanoid:PlayEmote(emote)
+			end)
+			task.wait(3)
+		end
+	end)
+	Sfx.play("chime")
+end
+
 function JuiceController.start()
+	Remotes.event("Victory").OnClientEvent:Connect(function(emote)
+		if type(emote) == "string" then
+			victory(emote)
+		end
+	end)
 	Remotes.event("Juice").OnClientEvent:Connect(function(kind, a, b, c)
 		if kind == "float" and type(a) == "string" and typeof(b) == "Vector3" then
 			float(a, b, if typeof(c) == "Color3" then c else nil)

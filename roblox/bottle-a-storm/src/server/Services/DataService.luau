@@ -53,6 +53,13 @@ local function defaultData()
 		spin = { day = -1, extra = 0 }, -- daily wheel: last free spin day, bought spins
 		holiday = { key = "", points = 0 }, -- event currency for the running holiday
 		obby = { lastDay = -1 }, -- last day the lobby parkour reward was claimed
+		level = 1, -- player level (1-100), then prestige (ProgressionData)
+		levelXp = 0,
+		prestige = 0,
+		winStreak = 0,
+		bestStreak = 0,
+		bestRank = 0, -- the most rank points you've ever had
+		achievements = {}, -- achievement id -> true
 		-- Cosmetics: owned ids; what's in use (hat, trail, back, aura, bed,
 		-- sword, fx, ko) is saved when set.
 		cosmetics = {
@@ -70,6 +77,7 @@ local function defaultData()
 			bedsBroken = 0,
 			wins = 0,
 			matches = 0,
+			rankPoints = 0, -- ranked (ProgressionData.Ranks)
 		},
 	}
 end

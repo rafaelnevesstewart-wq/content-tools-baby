@@ -1,6 +1,6 @@
--- Bed Wars blocks: while you hold a block (Cloud Wool, Wood Planks...), a see-
--- through preview shows where it will go; click to place it. Blocks snap to
--- a grid next to whatever you point at. BlockService on the server checks it.
+-- Bed Wars blocks: while you hold a block (Cloud Wool, Wood Planks...) or
+-- Storm TNT, a see-through preview shows where it will go; click to place it.
+-- Blocks snap to a grid next to whatever you point at. The server checks it.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -58,14 +58,20 @@ local function target(): Vector3?
 end
 
 local function watch(tool: Instance)
-	if not tool:IsA("Tool") or not tool:GetAttribute("BlockKey") then
+	if not tool:IsA("Tool") or not (tool:GetAttribute("BlockKey") or tool:GetAttribute("PlaceGadget")) then
 		return
 	end
 	held = tool
 	local connection = tool.Activated:Connect(function()
 		local cell = target()
-		if cell then
-			Sfx.play("pop", 0.7)
+		if not cell then
+			return
+		end
+		Sfx.play("pop", 0.7)
+		local gadget = tool:GetAttribute("PlaceGadget")
+		if gadget then
+			Remotes.event("UseGadget"):FireServer(gadget, cell) -- Storm TNT
+		else
 			Remotes.event("PlaceBlock"):FireServer(tool:GetAttribute("BlockKey"), cell)
 		end
 	end)

@@ -1,19 +1,21 @@
 -- Always-on screen info, kept tidy:
 --   top:  your Sparks (and your match Sparks bonus), then a row of small chips:
 --         match weather and events (Admin Abuse, holidays)
---   left: an icon bar (Rewards, Shop, Kit Market, Kits, Style, Battle Pass,
---         Admin)
+--   left: an icon bar (Rewards, Battle Pass, Kits, Kit Market, Style, Party,
+--         Robux, Admin)
 -- The match itself (timer, teams, beds, resources) is in MatchHUD.
 
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
+local ProgressionData = require(Shared.ProgressionData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local AdminPanel = require(script.Parent.AdminPanel)
 local Kits = require(script.Parent.Kits)
 local Market = require(script.Parent.Market)
+local Party = require(script.Parent.Party)
 local Rewards = require(script.Parent.Rewards)
 local Season = require(script.Parent.Season)
 local Shop = require(script.Parent.Shop)
@@ -26,6 +28,7 @@ local HUD = {}
 
 local sparksLabel: TextLabel
 local bonusLabel: TextLabel
+local levelChip: TextLabel
 local weatherChip: TextLabel
 local eventChip: TextLabel
 
@@ -66,6 +69,30 @@ end
 
 local function refreshStats()
 	sparksLabel.Text = "⚡ " .. Format.number(player:GetAttribute("Sparks") or 0)
+	local level = player:GetAttribute("Level")
+	if type(level) == "number" then
+		local prestige = player:GetAttribute("Prestige") or 0
+		local rank = ProgressionData.rankOf(player:GetAttribute("RankPoints") or 0)
+		local streak = player:GetAttribute("WinStreak") or 0
+		levelChip.Visible = true
+		levelChip.Text = "⭐"
+			.. (if prestige > 0 then tostring(prestige) else "")
+			.. " Lv "
+			.. level
+			.. " ("
+			.. (player:GetAttribute("LevelXp") or 0)
+			.. "/"
+			.. (player:GetAttribute("LevelNeed") or 100)
+			.. " XP)  ·  "
+			.. rank.emoji
+			.. " "
+			.. rank.name
+			.. " "
+			.. (player:GetAttribute("RankPoints") or 0)
+			.. (if streak >= 2 then "  ·  🔥" .. streak else "")
+		levelChip.TextColor3 =
+			UI.ink(ProgressionData.PrestigeColors[math.min(prestige, ProgressionData.MaxPrestige) + 1])
+	end
 	local bonus = player:GetAttribute("SparksBonus")
 	local shown = type(bonus) == "number" and bonus > 1.001
 	bonusLabel.Visible = shown
@@ -179,6 +206,8 @@ function HUD.start()
 		BackgroundTransparency = 1,
 		Parent = top,
 	}, { UI.list(6, Enum.FillDirection.Horizontal) })
+	levelChip = chip(chips, 0, 28, 15)
+	levelChip.Visible = false
 	weatherChip = chip(chips, 1, 28, 15)
 	weatherChip.Visible = false
 	eventChip = chip(chips, 2, 28, 15)
@@ -222,7 +251,8 @@ function HUD.start()
 	iconButton(bar, 2, "🌪️", "Kits", Color3.fromRGB(150, 200, 255)).Activated:Connect(Kits.toggle)
 	iconButton(bar, 3, "🏪", "Market", Color3.fromRGB(96, 170, 210)).Activated:Connect(Market.toggle)
 	iconButton(bar, 4, "🎨", "Style", Color3.fromRGB(255, 170, 220)).Activated:Connect(Style.toggle)
-	iconButton(bar, 5, "💎", "Robux", UI.Colors.Robux).Activated:Connect(Shop.toggle)
+	iconButton(bar, 5, "👥", "Party", Color3.fromRGB(140, 220, 200)).Activated:Connect(Party.toggle)
+	iconButton(bar, 6, "💎", "Robux", UI.Colors.Robux).Activated:Connect(Shop.toggle)
 	local adminButton = iconButton(bar, 20, "👑", "Admin", UI.Colors.Spark)
 	adminButton.Activated:Connect(AdminPanel.toggle)
 	local function refreshAdmin()

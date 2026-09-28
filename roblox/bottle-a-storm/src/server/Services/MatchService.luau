@@ -15,6 +15,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local MatchData = require(Shared.MatchData)
+local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
@@ -26,6 +27,8 @@ local WorldBuilder = require(Modules.WorldBuilder)
 local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
+local MapService = require(script.Parent.MapService)
+local PartyService = require(script.Parent.PartyService)
 local SeasonService = require(script.Parent.SeasonService)
 local WeatherService = require(script.Parent.WeatherService)
 
@@ -129,6 +132,11 @@ end
 
 function MatchService.phase(): string
 	return phase
+end
+
+-- How many teams the current (or last) match started with.
+function MatchService.teamCount(): number
+	return startedTeams
 end
 
 function MatchService.teamOf(player: Player): MatchTeam?
@@ -621,6 +629,7 @@ end
 
 local function resetToLobby()
 	MatchService.MatchEnded:Fire()
+	MapService.reset()
 	for _, team in teams do
 		team.folder:Destroy()
 		team.roblox:Destroy()
@@ -698,6 +707,29 @@ local function eligible(): { Player }
 	return list
 end
 
+-- The team size with the most votes among `players` (nil when nobody voted).
+local function pickMode(players: { Player })
+	local counts: { [string]: number } = {}
+	for _, player in players do
+		local vote = player:GetAttribute("ModeVote")
+		if type(vote) == "string" and MatchData.mode(vote) then
+			counts[vote] = (counts[vote] or 0) + 1
+		end
+	end
+	local best, bestCount = nil, 0
+	for _, mode in MatchData.Modes do
+		if (counts[mode.key] or 0) > bestCount then
+			best, bestCount = mode, counts[mode.key]
+		end
+	end
+	return best, counts
+end
+
+local function publishVotes()
+	local _, counts = pickMode(Players:GetPlayers())
+	workspace:SetAttribute("ModeVotes", HttpService:JSONEncode(counts))
+end
+
 local function startMatch()
 	local players = eligible()
 	if #players == 0 then
@@ -705,25 +737,51 @@ local function startMatch()
 		publish()
 		return
 	end
-	-- Shuffle, then split into teams.
+	-- Shuffle, then split into teams of the voted size, parties together.
 	for i = #players, 2, -1 do
 		local j = math.random(1, i)
 		players[i], players[j] = players[j], players[i]
 	end
-	local teamCount = if #players <= Config.Match.SoloUpTo then #players else math.ceil(#players / 2)
-	teamCount = math.clamp(teamCount, 1, math.min(#MatchData.Teams, #islands))
+	local mode = pickMode(players)
+	local size = if mode then mode.size elseif #players <= Config.Match.SoloUpTo then 1 else 2
+	local maxTeams = math.min(#MatchData.Teams, #islands)
+	local teamCount = math.clamp(math.ceil(#players / size), math.min(2, #players), maxTeams)
+	local capacity = math.ceil(#players / teamCount)
+	workspace:SetAttribute("MatchMode", if mode then mode.key else (if size == 1 then "Solo" else "Duo"))
 	Teams:ClearAllChildren()
 	teams = {}
 	buildMiddle()
+	MapService.apply(islands)
 	for i = 1, teamCount do
 		local islandIndex = math.floor((i - 1) * #islands / teamCount) + 1
 		table.insert(teams, setUpTeam(MatchData.Teams[i], islands[islandIndex]))
 	end
-	for index, player in players do
-		local team = teams[(index - 1) % teamCount + 1]
-		table.insert(team.members, player)
+	local function roomiest(): MatchTeam
+		local best = teams[1]
+		for _, team in teams do
+			if #team.members < #best.members then
+				best = team
+			end
+		end
+		return best
+	end
+	local groups = PartyService.groups(players)
+	table.sort(groups, function(a, b)
+		return #a > #b
+	end)
+	for _, group in groups do
+		local target = roomiest()
+		for _, player in group do
+			if #target.members >= capacity then
+				target = roomiest()
+			end
+			table.insert(target.members, player)
+			teamByPlayer[player] = target
+		end
+	end
+	for _, player in players do
+		local team = teamByPlayer[player] :: MatchTeam
 		team.alive[player] = true
-		teamByPlayer[player] = team
 		player.Neutral = false
 		player.Team = team.roblox
 		player:SetAttribute("TeamKey", team.info.key)
@@ -819,6 +877,12 @@ function MatchService.init()
 end
 
 function MatchService.start()
+	Remotes.event("VoteMode").OnServerEvent:Connect(function(player, key)
+		if phase ~= "playing" and type(key) == "string" and MatchData.mode(key) then
+			player:SetAttribute("ModeVote", key)
+			publishVotes()
+		end
+	end)
 	local function onPlayer(player: Player)
 		player.CharacterAdded:Connect(function(character)
 			task.defer(spawnInto, player, character)
@@ -844,6 +908,7 @@ function MatchService.start()
 		end
 		eliminated[player] = nil
 		lastHit[player] = nil
+		task.defer(publishVotes)
 	end)
 
 	-- The round loop.

@@ -20,6 +20,7 @@ local TABS = {
 	{ "Blocks", "🧱 Blocks" },
 	{ "Weapons", "⚔️ Weapons" },
 	{ "Armor", "🛡️ Armor" },
+	{ "Tools", "⛏️ Tools" },
 	{ "Items", "🍎 Items" },
 	{ "Upgrades", "💎 Team" },
 }
@@ -92,6 +93,59 @@ local function build()
 		end
 	end
 	refreshers = {}
+	if currentTab == "Tools" then
+		for index, key in { "Pickaxe", "Axe" } do
+			local info = MatchData.Tools[key]
+			local frame = card(index)
+			local title = UI.label({
+				Size = UDim2.new(1, 0, 0, 24),
+				TextSize = 17,
+				Parent = frame,
+			})
+			local body = UI.label({
+				Position = UDim2.fromOffset(0, 26),
+				Size = UDim2.new(1, 0, 0, 52),
+				TextSize = 13,
+				TextWrapped = true,
+				TextYAlignment = Enum.TextYAlignment.Top,
+				TextColor3 = UI.Colors.Muted,
+				Parent = frame,
+			})
+			local button = UI.button({
+				AnchorPoint = Vector2.new(0.5, 1),
+				Position = UDim2.fromScale(0.5, 1),
+				Size = UDim2.new(1, 0, 0, 36),
+				TextSize = 16,
+				Parent = frame,
+			})
+			button.Activated:Connect(function()
+				buy("BuyMatchItem", key)
+			end)
+			local function run()
+				local tier = player:GetAttribute(key .. "Tier") or 0
+				local nextTier = info.tiers[tier + 1]
+				local current = info.tiers[tier]
+				title.Text = info.emoji .. " " .. (if nextTier then nextTier.name else current.name)
+				body.Text = info.description
+					.. "\nYou have: "
+					.. (if current then current.name else "none")
+					.. "\nKept when you respawn (one tier lower)."
+				if not nextTier then
+					button.Text = "Maxed ✓"
+					button.BackgroundColor3 = UI.Colors.Disabled
+				else
+					local currency = resourceInfo(nextTier.currency)
+					button.Text = currency.emoji .. " " .. nextTier.cost .. " " .. nextTier.currency
+					button.BackgroundColor3 = if resource(nextTier.currency) >= nextTier.cost
+						then UI.Colors.Good
+						else UI.Colors.Disabled
+				end
+			end
+			table.insert(refreshers, run)
+			run()
+		end
+		return
+	end
 	if currentTab == "Upgrades" then
 		for index, upgrade in MatchData.Upgrades do
 			local frame = card(index)

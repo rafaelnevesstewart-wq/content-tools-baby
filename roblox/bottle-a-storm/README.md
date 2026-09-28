@@ -6,8 +6,11 @@ islands, the cloud beds and the storm kits, so it runs in Studio with no uploade
 ## How a match works
 
 Everyone waits in the **lobby** on the big middle island. With 2+ players (1 in Studio) a
-15-second countdown starts. Teams are made automatically: everyone for themselves with up to
-4 players, teams of 2 with more (up to 8 teams). Each team gets a sky island with:
+15-second countdown starts. In the lobby, players **vote for Solos, Duos or Squads** (team
+size 1, 2 or 4); the most votes wins (no votes: solos with up to 4 players, duos with more).
+**Parties** (👥 Party) always end up on the same team. Up to 8 teams. Every match is on a new
+**map**: 🌿 Meadow, 🌋 Volcano, ❄️ Frozen, 🍭 Candy or 🌌 Space (ground, cliffs, props and a
+color wash), never the same twice in a row. Each team gets a sky island with:
 
 - a **cloud bed** at the back. While it stands, you respawn 5 seconds after a knockout.
   Enemies break it by holding **E** on it for 2.5 seconds, but only if they can see it, so wall
@@ -16,9 +19,13 @@ Everyone waits in the **lobby** on the big middle island. With 2+ players (1 in 
   The middle island has 💎 Storm Crystal and ⚡ Lightning Core generators that speed up at 6
   and 12 minutes.
 - an **Item Shop**: blocks (Cloud Wool, Wood Planks, Stone Bricks, Obsidian), swords (Stone,
-  Iron, Diamond), a bow and arrows, armor (Chain, Iron, Diamond; kept when you respawn), Storm
-  Apples (heal) and Wind Pearls (throw to teleport). The 💎 Team tab has team upgrades bought
-  with Crystals: Sharp Blades, Reinforced Armor, Storm Forge, Healing Aura.
+  Iron, Diamond), a bow and arrows, armor (Chain, Iron, Diamond; kept when you respawn),
+  ⛏️ pickaxes and 🪓 axes (4 tiers each; they break blocks much faster and drop one tier when
+  you die), 🧨 Storm TNT (place it; 3 seconds later it blows up blocks, not Obsidian, and
+  knocks people away), 🔥 Fireballs (throw; they break wool and launch enemies), potions
+  (💨 Speed, 🦘 Jump, 👻 Invisibility for 30 seconds), Storm Apples (heal) and Wind Pearls
+  (throw to teleport). The 💎 Team tab has team upgrades bought with Crystals: Sharp Blades,
+  Reinforced Armor, Storm Forge, Healing Aura.
 
 Everyone has 100 health and starts with a wood sword. Hits push people back; falling off counts
 as a knockout. The last team standing wins. At 20 minutes every bed breaks (Sudden Death); at
@@ -48,12 +55,30 @@ Sparks come from matches: knockouts, final kills, breaking beds, winning, and ju
 They're multiplied by VIP, your Style Bonus, Kit Collection rows, your group bonus, Admin
 Abuse and Rainbow Hour (the HUD shows your current bonus). Spend them on cosmetics and kits.
 
+## Levels, ranked, streaks and achievements
+
+- **Level and prestige:** XP from every match (playing, knockouts, beds, wins). Each level
+  pays Sparks and every 10th level a kit. At level 100 you **prestige**: back to level 1 with
+  a new star color and ⚡5,000 (up to prestige 10).
+- **Ranked:** matches with 2+ teams give rank points (win +30, loss -12, final kill +5, bed
+  +8): 🥉 Bronze, 🥈 Silver, 🥇 Gold, 💠 Platinum, 💎 Diamond, 🔮 Master, 👑 Champion. A lobby
+  board shows the top ranked players.
+- **Win streaks:** win in a row for bonus Sparks (⚡50 per win in the streak, up to 500).
+- Your level, rank and streak show above your head and in the HUD; Level, Wins and Kills are
+  the player list columns.
+- **Victory dances:** when your team wins, you dance your 💃 Victory Dance (Cheer, Wave, Point,
+  Laugh, Groove, Spin Move, Robot) in a shower of confetti.
+- **Achievements** (🎁 Rewards → 🏅 Goals): 28 goals for playing, winning, knockouts, beds,
+  streaks, levels, ranks and collecting. Rewards (Sparks, kits and 3 achievement-only
+  cosmetics: Champion Trail, Veteran Bed, Legend Strike) are given automatically.
+
 ## Cosmetics (🎨 Style)
 
 - **You:** hats, trails, backs (wings, Arrow Quiver...) and auras.
 - **In matches:** 🛏️ **Cloud Beds** (your team's bed uses the first teammate's pick),
   🗡️ **Sword Skins** (every sword you hold), 🏹 **Arrow Effects**, and 💥 **Knockout Effects**
-  (what bursts out when you knock someone out: lightning, fireworks, frost...).
+  (what bursts out when you knock someone out: lightning, fireworks, frost...), and
+  💃 **Victory Dances**.
 
 Most cost Sparks; a few cost Robux; each season's pass has 3 exclusive ones. Every cosmetic
 you use adds its tier's **Style Bonus** to your match Sparks (up to +50%).
@@ -80,9 +105,10 @@ Premium, tier skips and the Star Booster pass (+50% stars) are sold for Robux.
 
 ## Controls in a match
 
-Click with a sword to swing (you can also hit placed blocks to break them), click with the bow
-to shoot, hold a block to see where it goes and click to place it, **E** to open the Item Shop
-or break a bed, **Shift** for your kit's power.
+Click with a sword to swing (you can also hit placed blocks to break them), a pickaxe or axe
+to mine blocks, the bow to shoot, a Fireball to throw it, a potion to drink it; hold a block or
+Storm TNT to see where it goes and click to place it; **E** to open the Item Shop or break a
+bed; **Shift** for your kit's power.
 
 ## Setup
 
@@ -118,13 +144,16 @@ or break a bed, **Shift** for your kit's power.
 ## Code map
 
 ```
-src/shared/   Config, MatchData (teams, item shop, upgrades, match rewards), StormData (kits,
+src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match rewards),
+              MapData (map rotation), ProgressionData (levels, ranks, achievements), StormData (kits,
               rarities, powers), CosmeticsData, SkinData (swords, arrows), SeasonData
               (battle pass), RewardsData (daily rewards, quests), MarketData (Kit Shop,
               crates), SpinData, TitleData, HolidayData, WeatherEvents, Products, Sounds,
               Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, MatchService (rounds, teams, beds, generators), CombatService,
+              GadgetService (TNT, fireballs, potions, pickaxes, axes), PartyService,
+              MapService, ProgressionService (levels, ranked, streaks, dances, achievements),
               BlockService, ItemShopService, KitService, WeatherService, MovementService
               (falling off), IncomeService (Sparks), IndexService (Kit Collection),
               SeasonService, RewardService, MarketService, SpinService, DailyService,
@@ -134,7 +163,7 @@ src/server/   Main.server.luau starts the services in order
   Modules/    WorldBuilder (islands, bridges, forecast TV), StormModel (kit storms), Effects,
               Juice, Notify, Codes
 src/client/   Main.client.luau starts the controllers
-  Controllers/ HUD, MatchHUD, ItemShop, Kits, KitController (Shift powers), KitFollower,
+  Controllers/ HUD, MatchHUD (and the mode vote), ItemShop, Kits, Party, KitController (Shift powers), KitFollower,
                WeaponController, BlockController, Aim, Shop, Market, HolidayShop, Style,
                Season, Rewards, AdminPanel, ForecastController, StormAnimator, FlashyFx,
                AmbientController, JuiceController, Toasts, Sfx, UI

@@ -8,7 +8,7 @@ export type ShopItem = {
 	key: string,
 	name: string,
 	emoji: string,
-	tab: string, -- "Blocks" | "Weapons" | "Armor" | "Items"
+	tab: string, -- "Blocks" | "Weapons" | "Armor" | "Items" (tools are in MatchData.Tools)
 	cost: number,
 	currency: string, -- "Copper" | "Silver" | "Crystals" | "Cores"
 	amount: number?, -- how many you get (blocks, arrows)
@@ -37,6 +37,23 @@ MatchData.Teams = {
 	{ key = "Pink", name = "Pink", color = rgb(245, 120, 190), brick = "Hot pink", emoji = "🩷" },
 	{ key = "Gray", name = "Gray", color = rgb(130, 130, 140), brick = "Medium stone grey", emoji = "⬛" },
 } :: { TeamInfo }
+
+-- Team sizes players vote for in the lobby (the most votes wins; with no
+-- votes, it's solos for small servers and duos for bigger ones).
+MatchData.Modes = {
+	{ key = "Solo", name = "Solos", emoji = "🧍", size = 1 },
+	{ key = "Duo", name = "Duos", emoji = "👥", size = 2 },
+	{ key = "Squad", name = "Squads", emoji = "👨‍👩‍👧‍👦", size = 4 },
+}
+
+function MatchData.mode(key: string?): { key: string, name: string, emoji: string, size: number }?
+	for _, mode in MatchData.Modes do
+		if mode.key == key then
+			return mode
+		end
+	end
+	return nil
+end
 
 -- Resources you carry during a match (lost when you die).
 MatchData.Resources = {
@@ -218,7 +235,84 @@ MatchData.Shop = {
 		currency = "Cores",
 		description = "Throw it and teleport to where it lands.",
 	},
+	{
+		key = "TNT",
+		name = "Storm TNT",
+		emoji = "🧨",
+		tab = "Items",
+		cost = 8,
+		currency = "Silver",
+		description = "Place it: after 3 seconds it blows up blocks (not Obsidian) and knocks people away.",
+	},
+	{
+		key = "Fireball",
+		name = "Fireball",
+		emoji = "🔥",
+		tab = "Items",
+		cost = 4,
+		currency = "Silver",
+		description = "Throw it: it explodes where it hits, breaking wool and launching enemies.",
+	},
+	{
+		key = "SpeedPotion",
+		name = "Speed Potion",
+		emoji = "💨",
+		tab = "Items",
+		cost = 1,
+		currency = "Cores",
+		description = "Run 40% faster for 30 seconds.",
+	},
+	{
+		key = "JumpPotion",
+		name = "Jump Potion",
+		emoji = "🦘",
+		tab = "Items",
+		cost = 1,
+		currency = "Cores",
+		description = "Jump much higher for 30 seconds.",
+	},
+	{
+		key = "InvisPotion",
+		name = "Invisibility Potion",
+		emoji = "👻",
+		tab = "Items",
+		cost = 2,
+		currency = "Cores",
+		description = "Turn invisible for 30 seconds (ends if you attack). Sneak up on beds!",
+	},
 } :: { ShopItem }
+
+-- Tools that break placed blocks faster than a sword. Buying one gives the
+-- next tier. You keep them when you respawn, but they drop one tier (never
+-- below the first). `power` is how many hits one swing does to a block; the
+-- axe does double on Wood Planks and Cloud Wool.
+export type ToolTier = { name: string, cost: number, currency: string, power: number, color: Color3 }
+
+MatchData.Tools = {
+	Pickaxe = {
+		emoji = "⛏️",
+		description = "Mines every kind of block fast.",
+		tiers = {
+			{ name = "Wood Pickaxe", cost = 10, currency = "Copper", power = 2, color = rgb(150, 110, 70) },
+			{ name = "Stone Pickaxe", cost = 3, currency = "Silver", power = 3, color = rgb(140, 140, 145) },
+			{ name = "Iron Pickaxe", cost = 6, currency = "Silver", power = 5, color = rgb(220, 225, 232) },
+			{ name = "Diamond Pickaxe", cost = 3, currency = "Cores", power = 8, color = rgb(90, 230, 240) },
+		} :: { ToolTier },
+	},
+	Axe = {
+		emoji = "🪓",
+		description = "Chops wood and wool super fast.",
+		tiers = {
+			{ name = "Wood Axe", cost = 10, currency = "Copper", power = 2, color = rgb(150, 110, 70) },
+			{ name = "Stone Axe", cost = 3, currency = "Silver", power = 3, color = rgb(140, 140, 145) },
+			{ name = "Iron Axe", cost = 6, currency = "Silver", power = 4, color = rgb(220, 225, 232) },
+			{ name = "Diamond Axe", cost = 3, currency = "Cores", power = 6, color = rgb(90, 230, 240) },
+		} :: { ToolTier },
+	},
+}
+
+-- Blocks the axe cuts at double power.
+MatchData.AxeBlocks = { WoodPlanks = true, CloudWool = true }
 
 -- Team upgrades, bought with Storm Crystals, help the whole team.
 MatchData.Upgrades = {

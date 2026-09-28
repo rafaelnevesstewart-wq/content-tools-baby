@@ -1,6 +1,7 @@
--- Bed Wars weapons: click with the Sword to swing, the Bow to shoot, the
--- Storm Apple to eat and the Wind Pearl to throw. This only aims and asks;
--- CombatService on the server checks every hit.
+-- Bed Wars weapons and gadgets: click with the Sword to swing, the Bow to
+-- shoot, the Storm Apple to eat, the Wind Pearl or a Fireball to throw, a
+-- potion to drink, and a Pickaxe or Axe to mine blocks. (Storm TNT is placed
+-- by BlockController.) This only aims and asks; the server checks it all.
 
 local Players = game:GetService("Players")
 
@@ -65,6 +66,47 @@ function WeaponController.start()
 	Aim.hookTool("Wind Pearl", function()
 		Sfx.play("throw", 1)
 		Remotes.event("UseItem"):FireServer("WindPearl", Aim.point({}, 0))
+	end)
+	Aim.hookTool("Fireball", function()
+		Sfx.play("throw", 0.7)
+		Remotes.event("UseGadget"):FireServer("Fireball", Aim.point(enemyRoots(), 4))
+	end)
+	for toolName, key in
+		{ ["Speed Potion"] = "SpeedPotion", ["Jump Potion"] = "JumpPotion", ["Invisibility Potion"] = "InvisPotion" }
+	do
+		Aim.hookTool(toolName, function()
+			Sfx.play("pop", 0.6)
+			Remotes.event("UseGadget"):FireServer(key, Vector3.zero)
+		end)
+	end
+	local lastMine = 0
+	for _, toolName in { "Pickaxe", "Axe" } do
+		Aim.hookTool(toolName, function()
+			if os.clock() - lastMine < 0.3 then
+				return
+			end
+			lastMine = os.clock()
+			slash(toolName)
+			Sfx.play("pop", 1.4)
+			Remotes.event("UseGadget"):FireServer("Mine", Aim.point({}, 0))
+		end)
+	end
+
+	-- While you're invisible, you still see a ghost of yourself.
+	local function showGhost()
+		local character = player.Character
+		if not character or not player:GetAttribute("Invisible") then
+			return
+		end
+		for _, part in character:GetDescendants() do
+			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.Transparency >= 1 then
+				part.Transparency = 0.75
+			end
+		end
+	end
+	player:GetAttributeChangedSignal("Invisible"):Connect(function()
+		task.wait(0.2) -- after the server's change arrives
+		showGhost()
 	end)
 end
 

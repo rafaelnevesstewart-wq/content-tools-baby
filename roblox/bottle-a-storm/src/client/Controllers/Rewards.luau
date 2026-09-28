@@ -4,6 +4,7 @@
 --   * Kits: your Kit Collection, every kit in the game. Ones you don't have
 --     show as "???". Collecting every kit of a rarity completes a row (+5%
 --     match Sparks forever).
+--   * Goals: achievements (their rewards are given automatically).
 --   * Titles: earned by playing; pick one to show above your name.
 --   * Codes, and the daily prize wheel (Spin).
 
@@ -14,7 +15,10 @@ local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local CosmeticsData = require(Shared.CosmeticsData)
+local Format = require(Shared.Format)
 local Products = require(Shared.Products)
+local ProgressionData = require(Shared.ProgressionData)
 local Remotes = require(Shared.Remotes)
 local RewardsData = require(Shared.RewardsData)
 local SpinData = require(Shared.SpinData)
@@ -45,6 +49,7 @@ local currentTab = "Daily"
 local info: Info? = nil
 type TitleInfo = { equipped: string?, list: { { id: string, unlocked: boolean, progress: number } } }
 local titles: TitleInfo? = nil
+local goals: { { id: string, done: boolean, progress: number } }? = nil
 local busy = false
 
 local function clear(frame: Instance)
@@ -328,6 +333,93 @@ local function buildIndex(page: Frame, data: Info)
 				.. (if known then "" else " · " .. hint(def)),
 			TextScaled = true,
 			TextColor3 = UI.Colors.Muted,
+			Parent = tile,
+		}, 13)
+	end
+end
+
+-- Achievements: finished ones pay out by themselves.
+local function rewardName(reward: any): string
+	if reward.kind == "cosmetic" then
+		local item = CosmeticsData.get(reward.id)
+		return if item then item.emoji .. " " .. item.name else "🎨 Cosmetic"
+	end
+	return RewardsData.describe(reward)
+end
+
+local function buildGoals(page: Frame)
+	local data = goals
+	if not data then
+		UI.label({ Size = UDim2.new(1, 0, 0, 30), Text = "Loading...", Parent = page })
+		return
+	end
+	local done = 0
+	for _, entry in data do
+		if entry.done then
+			done += 1
+		end
+	end
+	UI.label({
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "🏅 " .. done .. " / " .. #data .. " achievements · rewards are given automatically",
+		TextSize = 17,
+		Parent = page,
+	})
+	local scroll = UI.new("ScrollingFrame", {
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 1, -34),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = UI.Colors.Stroke,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		Parent = page,
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(250, 70),
+			CellPadding = UDim2.fromOffset(6, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		}),
+		UI.padding(4),
+	})
+	for order, entry in data do
+		local achievement = ProgressionData.achievement(entry.id)
+		if not achievement then
+			continue
+		end
+		local tile = UI.new("Frame", {
+			LayoutOrder = order,
+			BackgroundColor3 = if entry.done then Color3.fromRGB(38, 70, 52) else UI.Colors.PanelLight,
+			Parent = scroll,
+		}, { UI.corner(10), UI.padding(6), UI.stroke(if entry.done then UI.Colors.Good else UI.Colors.Stroke, 1.5) })
+		capped({
+			Size = UDim2.new(1, 0, 0, 22),
+			Text = achievement.emoji .. " " .. achievement.name .. (if entry.done then " ✓" else ""),
+			TextScaled = true,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = tile,
+		}, 16)
+		capped({
+			Position = UDim2.fromOffset(0, 22),
+			Size = UDim2.new(1, 0, 0, 18),
+			Text = achievement.goal .. "  (" .. Format.number(entry.progress) .. "/" .. Format.number(
+				achievement.target
+			) .. ")",
+			TextScaled = true,
+			TextColor3 = UI.Colors.Muted,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = tile,
+		}, 13)
+		capped({
+			Position = UDim2.fromOffset(0, 40),
+			Size = UDim2.new(1, 0, 0, 16),
+			Text = "Reward: " .. rewardName(achievement.reward),
+			TextScaled = true,
+			TextColor3 = UI.Colors.Spark,
+			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = tile,
 		}, 13)
 	end
@@ -671,6 +763,9 @@ local function rebuild()
 	if currentTab == "Titles" then
 		buildTitles(page)
 		return
+	elseif currentTab == "Goals" then
+		buildGoals(page)
+		return
 	elseif currentTab == "Codes" then
 		buildCodes(page)
 		return
@@ -699,6 +794,10 @@ function Rewards.refresh()
 	local titleData = Remotes.func("GetTitles"):InvokeServer()
 	if type(titleData) == "table" then
 		titles = titleData
+	end
+	local goalData = Remotes.func("GetAchievements"):InvokeServer()
+	if type(goalData) == "table" then
+		goals = goalData
 	end
 	if window.Visible and not wheelSpinning then
 		rebuild()
@@ -767,6 +866,7 @@ function Rewards.start()
 			{ "Daily", "📅 Daily" },
 			{ "Quests", "📜 Quests" },
 			{ "Index", "📖 Kits" },
+			{ "Goals", "🏅 Goals" },
 			{ "Titles", "🏷️ Titles" },
 			{ "Codes", "🎟️ Codes" },
 			{ "Spin", "🎡 Spin" },
@@ -775,9 +875,9 @@ function Rewards.start()
 		local name = entry[1]
 		local button = UI.button({
 			LayoutOrder = order,
-			Size = UDim2.new(1 / 6, -8, 1, 0),
+			Size = UDim2.new(1 / 7, -8, 1, 0),
 			Text = entry[2],
-			TextSize = 18,
+			TextSize = 16,
 			Parent = tabRow,
 		})
 		button.Activated:Connect(function()

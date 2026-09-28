@@ -17,7 +17,9 @@ function KitFollower.start()
 			local owner = Players:GetPlayerByUserId(model:GetAttribute("OwnerUserId") or 0)
 			local character = owner and owner.Character
 			local ownerRoot = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-			if root and ownerRoot then
+			if root and ownerRoot and owner ~= Players.LocalPlayer and owner:GetAttribute("Invisible") then
+				root.CFrame = CFrame.new(0, -500, 0) -- hidden with its invisible owner
+			elseif root and ownerRoot then
 				local bob = math.sin(t * 2 + (owner :: Player).UserId % 7) * 0.4
 				local goal = ownerRoot.CFrame * OFFSET * CFrame.new(0, bob, 0)
 				if (root.Position - goal.Position).Magnitude > 60 then

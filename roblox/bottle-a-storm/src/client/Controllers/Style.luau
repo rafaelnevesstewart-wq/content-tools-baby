@@ -173,7 +173,7 @@ local function card(grid: Frame, order: number, item: CosmeticsData.Item)
 	local function refresh()
 		local current = state()
 		local owned = table.find(current.owned or {}, item.id) ~= nil
-			or (item.cost == 0 and not item.robux and not item.season)
+			or (item.cost == 0 and not item.robux and not item.season and not item.achievement)
 		local default = CosmeticsData.Defaults[item.category]
 		local using = (current :: any)[item.category] == item.id
 			or (item.id == default and (current :: any)[item.category] == nil)
@@ -191,6 +191,10 @@ local function card(grid: Frame, order: number, item: CosmeticsData.Item)
 		elseif item.season then
 			mode = "none"
 			button.Text = "🎟️ Battle pass"
+			button.BackgroundColor3 = UI.Colors.Disabled
+		elseif item.achievement then
+			mode = "none"
+			button.Text = "🏅 Achievement"
 			button.BackgroundColor3 = UI.Colors.Disabled
 		elseif item.robux then
 			mode = "robux"
@@ -225,6 +229,7 @@ local HINTS: { [string]: string } = {
 	sword = "  ·  every sword you hold, wood to diamond",
 	fx = "  ·  your bow's arrows",
 	ko = "  ·  bursts out when you knock someone out",
+	dance = "  ·  your character dances when your team wins",
 }
 
 local function showTab(key: string)

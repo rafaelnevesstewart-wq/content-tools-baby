@@ -33,11 +33,30 @@ Config.Match = {
 	BowRange = 140,
 	AppleHeal = 40,
 	PearlRange = 60,
+	-- Gadgets (GadgetService).
+	TNTFuse = 3,
+	TNTRadius = 8,
+	TNTDamage = 40, -- at the center, less farther out
+	TNTKnockback = 70,
+	FireballSpeed = 70,
+	FireballRange = 90,
+	FireballRadius = 5,
+	FireballDamage = 15,
+	FireballKnockback = 55,
+	PotionSeconds = 30,
+	SpeedBoost = 1.4,
+	JumpBoost = 1.8,
 	-- Blocks.
 	BlockSize = 3,
 	BlockReach = 20,
 	MaxBlockHeight = 70,
 	BedBreakSeconds = 2.5,
+}
+
+-- Parties (👥 Party): friends who always end up on the same team.
+Config.Party = {
+	MaxSize = 4,
+	InviteSeconds = 60, -- an invite expires after this
 }
 
 -- Team islands around the middle (up to 8 teams). Set the place's Max

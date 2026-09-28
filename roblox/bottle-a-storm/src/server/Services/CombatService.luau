@@ -11,6 +11,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
+local Signal = require(Shared.Signal)
 local SkinData = require(Shared.SkinData)
 
 local Modules = script.Parent.Parent.Modules
@@ -24,6 +25,9 @@ local MatchService = require(script.Parent.MatchService)
 local WeatherService = require(script.Parent.WeatherService)
 
 local CombatService = {}
+
+-- (attacker) whenever a player hurts an enemy (an invisible player shows up).
+CombatService.Attacked = Signal.new()
 
 type Gear = { sword: number, armor: number, bow: boolean, arrows: number, apples: number, pearls: number }
 
@@ -255,6 +259,7 @@ local function damage(victim: Player, attacker: Player, amount: number, push: Ve
 	local taken = math.max(0.3, armor.taken - 0.06 * protection)
 	MatchService.recordHit(victim, attacker)
 	humanoid:TakeDamage(amount * taken)
+	CombatService.Attacked:Fire(attacker)
 	Juice.knock(victim, push * WeatherService.knockbackMultiplier())
 	Juice.sound(victim, "zap")
 	Juice.sound(attacker, "pop")
@@ -398,6 +403,13 @@ local function onUse(player: Player, key: any, aim: any)
 				Juice.sound(player, "chime")
 			end
 		end)
+	end
+end
+
+-- Hurts an enemy with armor and upgrades counted (explosions use this).
+function CombatService.hurt(victim: Player, attacker: Player, amount: number, push: Vector3)
+	if victim == attacker or MatchService.isEnemy(attacker, victim) then
+		damage(victim, attacker, if victim == attacker then amount * 0.3 else amount, push)
 	end
 end
 

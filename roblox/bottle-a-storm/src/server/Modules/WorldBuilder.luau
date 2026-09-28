@@ -501,7 +501,7 @@ local function wildBlocked(p: Vector3): boolean
 	if (p - spawn).Magnitude < 14 or (p - Vector3.new(0, 0, -30)).Magnitude < 16 then
 		return true
 	end
-	if p.Z > -128 and p.Z < -76 and math.abs(p.X) < 78 then
+	if p.Z > -128 and p.Z < -76 and math.abs(p.X) < 136 then
 		return true -- leaderboards and the winners' podium
 	end
 	local degrees = math.deg(math.atan2(p.Z, p.X)) % 360
@@ -524,8 +524,10 @@ local function wildBlocked(p: Vector3): boolean
 	return false
 end
 
--- Other services use this to keep things off the middle island's busy spots.
+-- Other services use these to keep things off the islands' busy spots
+-- (team islands in island space: -Z faces the middle).
 WorldBuilder.isWildBlocked = wildBlocked
+WorldBuilder.isPlotBlocked = plotBlocked
 
 export type PlotInfo = {
 	index: number,

@@ -1,6 +1,6 @@
 -- Global leaderboards in the lobby: the top 10 players in the world for
--- wins, knockouts and beds broken (saved in OrderedDataStores), plus avatar
--- statues of the top 3 winners. If the data stores can't be reached
+-- wins, knockouts, rank points and beds broken (saved in OrderedDataStores),
+-- plus avatar statues of the top 3 winners. If the data stores can't be reached
 -- (Studio without API access), the boards show this server's players instead.
 
 local DataStoreService = game:GetService("DataStoreService")
@@ -37,6 +37,13 @@ local boards: { Board } = {
 		title = "⚔️ Most Knockouts",
 		stat = "kills",
 		position = Vector3.new(0, 0, -116),
+		rows = {},
+	},
+	{
+		key = "Ranked",
+		title = "👑 Top Ranked",
+		stat = "rankPoints",
+		position = Vector3.new(120, 0, -104),
 		rows = {},
 	},
 	{

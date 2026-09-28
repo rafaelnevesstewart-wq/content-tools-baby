@@ -14,6 +14,7 @@ local order = {
 	"AdminPanel",
 	"Style",
 	"Kits",
+	"Party",
 	"ItemShop",
 	"HUD",
 	"MatchHUD",
