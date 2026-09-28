@@ -10,18 +10,48 @@ local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 
-local TIPS = {
-	"🛏️ Cover your bed in blocks: wool first, then wood, then obsidian.",
-	"⛏️ Stand on your generator to pick up Copper and Silver.",
-	"🧙 Pick a class before a match: Knight, Archer, Builder or Healer.",
-	"🐉 Beat the boss on the middle island for a pile of loot.",
-	"🪂 A Glider lets you sail across the gaps: hold jump while falling.",
-	"🎣 There's a fishing pond on Games Island. Can you catch the Storm Serpent?",
-	"🗺️ New treasure hunt clues every day at the top right.",
-	"📋 Everything is in the Menu (press M).",
-	"👥 Party up with friends to always play on the same team.",
-	"🌠 At night, look up: shooting stars grant wishes!",
+-- Tips in English, Portuguese and Spanish (your Roblox language picks; the
+-- ⚙️ Settings language isn't loaded yet this early).
+local TIPS_BY_LANGUAGE = {
+	en = {
+		"🛏️ Cover your bed in blocks: wool first, then wood, then obsidian.",
+		"⛏️ Stand on your generator to pick up Copper and Silver.",
+		"🧙 Pick a class before a match: Knight, Archer, Builder or Healer.",
+		"🐉 Beat the boss on the middle island for a pile of loot.",
+		"🪂 A Glider lets you sail across the gaps: hold jump while falling.",
+		"🎣 There's a fishing pond on Games Island. Can you catch the Storm Serpent?",
+		"🗺️ New treasure hunt clues every day at the top right.",
+		"📋 Everything is in the Menu (press M).",
+		"👥 Party up with friends to always play on the same team.",
+		"🌠 At night, look up: shooting stars grant wishes!",
+	},
+	pt = {
+		"🛏️ Cubra sua cama com blocos: lã primeiro, depois madeira, depois obsidiana.",
+		"⛏️ Fique em cima do seu gerador para pegar Cobre e Prata.",
+		"🧙 Escolha uma classe antes da partida: Cavaleiro, Arqueiro, Construtor ou Curandeiro.",
+		"🐉 Derrote o chefe na ilha do meio para ganhar muitos prêmios.",
+		"🪂 Com um Planador você cruza os buracos: segure pular enquanto cai.",
+		"🎣 Tem um lago de pesca na Ilha dos Jogos. Consegue pegar a Serpente da Tempestade?",
+		"🗺️ Novas pistas da caça ao tesouro todo dia, no canto de cima à direita.",
+		"📋 Tudo fica no Menu (aperte M).",
+		"👥 Faça um grupo com amigos para jogar sempre no mesmo time.",
+		"🌠 À noite, olhe para o céu: estrelas cadentes realizam desejos!",
+	},
+	es = {
+		"🛏️ Cubre tu cama con bloques: primero lana, luego madera, luego obsidiana.",
+		"⛏️ Párate en tu generador para recoger Cobre y Plata.",
+		"🧙 Elige una clase antes de la partida: Caballero, Arquero, Constructor o Sanador.",
+		"🐉 Vence al jefe de la isla del centro para ganar un montón de premios.",
+		"🪂 Con un Planeador cruzas los huecos: mantén saltar mientras caes.",
+		"🎣 Hay un estanque de pesca en la Isla de Juegos. ¿Atraparás la Serpiente de la Tormenta?",
+		"🗺️ Nuevas pistas de la búsqueda del tesoro cada día, arriba a la derecha.",
+		"📋 Todo está en el Menú (pulsa M).",
+		"👥 Forma un grupo con amigos para jugar siempre en el mismo equipo.",
+		"🌠 De noche, mira arriba: ¡las estrellas fugaces conceden deseos!",
+	},
 }
+local locale = string.lower(string.sub(game:GetService("LocalizationService").RobloxLocaleId, 1, 2))
+local TIPS = TIPS_BY_LANGUAGE[locale] or TIPS_BY_LANGUAGE.en
 
 ReplicatedFirst:RemoveDefaultLoadingScreen()
 

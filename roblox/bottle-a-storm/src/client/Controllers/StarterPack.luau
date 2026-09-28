@@ -4,6 +4,7 @@
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Lang = require(Shared.Lang)
 local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
@@ -12,13 +13,7 @@ local player = Players.LocalPlayer
 
 local StarterPack = {}
 
-local STEPS = {
-	"⚔️ Play a match: vote for a mode at the top, it starts by itself",
-	"🛏️ Protect your bed with blocks, break the other teams' beds",
-	"🧭 Talk to Guide Gale by the gate for a step-by-step quest",
-	"🧙 Pick a class (the Class button next to the mode vote)",
-	"📋 Everything else is in the Menu (or press M)",
-}
+local STEPS = { "starter.step1", "starter.step2", "starter.step3", "starter.step4", "starter.step5" }
 
 function StarterPack.start()
 	local screen = UI.screen("StarterPack", 12)
@@ -41,7 +36,7 @@ function StarterPack.start()
 	UI.label({
 		LayoutOrder = 1,
 		Size = UDim2.new(1, 0, 0, 36),
-		Text = "👋 Welcome to Bottle a Storm!",
+		Text = Lang.t("starter.title"),
 		TextSize = 24,
 		TextColor3 = UI.Colors.Spark,
 		TextScaled = true,
@@ -51,7 +46,7 @@ function StarterPack.start()
 		LayoutOrder = 2,
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		Text = "🎁 Your welcome gift: ⚡1,000 Sparks, a Rare kit and a 🦆 Duckling pet that heals you in matches!",
+		Text = Lang.t("starter.gift"),
 		TextSize = 16,
 		TextWrapped = true,
 		Parent = window,
@@ -59,7 +54,7 @@ function StarterPack.start()
 	UI.label({
 		LayoutOrder = 3,
 		Size = UDim2.new(1, 0, 0, 22),
-		Text = "What to do first:",
+		Text = Lang.t("starter.first"),
 		TextSize = 16,
 		TextColor3 = UI.Colors.Muted,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -70,7 +65,7 @@ function StarterPack.start()
 			LayoutOrder = 3 + index,
 			Size = UDim2.new(1, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
-			Text = step,
+			Text = Lang.t(step),
 			TextSize = 15,
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
@@ -80,7 +75,7 @@ function StarterPack.start()
 	UI.button({
 		LayoutOrder = 20,
 		Size = UDim2.new(1, 0, 0, 46),
-		Text = "🎁 Claim my gift & play!",
+		Text = Lang.t("starter.claim"),
 		TextSize = 19,
 		BackgroundColor3 = UI.Colors.Good,
 		Parent = window,

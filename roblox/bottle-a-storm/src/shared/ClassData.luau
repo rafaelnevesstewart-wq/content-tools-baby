@@ -47,7 +47,7 @@ ClassData.Default = "Knight"
 ClassData.HealEvery = 2
 ClassData.MaxLevel = 10
 -- Class XP for...
-ClassData.Xp = { play = 20, win = 40, kill = 5, bed = 10 }
+ClassData.Xp = { play = 25, win = 40, kill = 5, bed = 10 }
 
 -- XP needed to go from `level` to the next one.
 function ClassData.xpFor(level: number): number

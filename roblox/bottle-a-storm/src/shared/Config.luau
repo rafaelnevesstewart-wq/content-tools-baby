@@ -286,10 +286,10 @@ Config.MiniGames = {
 	RangeSeconds = 40,
 	TargetsAtOnce = 3,
 	SparksPerPoint = 2, -- Target Range prize
-	RaceSparks = 800, -- Parkour Race prize: this minus 10 per second...
+	RaceSparks = 600, -- Parkour Race prize: this minus 10 per second...
 	RaceMinSparks = 150, -- ...but never less than this
 	BestBonus = 500, -- beating your personal best
-	PrizesPerDay = 8,
+	PrizesPerDay = 5, -- shared by the range, the parkour race and the 🚤 boat race
 }
 
 -- Lucky Blocks mode (MatchData.Modes): ❓ blocks to break for surprises.

@@ -38,6 +38,7 @@ local EVENTS = {
 	"UseGadget", -- client -> server: ("TNT" | "Fireball" | "Rocket" | potion key | "Mine", aimPoint)
 	"Glide", -- client -> server: (on) you started or stopped gliding (the wings show)
 	"ClaimStarter", -- client -> server: () claim the 🎁 starter pack
+	"TutorialDone", -- client -> server: () the 🎓 first-match tutorial is done or skipped
 	"ArenaCupAction", -- client -> server: ("join" | "leave") the 🏟️ 2v2 Arena Cup sign-ups
 	"BoatAction", -- client -> server: ("stop") quit the 🚤 Sky Boat Race
 	"PickClass", -- client -> server: (classKey) your 🧙 class for the next match

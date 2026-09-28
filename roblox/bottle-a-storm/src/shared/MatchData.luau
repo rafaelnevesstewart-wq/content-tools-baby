@@ -462,11 +462,11 @@ MatchData.Upgrades = {
 
 -- Sparks and Season Stars earned in matches (before VIP and Style Bonus).
 MatchData.Rewards = {
-	Kill = { sparks = 25, stars = 10 },
+	Kill = { sparks = 30, stars = 10 },
 	FinalKill = { sparks = 60, stars = 25 },
 	Bed = { sparks = 120, stars = 50 },
 	Win = { sparks = 300, stars = 120 },
-	Played = { sparks = 50, stars = 30 },
+	Played = { sparks = 75, stars = 30 }, -- even a loss is worth playing
 }
 
 function MatchData.shopItem(key: string): ShopItem?

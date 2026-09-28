@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local GuideData = require(Shared.GuideData)
+local Lang = require(Shared.Lang)
 
 local UI = require(script.Parent.UI)
 
@@ -37,10 +38,11 @@ function GuideTracker.start()
 		elseif step == 1 then
 			-- Only nudge brand-new players to start.
 			chip.Visible = player:GetAttribute("GuideNew") == true
-			chip.Text = "🧭 New? Talk to Guide Gale by the gate!"
+			chip.Text = Lang.t("chip.guideNew")
 		else
 			chip.Visible = true
-			chip.Text = "🧭 " .. step .. "/" .. total .. ": " .. GuideData.Steps[step].text
+			local info = GuideData.Steps[step]
+			chip.Text = "🧭 " .. step .. "/" .. total .. ": " .. Lang.t("guide." .. info.key, info.text)
 		end
 	end
 	player:GetAttributeChangedSignal("GuideStep"):Connect(refresh)

@@ -2,6 +2,9 @@
 -- the match, the Storm Dragon, tournaments, Admin Abuse...) and the latest
 -- updates (NewsData). Your screen also shows the newest update once, the
 -- first time you join after it (NewsPopup, saved as data.newsSeen).
+-- 👋 Players coming back after a day or more get a "Welcome back" summary:
+-- every update they missed and what's waiting for them today. Brand-new
+-- players skip it (they get the 🎁 welcome gift and the 🎓 tutorial).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -14,6 +17,7 @@ local MapData = require(Shared.MapData)
 local MatchData = require(Shared.MatchData)
 local NewsData = require(Shared.NewsData)
 local Remotes = require(Shared.Remotes)
+local RewardsData = require(Shared.RewardsData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local Modules = script.Parent.Parent.Modules
@@ -173,22 +177,66 @@ local function build()
 	end
 end
 
+local MAX_UPDATES = 4 -- missed updates listed in the welcome-back window
+
+-- What the "Welcome back" / "What's new" window shows this player (the
+-- "WelcomeBack" attribute, as JSON), or nil if there's nothing to show.
+local function summary(data: any): { [string]: any }?
+	local now = os.time()
+	local lastVisit = if type(data.lastVisit) == "number" then data.lastVisit else 0
+	data.lastVisit = now
+	if (data.stats.matches or 0) == 0 and data.newsSeen == nil then
+		-- Brand new: nothing is "new" to them yet.
+		data.newsSeen = NewsData.latest().version
+		return nil
+	end
+	local seen = data.newsSeen or 0
+	local updates = {}
+	for _, news in NewsData.List do
+		if news.version > seen and #updates < MAX_UPDATES then
+			table.insert(updates, news.version)
+		end
+	end
+	local days = if lastVisit > 0 then math.floor((now - lastVisit) / 86400) else 0
+	if #updates == 0 and days < 1 then
+		return nil
+	end
+	local today = RewardsData.today(now)
+	local rule: string? = nil
+	for _, weekly in EventData.List do
+		if EventData.is(weekly.key) then
+			rule = weekly.emoji .. " " .. weekly.name
+		end
+	end
+	return {
+		days = days,
+		updates = updates,
+		daily = data.daily.lastDay < today,
+		treasure = data.treasure.day ~= today,
+		puzzles = data.puzzles.day ~= today,
+		rule = rule,
+	}
+end
+
+local function loaded(player: Player, data: any)
+	local info = summary(data)
+	player:SetAttribute("WelcomeBack", if info then HttpService:JSONEncode(info) else nil)
+end
+
 function NewsService.start()
 	build()
 	Remotes.event("NewsSeen").OnServerEvent:Connect(function(player)
 		local data = DataService.get(player)
 		if data then
 			data.newsSeen = NewsData.latest().version
-			player:SetAttribute("NewsSeen", data.newsSeen)
+			player:SetAttribute("WelcomeBack", nil)
 		end
 	end)
-	DataService.ProfileLoaded:Connect(function(player, data)
-		player:SetAttribute("NewsSeen", data.newsSeen or 0)
-	end)
+	DataService.ProfileLoaded:Connect(loaded)
 	for _, player in Players:GetPlayers() do
 		local data = DataService.get(player)
 		if data then
-			player:SetAttribute("NewsSeen", data.newsSeen or 0)
+			loaded(player, data)
 		end
 	end
 	task.spawn(function()

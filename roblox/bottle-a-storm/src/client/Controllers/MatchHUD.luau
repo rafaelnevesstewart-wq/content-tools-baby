@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
+local Lang = require(Shared.Lang)
 local MapData = require(Shared.MapData)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
@@ -248,7 +249,7 @@ function MatchHUD.start()
 		LayoutOrder = 0,
 		Size = UDim2.fromOffset(0, 34),
 		AutomaticSize = Enum.AutomaticSize.X,
-		Text = "Vote:",
+		Text = Lang.t("vote.label"),
 		TextSize = 16,
 		TextStrokeTransparency = 0.4,
 		Parent = voteRow,
@@ -270,7 +271,7 @@ function MatchHUD.start()
 	UI.button({
 		LayoutOrder = 99,
 		Size = UDim2.fromOffset(150, 34),
-		Text = "🗳️ Map & Bots",
+		Text = Lang.t("vote.mapBots"),
 		TextSize = 15,
 		BackgroundColor3 = UI.Colors.Rare,
 		Parent = voteRow,
@@ -279,16 +280,16 @@ function MatchHUD.start()
 	local classButton = UI.button({
 		LayoutOrder = 100,
 		Size = UDim2.fromOffset(150, 34),
-		Text = "Class: " .. ClassPicker.label(),
+		Text = Lang.f("vote.class", { class = ClassPicker.label() }),
 		TextSize = 15,
 		BackgroundColor3 = Color3.fromRGB(60, 120, 90),
 		Parent = voteRow,
 	})
 	classButton.Activated:Connect(ClassPicker.toggle)
 	player:GetAttributeChangedSignal("Class"):Connect(function()
-		classButton.Text = "Class: " .. ClassPicker.label()
+		classButton.Text = Lang.f("vote.class", { class = ClassPicker.label() })
 	end)
-	classButton.Text = "Class: " .. ClassPicker.label()
+	classButton.Text = Lang.f("vote.class", { class = ClassPicker.label() })
 	workspace:GetAttributeChangedSignal("ModeVotes"):Connect(refreshVotes)
 	workspace:GetAttributeChangedSignal("MatchPhase"):Connect(refreshVotes)
 	player:GetAttributeChangedSignal("ModeVote"):Connect(refreshVotes)

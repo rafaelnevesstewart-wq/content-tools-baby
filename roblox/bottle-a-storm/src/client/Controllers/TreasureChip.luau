@@ -4,6 +4,7 @@
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Lang = require(Shared.Lang)
 local TreasureData = require(Shared.TreasureData)
 
 local UI = require(script.Parent.UI)
@@ -32,7 +33,14 @@ function TreasureChip.start()
 		local step = player:GetAttribute("TreasureStep")
 		chip.Visible = type(clue) == "string" and not player:GetAttribute("InMatch")
 		if type(clue) == "string" then
-			chip.Text = "🗺️ Treasure " .. tostring(step) .. "/" .. TreasureData.PerDay .. ": " .. clue
+			-- The clue in your language (found by its English text).
+			local shown = clue
+			for _, spot in TreasureData.Spots do
+				if spot.clue == clue then
+					shown = Lang.t("clue." .. spot.key, clue)
+				end
+			end
+			chip.Text = Lang.f("chip.treasure", { n = tostring(step), total = TreasureData.PerDay, clue = shown })
 		end
 	end
 	for _, name in { "TreasureClue", "TreasureStep", "InMatch" } do

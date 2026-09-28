@@ -18,7 +18,8 @@ function MovementService.start()
 				local character = player.Character
 				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 				local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-				if root and humanoid and humanoid.Health > 0 then
+				-- (Boats hover: the boat race keeps its own eye on racers.)
+				if root and humanoid and humanoid.Health > 0 and not player:GetAttribute("Boating") then
 					local inMatch = player:GetAttribute("InMatch") == true
 					local spawn = workspace:FindFirstChild("LobbySpawn", true) :: BasePart?
 					if not inMatch and spawn and root.Position.Y < Config.Lobby.Center.Y - 40 then

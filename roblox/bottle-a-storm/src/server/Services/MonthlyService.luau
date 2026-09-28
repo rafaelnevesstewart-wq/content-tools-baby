@@ -8,6 +8,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local CustomData = require(Shared.CustomData)
 local Format = require(Shared.Format)
 local MonthlyData = require(Shared.MonthlyData)
 
@@ -135,7 +136,8 @@ end
 
 local function addPoints(player: Player, amount: number)
 	local data = DataService.get(player)
-	if not data then
+	-- (Private servers with their own rules don't count toward the season.)
+	if not data or CustomData.changed() then
 		return
 	end
 	rollOver(player, data)

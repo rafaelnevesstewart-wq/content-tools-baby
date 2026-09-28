@@ -5,6 +5,9 @@
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Lang = require(Shared.Lang)
+
 local AchievementBook = require(script.Parent.AchievementBook)
 local AdminPanel = require(script.Parent.AdminPanel)
 local Challenges = require(script.Parent.Challenges)
@@ -30,11 +33,12 @@ local player = Players.LocalPlayer
 
 local Menu = {}
 
-type Tile = { emoji: string, name: string, hint: string, color: Color3, open: () -> (), admin: boolean? }
+type Tile = { key: string, emoji: string, name: string, hint: string, color: Color3, open: () -> (), admin: boolean? }
 
 local TILES: { Tile } = {
 	{
 		emoji = "🎨",
+		key = "style",
 		name = "Style",
 		hint = "Hats, trails, pets, mounts…",
 		color = Color3.fromRGB(255, 170, 220),
@@ -42,6 +46,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🌪️",
+		key = "kits",
 		name = "Kits",
 		hint = "Pick the kit you bring",
 		color = Color3.fromRGB(150, 200, 255),
@@ -49,6 +54,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🧙",
+		key = "class",
 		name = "Class",
 		hint = "Knight, Archer, Builder, Healer",
 		color = Color3.fromRGB(110, 190, 140),
@@ -56,6 +62,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🌟",
+		key = "challenges",
 		name = "Challenges",
 		hint = "Daily and weekly goals",
 		color = Color3.fromRGB(255, 225, 120),
@@ -63,6 +70,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🏅",
+		key = "achievements",
 		name = "Achievements",
 		hint = "Every goal and title",
 		color = Color3.fromRGB(255, 200, 110),
@@ -70,6 +78,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🎁",
+		key = "rewards",
 		name = "Rewards",
 		hint = "Daily calendar, quests, codes",
 		color = Color3.fromRGB(150, 225, 170),
@@ -77,6 +86,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🎟️",
+		key = "pass",
 		name = "Battle Pass",
 		hint = "Season rewards",
 		color = Color3.fromRGB(255, 205, 90),
@@ -84,6 +94,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "👥",
+		key = "party",
 		name = "Party & Friends",
 		hint = "Team up, duel, trade, gift",
 		color = Color3.fromRGB(140, 220, 200),
@@ -91,6 +102,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🛡️",
+		key = "clan",
 		name = "Clan",
 		hint = "Your clan and its pass",
 		color = Color3.fromRGB(190, 160, 255),
@@ -98,6 +110,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "📊",
+		key = "stats",
 		name = "Stats",
 		hint = "How you've been doing",
 		color = Color3.fromRGB(150, 190, 255),
@@ -105,6 +118,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🏪",
+		key = "market",
 		name = "Kit Market",
 		hint = "Buy kits and crates",
 		color = Color3.fromRGB(96, 170, 210),
@@ -112,6 +126,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "🛒",
+		key = "playermarket",
 		name = "Player Market",
 		hint = "Buy and sell cosmetics",
 		color = Color3.fromRGB(240, 180, 80),
@@ -119,6 +134,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "📖",
+		key = "fish",
 		name = "Fish Book",
 		hint = "Your catches",
 		color = Color3.fromRGB(90, 200, 230),
@@ -126,6 +142,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "😀",
+		key = "emotes",
 		name = "Emotes",
 		hint = "Dance and wave (G)",
 		color = Color3.fromRGB(250, 180, 60),
@@ -133,6 +150,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "📸",
+		key = "photo",
 		name = "Photo Mode",
 		hint = "Poses and frames (P)",
 		color = Color3.fromRGB(200, 170, 255),
@@ -140,6 +158,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "📜",
+		key = "messages",
 		name = "Messages",
 		hint = "Everything that popped up",
 		color = Color3.fromRGB(170, 180, 200),
@@ -147,6 +166,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "💎",
+		key = "robux",
 		name = "Robux Shop",
 		hint = "VIP, boosts and more",
 		color = Color3.fromRGB(36, 156, 92),
@@ -154,6 +174,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "⚙️",
+		key = "settings",
 		name = "Settings",
 		hint = "Camera, sound, faster mode",
 		color = Color3.fromRGB(190, 196, 210),
@@ -161,6 +182,7 @@ local TILES: { Tile } = {
 	},
 	{
 		emoji = "👑",
+		key = "admin",
 		name = "Admin",
 		hint = "Owner tools and tests",
 		color = Color3.fromRGB(255, 196, 64),
@@ -170,12 +192,26 @@ local TILES: { Tile } = {
 }
 
 local window: Frame
+local title: TextLabel
 local adminTiles: { GuiObject } = {}
+local labels: { { tile: Tile, name: TextLabel, hint: TextLabel } } = {}
+
+-- Texts in the player's language (it can change in ⚙️ Settings).
+local function translate()
+	title.Text = Lang.t("menu.title")
+	for _, entry in labels do
+		entry.name.Text = Lang.t("tile." .. entry.tile.key, entry.tile.name)
+		entry.hint.Text = Lang.t("tile." .. entry.tile.key .. ".hint", entry.tile.hint)
+	end
+end
 
 function Menu.toggle()
 	window.Visible = not window.Visible
 	for _, tile in adminTiles do
 		tile.Visible = AdminPanel.isAdmin()
+	end
+	if window.Visible then
+		translate()
 	end
 end
 
@@ -195,7 +231,7 @@ function Menu.start()
 		UI.padding(12),
 		UI.new("UISizeConstraint", { MaxSize = Vector2.new(640, 600) }),
 	})
-	UI.label({
+	title = UI.label({
 		Size = UDim2.new(1, -60, 0, 34),
 		Text = "📋 Menu",
 		TextSize = 24,
@@ -246,14 +282,15 @@ function Menu.start()
 			TextSize = 30,
 			Parent = button,
 		})
-		UI.label({
+		local nameLabel = UI.label({
 			Position = UDim2.fromOffset(4, 44),
 			Size = UDim2.new(1, -8, 0, 20),
 			Text = tile.name,
 			TextSize = 15,
+			TextScaled = true,
 			Parent = button,
 		})
-		UI.label({
+		local hintLabel = UI.label({
 			Position = UDim2.fromOffset(4, 64),
 			Size = UDim2.new(1, -8, 0, 28),
 			Text = tile.hint,
@@ -262,6 +299,7 @@ function Menu.start()
 			TextColor3 = UI.Colors.Muted,
 			Parent = button,
 		})
+		table.insert(labels, { tile = tile, name = nameLabel, hint = hintLabel })
 		button.Activated:Connect(function()
 			window.Visible = false
 			tile.open()
@@ -277,6 +315,7 @@ function Menu.start()
 		end
 		return Enum.ContextActionResult.Pass
 	end, false, Enum.KeyCode.M)
+	translate()
 	player:GetAttributeChangedSignal("IsAdmin"):Connect(function()
 		for _, tile in adminTiles do
 			tile.Visible = AdminPanel.isAdmin()

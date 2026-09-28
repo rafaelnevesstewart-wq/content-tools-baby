@@ -5,6 +5,7 @@
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
+local Lang = require(Shared.Lang)
 local ProgressionData = require(Shared.ProgressionData)
 local Remotes = require(Shared.Remotes)
 local TitleData = require(Shared.TitleData)
@@ -141,7 +142,7 @@ local function row(order: number, entry: Row)
 			AnchorPoint = Vector2.new(1, 1),
 			Position = UDim2.fromScale(1, 1),
 			Size = UDim2.fromOffset(96, 26),
-			Text = if wearing then "Wearing" else "Wear",
+			Text = if wearing then Lang.t("achievements.wearing") else Lang.t("achievements.wear"),
 			TextSize = 13,
 			BackgroundColor3 = if wearing then UI.Colors.Good else UI.Colors.Stroke,
 			Parent = frame,
@@ -226,7 +227,7 @@ function AchievementBook.start()
 	})
 	UI.label({
 		Size = UDim2.new(1, -60, 0, 32),
-		Text = "🏅 Achievement Book",
+		Text = Lang.t("window.achievements"),
 		TextSize = 22,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = UI.Colors.Spark,
@@ -264,7 +265,13 @@ function AchievementBook.start()
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
-	for order, entry in { { "Almost", "⏳ Almost there" }, { "Done", "✅ Done" }, { "All", "📚 All" } } do
+	for order, entry in
+		{
+			{ "Almost", Lang.t("achievements.almost") },
+			{ "Done", Lang.t("achievements.done") },
+			{ "All", Lang.t("achievements.all") },
+		}
+	do
 		local button = UI.button({ LayoutOrder = order, Text = entry[2], TextSize = 14, Parent = filters })
 		button.Activated:Connect(function()
 			filter = entry[1]

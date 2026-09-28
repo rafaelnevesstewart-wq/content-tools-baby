@@ -14,6 +14,7 @@ local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 
 local Modules = script.Parent.Parent.Modules
+local Busy = require(Modules.Busy)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 local Usage = require(Modules.Usage)
@@ -193,8 +194,9 @@ local function onAction(player: Player, action: any, userId: any, stars: any): a
 	end
 	if action == "visit" then
 		local character = player.Character
-		if not character or player:GetAttribute("InMatch") then
-			return false, "You can visit bases from the lobby."
+		local busy = Busy.reason(player)
+		if not character or busy then
+			return false, "You can't visit right now (you're " .. (busy or "loading") .. ")."
 		end
 		character:PivotTo(BaseService.visitFrame(entry.plot))
 		return true, "🏗️ This is " .. entry.name .. "'s base!"

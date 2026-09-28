@@ -127,7 +127,9 @@ local function land(player: Player)
 		book.paid = 0
 	end
 	local sparks = math.floor(fish.sparks * (0.8 + 0.4 * size))
-	sparks = math.clamp(FishData.MaxSparksPerDay - book.paid, 0, sparks)
+	if not FishData.AlwaysPays[fish.rarity] then
+		sparks = math.clamp(FishData.MaxSparksPerDay - book.paid, 0, sparks)
+	end
 	book.paid += sparks
 	if sparks > 0 then
 		data.sparks += sparks

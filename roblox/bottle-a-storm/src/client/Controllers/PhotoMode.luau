@@ -191,7 +191,7 @@ local function setActive(on: boolean)
 	if on == active then
 		return
 	end
-	if on and player:GetAttribute("InMatch") then
+	if on and (player:GetAttribute("InMatch") or player:GetAttribute("Dueling") or player:GetAttribute("Boating")) then
 		return
 	end
 	active = on

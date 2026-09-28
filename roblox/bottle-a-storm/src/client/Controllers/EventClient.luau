@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local EventData = require(Shared.EventData)
+local Lang = require(Shared.Lang)
 
 local UI = require(script.Parent.UI)
 
@@ -44,7 +45,7 @@ function EventClient.start()
 		end
 		chip.Visible = event ~= nil
 		if event then
-			chip.Text = "🎪 This week: " .. event.emoji .. " " .. event.name
+			chip.Text = Lang.f("chip.week", { name = event.emoji .. " " .. event.name })
 		end
 		local inMatch = player:GetAttribute("InMatch") == true
 		local mapGravity = workspace:GetAttribute("MapGravity") -- 🌊 Bubble Reef is floaty

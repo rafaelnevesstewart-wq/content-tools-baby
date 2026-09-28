@@ -30,9 +30,10 @@ local function isSmall(item: Instance): boolean
 	if SMALL[item.Name] then
 		return true
 	end
-	-- Everything in a match's map props folder.
+	-- Map props you can't bump into (hiding solid ones would let you walk
+	-- through things that are really there).
 	local props = item:FindFirstAncestor("MapProps")
-	return props ~= nil
+	return props ~= nil and not item.CanCollide
 end
 
 local function hide(item: Instance)

@@ -14,7 +14,7 @@ BoatData.Start = CFrame.lookAt(L + Vector3.new(62, 10, 60), L + Vector3.new(60, 
 BoatData.RingRadius = 10
 BoatData.Speed = 72 -- studs a second at full speed
 BoatData.TimeLimit = 180
-BoatData.StartSparks = 900 -- prize: this minus 5 per second...
+BoatData.StartSparks = 700 -- prize: this minus 5 per second...
 BoatData.MinSparks = 150 -- ...but never less than this
 
 BoatData.Rings = {

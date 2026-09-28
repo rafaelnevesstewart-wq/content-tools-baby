@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Lang = require(Shared.Lang)
 local Remotes = require(Shared.Remotes)
 local SettingsData = require(Shared.SettingsData)
 local Signal = require(Shared.Signal)
@@ -72,7 +73,10 @@ end
 
 local function valueText(setting: SettingsData.Setting, value: any): string
 	if setting.kind == "toggle" then
-		return if value then "ON" else "OFF"
+		return if value then Lang.t("settings.on") else Lang.t("settings.off")
+	end
+	if setting.labels then
+		return setting.labels[value :: number] or tostring(value)
 	end
 	return math.floor((value :: number) * 100 + 0.5) .. "%"
 end
@@ -93,7 +97,7 @@ local function build()
 			}, { UI.corner(10), UI.padding(8) })
 			UI.label({
 				Size = UDim2.new(1, -110, 0, 24),
-				Text = setting.name,
+				Text = Lang.t("setting." .. setting.key .. ".name", setting.name),
 				TextSize = 17,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -102,7 +106,7 @@ local function build()
 			UI.label({
 				Position = UDim2.fromOffset(0, 24),
 				Size = UDim2.new(1, -110, 0, 22),
-				Text = setting.hint,
+				Text = Lang.t("setting." .. setting.key .. ".hint", setting.hint),
 				TextSize = 13,
 				TextWrapped = true,
 				TextXAlignment = Enum.TextXAlignment.Left,
@@ -171,7 +175,7 @@ function Settings.start()
 	})
 	UI.label({
 		Size = UDim2.new(1, -60, 0, 34),
-		Text = "⚙️ Settings",
+		Text = Lang.t("settings.title"),
 		TextSize = 28,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = UI.Colors.Spark,

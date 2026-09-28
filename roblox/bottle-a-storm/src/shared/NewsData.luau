@@ -9,6 +9,17 @@ local NewsData = {}
 
 NewsData.List = {
 	{
+		version = 14,
+		title = "🌍 Português, Español and a smoother game!",
+		lines = {
+			"🌍 Menus in Portuguese and Spanish (⚙️ Settings → Language)",
+			"🎓 A short tutorial in your very first match",
+			"👋 A welcome-back summary of what you missed",
+			"⚖️ Fairer prizes: matches pay more, lobby games a little less",
+			"🎨 Every window has the same look, 🐞 8 bug fixes",
+		},
+	},
+	{
 		version = 13,
 		title = "📋 A tidier, faster Bottle a Storm!",
 		lines = {

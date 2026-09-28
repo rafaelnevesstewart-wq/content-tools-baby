@@ -9,6 +9,7 @@
 local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Lang = require(Shared.Lang)
 local Remotes = require(Shared.Remotes)
 
 local Settings = require(script.Parent.Settings)
@@ -186,7 +187,7 @@ function Toasts.start()
 	})
 	UI.label({
 		Size = UDim2.new(1, -60, 0, 32),
-		Text = "📜 Messages",
+		Text = Lang.t("window.messages"),
 		TextSize = 22,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = UI.Colors.Spark,

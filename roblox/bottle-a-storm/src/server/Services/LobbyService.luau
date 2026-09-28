@@ -64,6 +64,7 @@ LobbyService.arenaTaken = false
 local function free(player: Player): boolean
 	return player.Parent ~= nil
 		and not player:GetAttribute("InMatch")
+		and not player:GetAttribute("Boating")
 		and duelOf[player] == nil
 		and player:GetAttribute("Dueling") == nil
 		and alive(player)
@@ -428,6 +429,19 @@ function LobbyService.startDuel(a: Player, b: Player, onDone: (Player?) -> ()): 
 	end
 	begin(a, b, onDone)
 	return true
+end
+
+-- How many 1v1 duels are going on (the 2v2 Arena Cup waits for them).
+function LobbyService.duelsGoingOn(): number
+	local seen: { [Duel]: boolean } = {}
+	local count = 0
+	for _, duel in duelOf do
+		if not seen[duel] then
+			seen[duel] = true
+			count += 1
+		end
+	end
+	return count
 end
 
 -- Whether a player is in the lobby, alive and not dueling.

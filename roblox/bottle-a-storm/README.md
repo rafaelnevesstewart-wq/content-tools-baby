@@ -333,7 +333,7 @@ win.
 
 On the east side of Games Island there's a pond. Take a rod at the dock, click the water to
 cast, and click again quickly when the bobber dips. There are 14 catches (from an Old Boot to
-the Mythic 🐉 Storm Serpent). Each pays Sparks, up to 5,000 a day. The 📖 Fish Book stand
+the Mythic 🐉 Storm Serpent). Each pays Sparks, up to 3,000 a day (Legendary and Mythic fish always pay in full). The 📖 Fish Book stand
 shows what you've caught and your heaviest of each. Catching 100 earns 🎣 Master Angler.
 
 ## 🏅 Monthly season
@@ -442,7 +442,7 @@ Lobby and Match lists.
 
 ## ⚙️ Settings
 
-Music volume, camera follows the mouse, over-the-shoulder view, big phone buttons, sound effects volume,
+🌍 **Language** (Auto, English, Português, Español), music volume, camera follows the mouse, over-the-shoulder view, big phone buttons, sound effects volume,
 sky extras, 🔕 fewer pop-up messages, ⚡ faster mode (hides small decorations on slow devices),
 damage numbers, kill feed, fancy effects and other players' pets. Saved with your profile.
 
@@ -469,6 +469,42 @@ when.
 Brand-new players (no matches yet) get a welcome window with a gift (⚡1,000, a Rare kit and a
 🦆 Duckling pet) and a short list of what to do first. Players who already played never see
 it.
+
+## 🌍 Languages
+
+The main screens (Menu, icon bar, ⚙️ Settings, welcome and welcome-back windows, the
+tutorial, the top-right chips, Guide Gale's steps, treasure clues, the Achievement Book and the
+loading tips) come in English, Portuguese and Spanish (`src/shared/Lang.luau`). ⚙️ Settings →
+Language picks one; *Auto* follows the player's Roblox language. Server messages (pop-ups,
+signs, the news board) are still English: turn on Roblox's automatic translation (Creator
+Dashboard → your game → Localization) to cover them too.
+
+## 🎓 First-match tutorial
+
+In a new player's very first match, a banner above the resources walks them through it one
+step at a time: protect your bed, pick up resources at the generator, buy blocks, place them,
+then go break an enemy bed. Each step moves on by itself once it's done; *Skip* ends it. It
+never shows again after the first match.
+
+## 👋 Welcome back
+
+Players who were away a day or more (or missed an update) get a window when they join: how
+long they were away, every update they missed (up to 4, newest in full) and what's waiting
+today (daily reward, new treasure clues, new puzzle rooms, this week's special rule).
+Brand-new players skip it.
+
+## ⚖️ Balance
+
+Matches are the main way to earn Sparks (about ⚡2,000 an hour); lobby activities are a
+daily bonus on top. Daily limits: fishing ⚡3,000 (Legendary and Mythic fish always pay in
+full), 5 mini-game prizes (range, parkour race, boat race), 10 paid duel wins, 3 puzzle rooms,
+5 treasure spots, 10 wishes. The big items (⚡50,000-100,000 cosmetics, Mythic kits) take a
+few days of play. Class and pet levels reach 10 in about 60-70 matches.
+
+## 🎨 Window look
+
+Every window uses the same dark panel, rounded corners, blue border, gold title and red ✕,
+and pops open with a small bounce (`WindowStyle`), so new windows match automatically.
 
 ## 👑 Admin panel
 
@@ -533,7 +569,7 @@ src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match
               crates), SpinData, TitleData, HolidayData, WeatherEvents, Products, Sounds,
               SettingsData, ChallengeData, PaintData, EmoteData, PetLevels,
               ClanPassData, BaseData, NewsData, TauntData, EventData (weekly events),
-              GuideData (Guide Gale), ContestData (build contests), FishData, MonthlyData,
+              Lang (English, Portuguese, Spanish), GuideData (Guide Gale), ContestData (build contests), FishData, MonthlyData,
               PetHelpers, CustomData (private match rules), TreasureData, ClassData,
               PuzzleData, BoatData, Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
@@ -559,12 +595,12 @@ src/server/   Main.server.luau starts the services in order
               ClassService, DisasterService, BountyService, PuzzleService, BoatService,
               CostumeService, LegendsService, PlayerShopService, WishService,
               ArenaCupService (BossService also runs the Sea Serpent), LobbyEventService,
-              UsageService (play stats), StarterService
+              UsageService (play stats), StarterService, TutorialService
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
               ItemModels (weapons and items), PetModels, MountModels (and the sky boat),
               FurnitureModels, StormModel (kit
               storms), Effects,
-              Juice, Notify, Codes, Usage (play stats)
+              Juice, Notify, Codes, Usage (play stats), Busy (who's in a match, fight or race)
 src/first/    LoadingScreen (runs first: the loading screen)
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, MatchHUD (and the mode vote), CameraController, ItemShop, Kits, Party, KitController (Shift powers), KitFollower,
@@ -575,12 +611,13 @@ src/client/   Main.client.luau starts the controllers
                MusicController, TournamentHUD, Vote, SpectateController (follow players
                after you're out), BossHUD, Challenges, Clan, Trade, BlockPhysics (slime
                and ladders), Paint, EmoteWheel, ShopStreet, ZombieHUD, HillHUD,
-               NewsPopup, DayNightHUD, TauntPicker, MountController, MiniGameHUD,
+               NewsPopup (what's new and welcome back), DayNightHUD, TauntPicker, MountController, MiniGameHUD,
                BaseBuilder, EventClient (low gravity), GlideController, GuideTracker,
                ContestClient, Gift, FishingController, FishBook, MonthlyChip, PetHelpChip,
                CustomMatch, TreasureChip, PhotoMode, ClassPicker, DisasterChip, PuzzleCode,
                BoatController, CostumeClient, PlayerShop, ArenaCupClient, LobbyEventChip,
-               AchievementBook, Menu, StarterPack, LowDetail (faster mode), Toasts
+               AchievementBook, Menu, StarterPack, TutorialController, WindowStyle,
+               LowDetail (faster mode), Toasts
                (and the 📜 Messages log), Sfx, UI
 ```
 

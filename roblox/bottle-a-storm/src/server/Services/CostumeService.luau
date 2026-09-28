@@ -15,6 +15,7 @@ local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 
 local Modules = script.Parent.Parent.Modules
+local Busy = require(Modules.Busy)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 local Usage = require(Modules.Usage)
@@ -213,8 +214,9 @@ local function onAction(player: Player, action: any, userId: any, stars: any): a
 		local character = player.Character
 		local theirs = entry.player.Character
 		local theirRoot = theirs and theirs:FindFirstChild("HumanoidRootPart") :: BasePart?
-		if not character or player:GetAttribute("InMatch") or not theirRoot or entry.player:GetAttribute("InMatch") then
-			return false, "You can look from the lobby (and they have to be in it too)."
+		local busy = Busy.reason(player)
+		if not character or busy or not theirRoot or Busy.reason(entry.player) then
+			return false, "Not right now (you or they are " .. (busy or Busy.reason(entry.player) or "busy") .. ")."
 		end
 		local spot = theirRoot.CFrame * CFrame.new(0, 0, -6)
 		character:PivotTo(CFrame.lookAt(spot.Position, theirRoot.Position))

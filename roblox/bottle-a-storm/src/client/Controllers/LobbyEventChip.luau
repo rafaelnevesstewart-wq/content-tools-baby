@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
+local Lang = require(Shared.Lang)
 
 local UI = require(script.Parent.UI)
 
@@ -42,7 +43,9 @@ function LobbyEventChip.start()
 		end
 		local left = math.max(0, (tonumber(state.nextAt) or 0) - workspace:GetServerTimeNow())
 		chip.Visible = true
-		chip.Text = "📅 Next: " .. tostring(state.next) .. (if left > 0 then " in " .. Format.time(left) else " soon")
+		chip.Text = if left > 0
+			then Lang.f("chip.next", { event = tostring(state.next), time = Format.time(left) })
+			else Lang.f("chip.nextSoon", { event = tostring(state.next) })
 	end)
 end
 

@@ -13,6 +13,7 @@ local Config = require(Shared.Config)
 local Remotes = require(Shared.Remotes)
 
 local Modules = script.Parent.Parent.Modules
+local Busy = require(Modules.Busy)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 local WorldBuilder = require(Modules.WorldBuilder)
@@ -171,11 +172,18 @@ local function playFight(fight: Fight): Team?
 	end
 	current = fight
 	publish()
+	-- Take the arena: no new 1v1 duels, and let any going on finish first.
+	LobbyService.arenaTaken = true
+	local waitUntil = os.clock() + 60
+	while LobbyService.duelsGoingOn() > 0 and os.clock() < waitUntil do
+		task.wait(1)
+	end
 	side = {}
 	standing = {}
 	for sideIndex, team in { a, b } do
 		for index, player in team.players do
-			if player.Parent and not player:GetAttribute("InMatch") then
+			-- (Someone busy elsewhere, like the boat race, sits this one out.)
+			if player.Parent and Busy.reason(player) == nil then
 				side[player] = team
 				standing[player] = true
 				player:SetAttribute("Dueling", "🏟️ 2v2")
@@ -351,7 +359,9 @@ local function onAction(player: Player, action: any)
 			Notify.player(player, "🏟️ The Arena Cup is full!", "error")
 			return
 		end
-		if player:GetAttribute("InMatch") then
+		local busy = Busy.reason(player)
+		if busy and not player:GetAttribute("Dueling") then
+			Notify.player(player, "🏟️ You can join when you're not " .. busy .. ".", "info")
 			return
 		end
 		table.insert(signups, player)

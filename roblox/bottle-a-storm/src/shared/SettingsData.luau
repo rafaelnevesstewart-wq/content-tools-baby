@@ -10,6 +10,7 @@ export type Setting = {
 	kind: "toggle" | "level",
 	default: boolean | number,
 	levels: { number }?, -- for "level": the steps you click through
+	labels: { [number]: string }?, -- for "level": names for the steps (instead of %)
 	mouseOnly: boolean?, -- only shown with a mouse and keyboard
 	touchOnly: boolean?, -- only shown on phones and tablets
 }
@@ -17,6 +18,15 @@ export type Setting = {
 local SettingsData = {}
 
 SettingsData.List = {
+	{
+		key = "language",
+		name = "🌍 Language",
+		hint = "Auto uses your Roblox language. Some text changes after you rejoin.",
+		kind = "level",
+		default = 0,
+		levels = { 0, 1, 2, 3 },
+		labels = { [0] = "Auto", [1] = "English", [2] = "Português", [3] = "Español" },
+	},
 	{
 		key = "cameraLock",
 		name = "🖱️ Camera follows the mouse",

@@ -81,6 +81,8 @@ local function defaultData()
 		classXp = {}, -- 🎓 class key -> { level, xp }
 		wishes = { day = -1, count = 0 }, -- 🌠 today's shooting-star wishes
 		puzzles = { day = -1, done = {} }, -- 🧩 today's solved puzzle rooms (PuzzleData)
+		lastVisit = 0, -- when you last joined (os.time), for 👋 Welcome back
+		tutorial = "", -- "done" once the 🎓 first-match tutorial is finished or skipped
 		-- 🌟 Challenges (ChallengeService fills these in).
 		challenges = { day = -1, week = -1, bonusClaimed = false },
 		level = 1, -- player level (1-100), then prestige (ProgressionData)

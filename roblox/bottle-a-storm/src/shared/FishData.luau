@@ -148,7 +148,8 @@ FishData.List = {
 FishData.BiteAfter = { 2, 7 } -- seconds before a fish bites
 FishData.ReactSeconds = 1.3 -- how long you have to click once it bites
 FishData.CastRange = 26 -- how far from the pond's middle you can fish from
-FishData.MaxSparksPerDay = 5000 -- fish stop paying Sparks after this much a day (they still count)
+FishData.MaxSparksPerDay = 3000 -- fish stop paying Sparks after this much a day (they still count)...
+FishData.AlwaysPays = { Legendary = true, Mythic = true } :: { [string]: boolean } -- ...except these, which always pay in full
 
 function FishData.get(id: string?): Fish?
 	for _, fish in FishData.List do

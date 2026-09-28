@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
+local Lang = require(Shared.Lang)
 
 local UI = require(script.Parent.UI)
 
@@ -30,7 +31,7 @@ function MonthlyChip.start()
 		local points = player:GetAttribute("MonthlyPoints")
 		chip.Visible = type(points) == "number" and not player:GetAttribute("InMatch")
 		if type(points) == "number" then
-			chip.Text = "🏅 Season: " .. Format.number(points) .. " pts"
+			chip.Text = Lang.f("chip.season", { points = Format.number(points) })
 		end
 	end
 	player:GetAttributeChangedSignal("MonthlyPoints"):Connect(refresh)

@@ -16,6 +16,7 @@ local Remotes = require(Shared.Remotes)
 local RewardsData = require(Shared.RewardsData)
 
 local Modules = script.Parent.Parent.Modules
+local Busy = require(Modules.Busy)
 local Effects = require(Modules.Effects)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
@@ -437,6 +438,10 @@ local function tryCode(player: Player, guess: any): (boolean, string)
 	local door = Vector3.new((ROOM_MIN.X + ROOM_MAX.X) / 2, ROOM_MIN.Y, ROOM_MIN.Z)
 	if not where or (where.Position - door).Magnitude > 14 then
 		return false, "Stand by the Code Door."
+	end
+	local busy = Busy.reason(player)
+	if busy then
+		return false, "Not while you're " .. busy .. "."
 	end
 	if type(guess) ~= "string" or guess ~= code then
 		Juice.sound(player, "oops")

@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
+local Lang = require(Shared.Lang)
 local ProgressionData = require(Shared.ProgressionData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
@@ -116,7 +117,7 @@ local function iconButton(parent: Instance, order: number, emoji: string, captio
 	UI.label({
 		Position = UDim2.fromScale(0, 0.62),
 		Size = UDim2.new(1, 0, 0.34, 0),
-		Text = caption,
+		Text = Lang.t("bar." .. string.lower(caption), caption),
 		TextSize = 13,
 		TextColor3 = Color3.new(1, 1, 1),
 		TextStrokeColor3 = UI.Colors.Outline,

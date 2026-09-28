@@ -75,6 +75,7 @@ local order = {
 	"LobbyEventService",
 	"UsageService",
 	"StarterService",
+	"TutorialService",
 	"MonetizationService",
 }
 
