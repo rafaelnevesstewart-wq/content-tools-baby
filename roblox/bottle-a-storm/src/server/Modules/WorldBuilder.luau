@@ -11,7 +11,6 @@ local Config = require(Shared.Config)
 local WorldBuilder = {}
 
 local GRASS = Color3.fromRGB(88, 124, 62)
-local WILD_GRASS = Color3.fromRGB(96, 132, 66)
 local DIRT = Color3.fromRGB(104, 82, 62)
 local ROCK = Color3.fromRGB(102, 98, 94)
 local WOOD = Color3.fromRGB(120, 88, 60)
@@ -48,64 +47,73 @@ local function part(props: { [string]: any }): Part
 	return p
 end
 
--- A flat disc whose top surface sits at `top`.
-local function disc(
-	parent: Instance,
-	name: string,
-	center: Vector3,
-	radius: number,
-	thickness: number,
-	color: Color3,
-	material: Enum.Material
-): Part
-	return part({
-		Name = name,
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(thickness, radius * 2, radius * 2),
-		CFrame = CFrame.new(center - Vector3.new(0, thickness / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = color,
-		Material = material,
-		Parent = parent,
-	})
-end
-
--- Grass top with shrinking layers of dirt and rock underneath.
-local function floatingIsland(
-	parent: Instance,
-	name: string,
-	center: Vector3,
-	radius: number,
-	grass: Color3,
-	groundMaterial: Enum.Material?,
-	rock: Color3?
-): Model
+-- A floating island made of real Roblox terrain: a grass top whose surface
+-- sits at `center.Y`, a dirt layer with a ragged edge, and a rugged rock
+-- underside that tapers to a point. The returned Model holds the island's
+-- decorations (the terrain itself lives in workspace.Terrain).
+local function floatingIsland(parent: Instance, name: string, center: Vector3, radius: number, rng: Random): Model
+	local terrain = workspace.Terrain
 	local model = Instance.new("Model")
 	model.Name = name
-	local top = disc(model, "Ground", center, radius, 4, grass, groundMaterial or Enum.Material.Grass)
-	-- A rim of darker earth just under the grass edge.
-	disc(model, "Rim", center - Vector3.new(0, 1.2, 0), radius + 0.6, 1.6, rock or DIRT, Enum.Material.Ground)
-	model.PrimaryPart = top
-	local layers = {
-		{ scale = 0.92, depth = 4, thickness = 7, color = rock or DIRT },
-		{ scale = 0.7, depth = 11, thickness = 8, color = rock or ROCK },
-		{ scale = 0.42, depth = 19, thickness = 9, color = rock or ROCK },
-		{ scale = 0.18, depth = 28, thickness = 8, color = rock or ROCK },
-	}
-	for index, layer in layers do
-		disc(
-			model,
-			"Underside" .. index,
-			center - Vector3.new(0, layer.depth, 0),
-			radius * layer.scale,
-			layer.thickness,
-			layer.color,
-			if index == 1 then Enum.Material.Ground else Enum.Material.Rock
-		)
+	model:SetAttribute("Radius", radius)
+	-- Dirt edge first, then grass over it, so the rim shows a little earth.
+	terrain:FillCylinder(CFrame.new(center - Vector3.new(0, 3, 0)), 6, radius + 1.5, Enum.Material.Ground)
+	terrain:FillCylinder(CFrame.new(center - Vector3.new(0, 2, 0)), 4, radius, Enum.Material.Grass)
+	terrain:FillCylinder(CFrame.new(center - Vector3.new(0, 8, 0)), 8, radius * 0.97, Enum.Material.Ground)
+	-- The underside: overlapping rock blobs, smaller and deeper toward a point.
+	local layers = 6
+	for layer = 1, layers do
+		local share = 1 - layer / (layers + 1)
+		local ring = radius * share
+		local depth = 10 + layer * radius * 0.11
+		local count = math.max(3, math.ceil(ring / 7))
+		for _ = 1, count do
+			local angle = rng:NextNumber(0, math.pi * 2)
+			local distance = rng:NextNumber(0, ring * 0.75)
+			local size = ring * rng:NextNumber(0.28, 0.45) + 4
+			terrain:FillBall(
+				center
+					+ Vector3.new(
+						math.cos(angle) * distance,
+						-depth - rng:NextNumber(-3, 3),
+						math.sin(angle) * distance
+					),
+				size,
+				if rng:NextNumber() < 0.25 then Enum.Material.Slate else Enum.Material.Rock
+			)
+		end
 	end
+	terrain:FillBall(
+		center - Vector3.new(0, 10 + (layers + 1) * radius * 0.11, 0),
+		radius * 0.08 + 3,
+		Enum.Material.Rock
+	)
 	model.Parent = parent
 	return model
 end
 
+-- Mossy boulders half sunk into an island, away from the busy spots.
+local function boulders(frame: CFrame, radius: number, count: number, rng: Random, blocked: (Vector3) -> boolean)
+	local placed, tries = 0, 0
+	while placed < count and tries < count * 20 do
+		tries += 1
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local distance = rng:NextNumber(radius * 0.45, radius - 4)
+		local spot = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+		if not blocked(spot) then
+			placed += 1
+			local size = rng:NextNumber(2.5, 5)
+			workspace.Terrain:FillBall(
+				frame:PointToWorldSpace(spot - Vector3.new(0, size * 0.35, 0)),
+				size,
+				if rng:NextNumber() < 0.3 then Enum.Material.Slate else Enum.Material.Rock
+			)
+		end
+	end
+end
+
+-- A rope-and-plank bridge: a planked deck on two support beams, posts every
+-- few studs and sagging rope rails.
 local function bridge(parent: Instance, from: Vector3, to: Vector3)
 	local model = Instance.new("Model")
 	model.Name = "Bridge"
@@ -114,20 +122,59 @@ local function bridge(parent: Instance, from: Vector3, to: Vector3)
 	local frame = CFrame.lookAt((from + flatTo) / 2, flatTo)
 	part({
 		Name = "Deck",
-		Size = Vector3.new(12, 1.5, length),
-		CFrame = frame * CFrame.new(0, -0.75, 0),
-		Color = WOOD,
+		Size = Vector3.new(12, 1, length),
+		CFrame = frame * CFrame.new(0, -0.5, 0),
+		Color = Color3.fromRGB(128, 96, 66),
 		Material = Enum.Material.WoodPlanks,
-		Reflectance = 0,
 		Parent = model,
 	})
 	for _, side in { -1, 1 } do
 		part({
-			Name = "Rail",
-			Size = Vector3.new(0.6, 2.5, length),
-			CFrame = frame * CFrame.new(6 * side, 1.25, 0),
-			Color = Color3.fromRGB(96, 70, 48),
+			Name = "Beam",
+			Size = Vector3.new(1.2, 1.4, length),
+			CFrame = frame * CFrame.new(side * 5, -1.6, 0),
+			Color = Color3.fromRGB(86, 62, 44),
 			Material = Enum.Material.Wood,
+			Parent = model,
+		})
+		local posts = math.floor(length / 12)
+		local previous: Vector3? = nil
+		for i = 0, posts do
+			local z = -length / 2 + i * length / posts
+			local post = part({
+				Name = "Post",
+				Size = Vector3.new(0.7, 4, 0.7),
+				CFrame = frame * CFrame.new(side * 5.8, 1.5, z),
+				Color = Color3.fromRGB(96, 70, 48),
+				Material = Enum.Material.Wood,
+				Parent = model,
+			})
+			local top = post.Position + Vector3.new(0, 1.6, 0)
+			if previous then
+				-- The rope sags a little between posts.
+				local mid = (previous + top) / 2 - Vector3.new(0, 0.5, 0)
+				for _, pair in { { previous, mid }, { mid, top } } do
+					local a, b = pair[1], pair[2]
+					part({
+						Name = "Rope",
+						Shape = Enum.PartType.Cylinder,
+						Size = Vector3.new((b - a).Magnitude, 0.25, 0.25),
+						CFrame = CFrame.lookAt((a + b) / 2, b) * CFrame.Angles(0, math.rad(90), 0),
+						Color = Color3.fromRGB(176, 150, 110),
+						Material = Enum.Material.Fabric,
+						CanCollide = false,
+						Parent = model,
+					})
+				end
+			end
+			previous = top
+		end
+		-- An invisible rail so nobody slips off the side by accident.
+		part({
+			Name = "Rail",
+			Size = Vector3.new(0.4, 3.5, length),
+			CFrame = frame * CFrame.new(side * 5.8, 1.75, 0),
+			Transparency = 1,
 			Parent = model,
 		})
 	end
@@ -334,27 +381,70 @@ local function squashedBall(parent: Instance, name: string, size: Vector3, cfram
 	return p
 end
 
+-- A tree with a tapering trunk, a few branches and clumps of leaves in
+-- slightly different greens.
 local function tree(parent: Instance, ground: Vector3, rng: Random)
-	local height = rng:NextNumber(6, 9)
+	local height = rng:NextNumber(8, 12)
+	local bark = WOOD:Lerp(Color3.fromRGB(70, 52, 38), rng:NextNumber(0.2, 0.7))
+	local lean =
+		CFrame.Angles(math.rad(rng:NextNumber(-4, 4)), rng:NextNumber(0, math.pi * 2), math.rad(rng:NextNumber(-4, 4)))
+	local base = CFrame.new(ground) * lean
 	part({
 		Name = "TreeTrunk",
 		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(height, 1.8, 1.8),
-		CFrame = CFrame.new(ground + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = WOOD:Lerp(Color3.fromRGB(80, 60, 44), rng:NextNumber(0, 0.6)),
+		Size = Vector3.new(height * 0.6, 2, 2),
+		CFrame = base * CFrame.new(0, height * 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = bark,
 		Material = Enum.Material.Wood,
 		Parent = parent,
 	})
+	part({
+		Name = "TreeTrunk",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(height * 0.5, 1.4, 1.4),
+		CFrame = base * CFrame.new(0, height * 0.75, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = bark,
+		Material = Enum.Material.Wood,
+		Parent = parent,
+	})
+	-- Roots flaring out at the bottom.
+	for i = 1, 3 do
+		part({
+			Name = "TreeRoot",
+			Size = Vector3.new(0.8, 0.8, 2.4),
+			CFrame = base * CFrame.Angles(0, i * 2.1, 0) * CFrame.new(0, 0.2, 1.2) * CFrame.Angles(math.rad(25), 0, 0),
+			Color = bark,
+			Material = Enum.Material.Wood,
+			Parent = parent,
+		})
+	end
 	local color = LEAVES[rng:NextInteger(1, #LEAVES)]
-	for i = 1, rng:NextInteger(2, 3) do
-		local size = rng:NextNumber(6, 9)
-		local offset = Vector3.new(rng:NextNumber(-2, 2), height + (i - 1) * 2.2, rng:NextNumber(-2, 2))
+	local crown = base * CFrame.new(0, height, 0)
+	for i = 1, rng:NextInteger(5, 7) do
+		local angle = i * 2.4
+		local spread = if i == 1 then 0 else rng:NextNumber(2, 3.5)
+		local size = rng:NextNumber(4.5, 7)
+		local offset = Vector3.new(math.cos(angle) * spread, rng:NextNumber(-1.5, 2), math.sin(angle) * spread)
+		if i > 1 then
+			-- A branch reaching out to this clump.
+			local from = (base * CFrame.new(0, height * 0.7, 0)).Position
+			local to = (crown * CFrame.new(offset * 0.8)).Position
+			part({
+				Name = "TreeBranch",
+				Size = Vector3.new(0.5, 0.5, (to - from).Magnitude),
+				CFrame = CFrame.lookAt((from + to) / 2, to),
+				Color = bark,
+				Material = Enum.Material.Wood,
+				CanCollide = false,
+				Parent = parent,
+			})
+		end
 		part({
 			Name = "TreeTop",
 			Shape = Enum.PartType.Ball,
-			Size = Vector3.new(size, size, size),
-			CFrame = CFrame.new(ground + offset),
-			Color = color:Lerp(Color3.fromRGB(40, 60, 30), rng:NextNumber(0, 0.25)),
+			Size = Vector3.new(size, size * 0.8, size),
+			CFrame = crown * CFrame.new(offset),
+			Color = color:Lerp(Color3.fromRGB(40, 60, 30), rng:NextNumber(0, 0.35)),
 			Material = Enum.Material.LeafyGrass,
 			CanCollide = false,
 			CanQuery = false,
@@ -550,7 +640,14 @@ function WorldBuilder.build(): { PlotInfo }
 
 	local rng = Random.new(42)
 	local center = Vector3.new(0, 0, 0)
-	local wild = floatingIsland(world, "WildSkies", center, Config.World.CenterRadius, WILD_GRASS)
+	local terrain = workspace.Terrain
+	terrain.Decoration = true -- swaying grass blades on the grass
+	terrain:SetMaterialColor(Enum.Material.Grass, GRASS)
+	terrain:SetMaterialColor(Enum.Material.Ground, DIRT)
+	terrain:SetMaterialColor(Enum.Material.Rock, ROCK)
+	terrain:SetMaterialColor(Enum.Material.LeafyGrass, Color3.fromRGB(78, 112, 52))
+	local wild = floatingIsland(world, "WildSkies", center, Config.World.CenterRadius, rng)
+	boulders(CFrame.new(center), Config.World.CenterRadius, 14, rng, wildBlocked)
 	scatter(wild, CFrame.new(center), rng, { trees = 32, flowers = 55, mushrooms = 20, bushes = 22 }, {
 		treeMin = Config.World.CenterRadius * 0.72,
 		treeMax = Config.World.CenterRadius - 6,
@@ -582,7 +679,8 @@ function WorldBuilder.build(): { PlotInfo }
 		local plotCenter = center + direction * Config.World.PlotRingDistance
 		local cframe = CFrame.lookAt(plotCenter, center)
 
-		local island = floatingIsland(plotsFolder, "Plot" .. index, plotCenter, Config.World.PlotRadius, GRASS)
+		local island = floatingIsland(plotsFolder, "Plot" .. index, plotCenter, Config.World.PlotRadius, rng)
+		boulders(cframe, Config.World.PlotRadius, 5, rng, plotBlocked)
 		island:SetAttribute("PlotIndex", index)
 		table.insert(plots, { index = index, cframe = cframe, model = island })
 		decoratePlot(island, cframe, rng)

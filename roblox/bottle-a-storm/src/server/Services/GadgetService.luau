@@ -13,6 +13,7 @@ local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
 
 local Modules = script.Parent.Parent.Modules
+local ItemModels = require(Modules.ItemModels)
 local Effects = require(Modules.Effects)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
@@ -68,22 +69,6 @@ local function findTool(player: Player, name: string): Tool?
 	return if tool and tool:IsA("Tool") then tool else nil
 end
 
-local function makeTool(name: string, tip: string, size: Vector3, color: Color3, material: Enum.Material): Tool
-	local tool = Instance.new("Tool")
-	tool.Name = name
-	tool.ToolTip = tip
-	tool.CanBeDropped = false
-	local handle = Instance.new("Part")
-	handle.Name = "Handle"
-	handle.Size = size
-	handle.Color = color
-	handle.Material = material
-	handle.CanCollide = false
-	handle.Massless = true
-	handle.Parent = tool
-	return tool
-end
-
 -- Adds or removes a tool so it matches the count (and refreshes its tip).
 local function sync(player: Player, name: string, count: number, build: () -> Tool)
 	local tool = findTool(player, name)
@@ -108,43 +93,17 @@ local function refreshTools(player: Player)
 		if tier > 0 then
 			local data = info.tiers[tier]
 			sync(player, key, 1, function()
-				local tool = makeTool(
-					key,
-					data.name .. " (click a block)",
-					Vector3.new(0.4, 3, 0.4),
-					data.color,
-					Enum.Material.Metal
-				)
+				local tool = if key == "Pickaxe" then ItemModels.pickaxe(data) else ItemModels.axe(data)
 				tool:SetAttribute("Tier", tier)
 				return tool
 			end)
 		end
 	end
-	sync(player, "Storm TNT", kit.tnt, function()
-		local tool = makeTool(
-			"Storm TNT",
-			"Click to place (3 second fuse)",
-			Vector3.one * 1.2,
-			Color3.fromRGB(200, 40, 40),
-			Enum.Material.SmoothPlastic
-		)
-		tool:SetAttribute("PlaceGadget", "TNT")
-		return tool
-	end)
-	sync(player, "Fireball", kit.fireballs, function()
-		local tool =
-			makeTool("Fireball", "Click to throw", Vector3.one, Color3.fromRGB(255, 120, 30), Enum.Material.Neon)
-		local handle = tool:FindFirstChild("Handle") :: Part
-		handle.Shape = Enum.PartType.Ball
-		local fire = Instance.new("Fire")
-		fire.Size = 2
-		fire.Parent = handle
-		return tool
-	end)
+	sync(player, "Storm TNT", kit.tnt, ItemModels.tnt)
+	sync(player, "Fireball", kit.fireballs, ItemModels.fireball)
 	for key, potion in POTIONS do
 		sync(player, potion.tool, kit.potions[key] or 0, function()
-			local tool =
-				makeTool(potion.tool, "Click to drink", Vector3.new(0.6, 1, 0.6), potion.color, Enum.Material.Glass)
+			local tool = ItemModels.potion(potion.tool, potion.color)
 			tool:SetAttribute("Potion", key)
 			return tool
 		end)
@@ -215,14 +174,8 @@ local function placeTNT(player: Player, point: Vector3)
 	end
 	kit.tnt -= 1
 	refreshTools(player)
-	local tnt = Instance.new("Part")
-	tnt.Name = "StormTNT"
-	tnt.Anchored = true
-	tnt.CanCollide = false
-	tnt.Size = Vector3.one * Config.Match.BlockSize * 0.9
+	local tnt = ItemModels.tntBlock(Config.Match.BlockSize * 0.9)
 	tnt.CFrame = CFrame.new(cell)
-	tnt.Color = Color3.fromRGB(200, 40, 40)
-	tnt.Material = Enum.Material.SmoothPlastic
 	tnt.Parent = workspace
 	local sparks = Instance.new("Sparkles")
 	sparks.SparkleColor = Color3.fromRGB(255, 220, 90)

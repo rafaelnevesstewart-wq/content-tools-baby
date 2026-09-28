@@ -12,9 +12,9 @@ local Config = require(Shared.Config)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
-local SkinData = require(Shared.SkinData)
 
 local Modules = script.Parent.Parent.Modules
+local ItemModels = require(Modules.ItemModels)
 local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 
@@ -69,54 +69,6 @@ end
 -- Tools
 ---------------------------------------------------------------------------
 
-local function handlePart(props: { [string]: any }): Part
-	local p = Instance.new("Part")
-	p.Name = "Handle"
-	p.CanCollide = false
-	p.Massless = true
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	for key, value in props do
-		(p :: any)[key] = value
-	end
-	return p
-end
-
-local function makeSword(tier: number, skin: string?): Tool
-	local sword = MatchData.Swords[tier]
-	local tool = Instance.new("Tool")
-	tool.Name = "Sword"
-	tool.ToolTip = sword.name .. " (" .. sword.damage .. " damage)"
-	tool.CanBeDropped = false
-	tool.Grip = CFrame.new(0, 0, -1.5, 0, 0, 1, 1, 0, 0, 0, 1, 0)
-	local blade = handlePart({ Size = Vector3.new(0.3, 0.8, 4), Color = sword.color, Material = sword.material })
-	SkinData.applySword(blade, skin) -- the Sword Skin cosmetic
-	blade.Parent = tool
-	-- The guard always shows the tier, whatever the skin.
-	local guard = handlePart({
-		Name = "Guard",
-		Size = Vector3.new(0.4, 1.8, 0.3),
-		Color = sword.color,
-		Material = sword.material,
-	})
-	guard.CFrame = blade.CFrame * CFrame.new(0, 0, 1.4)
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = blade
-	weld.Part1 = guard
-	weld.Parent = guard
-	guard.Parent = tool
-	return tool
-end
-
-local function simpleTool(name: string, tip: string, size: Vector3, color: Color3, material: Enum.Material): Tool
-	local tool = Instance.new("Tool")
-	tool.Name = name
-	tool.ToolTip = tip
-	tool.CanBeDropped = false
-	handlePart({ Size = size, Color = color, Material = material, Shape = Enum.PartType.Block }).Parent = tool
-	return tool
-end
-
 local function removeTool(player: Player, name: string)
 	for _, container in { player:FindFirstChildOfClass("Backpack"), player.Character } do
 		local tool = container and container:FindFirstChild(name)
@@ -147,7 +99,7 @@ local function refreshTools(player: Player)
 	local wasHolding = sword ~= nil
 	removeTool(player, "Sword")
 	local data = DataService.get(player)
-	local newSword = makeSword(g.sword, data and data.cosmetics.sword)
+	local newSword = ItemModels.sword(g.sword, data and data.cosmetics.sword)
 	giveTool(player, newSword)
 	if wasHolding then
 		local humanoid = humanoidOf(player)
@@ -156,50 +108,49 @@ local function refreshTools(player: Player)
 		end
 	end
 	if g.bow and not hasTool(player, "Bow") then
-		giveTool(
-			player,
-			simpleTool(
-				"Bow",
-				"Click to shoot (needs arrows)",
-				Vector3.new(0.3, 3.4, 0.3),
-				Color3.fromRGB(120, 86, 58),
-				Enum.Material.Wood
-			)
-		)
+		giveTool(player, ItemModels.bow())
 	elseif not g.bow then
 		removeTool(player, "Bow")
 	end
 	if g.apples > 0 and not hasTool(player, "Storm Apple") then
-		local apple = simpleTool(
-			"Storm Apple",
-			"Eat to heal 40",
-			Vector3.one * 0.9,
-			Color3.fromRGB(210, 40, 40),
-			Enum.Material.SmoothPlastic
-		)
-		apple.Handle.Shape = Enum.PartType.Ball
-		giveTool(player, apple)
+		giveTool(player, ItemModels.apple())
 	elseif g.apples <= 0 then
 		removeTool(player, "Storm Apple")
 	end
 	if g.pearls > 0 and not hasTool(player, "Wind Pearl") then
-		local pearl = simpleTool(
-			"Wind Pearl",
-			"Throw to teleport where it lands",
-			Vector3.one * 0.8,
-			Color3.fromRGB(150, 90, 230),
-			Enum.Material.Neon
-		)
-		pearl.Handle.Shape = Enum.PartType.Ball
-		giveTool(player, pearl)
+		giveTool(player, ItemModels.pearl())
 	elseif g.pearls <= 0 then
 		removeTool(player, "Wind Pearl")
 	end
 	publish(player)
 end
 
--- Armor you can see: a chest plate and helmet in the tier's color (cloth is
--- your team's color).
+-- Armor you can see: a chestplate with a team-colored emblem, shoulder
+-- pauldrons, a belt, shin guards and a helmet with a plume in your team's
+-- color. Cloth armor is a tunic and hood in your team's color; chain is
+-- riveted grey plate; iron is polished steel; diamond is shining crystal.
+local ARMOR_LOOK: { [string]: { color: Color3?, material: Enum.Material, reflectance: number, trim: Color3 } } = {
+	Cloth = { color = nil, material = Enum.Material.Fabric, reflectance = 0, trim = Color3.fromRGB(90, 70, 50) },
+	Chain = {
+		color = Color3.fromRGB(150, 152, 158),
+		material = Enum.Material.DiamondPlate,
+		reflectance = 0.05,
+		trim = Color3.fromRGB(96, 98, 104),
+	},
+	Iron = {
+		color = Color3.fromRGB(205, 208, 214),
+		material = Enum.Material.Metal,
+		reflectance = 0.15,
+		trim = Color3.fromRGB(150, 120, 60),
+	},
+	Diamond = {
+		color = Color3.fromRGB(110, 225, 240),
+		material = Enum.Material.Glass,
+		reflectance = 0.25,
+		trim = Color3.fromRGB(230, 250, 255),
+	},
+}
+
 local function dressArmor(player: Player)
 	local character = player.Character
 	if not character then
@@ -210,36 +161,140 @@ local function dressArmor(player: Player)
 		old:Destroy()
 	end
 	local team = MatchService.teamOf(player)
+	local teamColor = if team then team.info.color else Color3.new(1, 1, 1)
 	local armor = MatchData.Armor[gearOf(player).armor]
-	local color = armor.color or (if team then team.info.color else Color3.new(1, 1, 1))
+	local look = ARMOR_LOOK[armor.key] or ARMOR_LOOK.Cloth
+	local color = look.color or teamColor
 	local folder = Instance.new("Folder")
 	folder.Name = "MatchArmor"
-	local function plate(to: BasePart?, size: Vector3, offset: CFrame)
+	local function plate(to: BasePart?, size: Vector3, offset: CFrame, overrides: { [string]: any }?): Part?
 		if not to then
-			return
+			return nil
 		end
 		local p = Instance.new("Part")
 		p.Size = size
 		p.CFrame = to.CFrame * offset
 		p.Color = color
-		p.Material = if armor.key == "Cloth" then Enum.Material.Fabric else Enum.Material.Metal
+		p.Material = look.material
+		p.Reflectance = look.reflectance
 		p.CanCollide = false
 		p.CanQuery = false
 		p.CanTouch = false
 		p.Massless = true
+		p.TopSurface = Enum.SurfaceType.Smooth
+		p.BottomSurface = Enum.SurfaceType.Smooth
+		local extra: { [string]: any } = overrides or {}
+		for key, value in extra do
+			(p :: any)[key] = value
+		end
 		local weld = Instance.new("WeldConstraint")
 		weld.Part0 = to
 		weld.Part1 = p
 		weld.Parent = p
 		p.Parent = folder
+		return p
 	end
-	local torso = (character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")) :: BasePart?
-	local head = character:FindFirstChild("Head") :: BasePart?
+	local function find(...: string): BasePart?
+		for _, name in { ... } do
+			local found = character:FindFirstChild(name)
+			if found and found:IsA("BasePart") then
+				return found
+			end
+		end
+		return nil
+	end
+	local torso = find("UpperTorso", "Torso")
+	local lower = find("LowerTorso")
+	local head = find("Head")
 	if torso then
-		plate(torso, torso.Size + Vector3.new(0.15, 0.1, 0.15), CFrame.new())
+		local size = torso.Size
+		plate(torso, size + Vector3.new(0.18, 0.08, 0.18), CFrame.new())
+		-- A raised ridge down the middle and a team emblem on the chest.
+		plate(torso, Vector3.new(0.2, size.Y * 0.8, 0.12), CFrame.new(0, 0, -size.Z / 2 - 0.12), { Color = look.trim })
+		plate(
+			torso,
+			Vector3.new(0.5, 0.5, 0.08),
+			CFrame.new(0, size.Y * 0.15, -size.Z / 2 - 0.17) * CFrame.Angles(0, 0, math.rad(45)),
+			{ Color = teamColor, Material = Enum.Material.SmoothPlastic, Reflectance = 0 }
+		)
+	end
+	-- Rounded pauldrons on the shoulders.
+	for _, arm in { find("RightUpperArm", "Right Arm"), find("LeftUpperArm", "Left Arm") } do
+		if arm then
+			local size = arm.Size
+			local pauldron =
+				plate(arm, Vector3.new(size.X + 0.35, 0.55, size.Z + 0.35), CFrame.new(0, size.Y * 0.35, 0))
+			if pauldron then
+				local mesh = Instance.new("SpecialMesh")
+				mesh.MeshType = Enum.MeshType.Sphere
+				mesh.Parent = pauldron
+			end
+			plate(
+				arm,
+				Vector3.new(size.X + 0.12, 0.12, size.Z + 0.12),
+				CFrame.new(0, size.Y * 0.12, 0),
+				{ Color = look.trim }
+			)
+		end
+	end
+	if lower then
+		plate(lower, Vector3.new(lower.Size.X + 0.2, 0.35, lower.Size.Z + 0.2), CFrame.new(0, 0, 0), {
+			Color = Color3.fromRGB(70, 50, 36),
+			Material = Enum.Material.Fabric,
+			Reflectance = 0,
+		})
+		plate(lower, Vector3.new(0.4, 0.3, 0.1), CFrame.new(0, 0, -lower.Size.Z / 2 - 0.13), { Color = look.trim })
+	end
+	for _, shin in { find("RightLowerLeg", "Right Leg"), find("LeftLowerLeg", "Left Leg") } do
+		if shin then
+			plate(
+				shin,
+				Vector3.new(shin.Size.X + 0.12, shin.Size.Y * 0.7, 0.2),
+				CFrame.new(0, 0, -shin.Size.Z / 2 - 0.05)
+			)
+		end
 	end
 	if head then
-		plate(head, Vector3.new(head.Size.X + 0.2, 0.5, head.Size.Z + 0.2), CFrame.new(0, head.Size.Y / 2, 0))
+		local size = head.Size
+		if armor.key == "Cloth" then
+			-- A soft hood.
+			local hood = plate(head, size + Vector3.new(0.25, 0.1, 0.25), CFrame.new(0, 0.12, 0.08))
+			if hood then
+				local mesh = Instance.new("SpecialMesh")
+				mesh.MeshType = Enum.MeshType.Sphere
+				mesh.Scale = Vector3.new(1, 1, 1)
+				mesh.Parent = hood
+			end
+		else
+			-- A domed helmet with a brow band, a nose guard and a plume.
+			local dome =
+				plate(head, Vector3.new(size.X + 0.3, size.Y * 0.8, size.Z + 0.3), CFrame.new(0, size.Y * 0.25, 0))
+			if dome then
+				local mesh = Instance.new("SpecialMesh")
+				mesh.MeshType = Enum.MeshType.Sphere
+				mesh.Parent = dome
+			end
+			plate(
+				head,
+				Vector3.new(size.X + 0.32, 0.18, size.Z + 0.32),
+				CFrame.new(0, size.Y * 0.1, 0),
+				{ Color = look.trim }
+			)
+			plate(head, Vector3.new(0.14, size.Y * 0.45, 0.12), CFrame.new(0, -size.Y * 0.05, -size.Z / 2 - 0.12))
+			plate(head, Vector3.new(0.18, 0.7, 0.9), CFrame.new(0, size.Y * 0.75, 0.1), {
+				Color = teamColor,
+				Material = Enum.Material.Fabric,
+				Reflectance = 0,
+			})
+		end
+	end
+	if armor.key == "Diamond" then
+		local chest = folder:FindFirstChildWhichIsA("BasePart")
+		if chest then
+			local sparkles = Instance.new("Sparkles")
+			sparkles.SparkleColor = Color3.fromRGB(200, 250, 255)
+			sparkles.Parent = chest
+		end
 	end
 	folder.Parent = character
 end
@@ -265,9 +320,9 @@ local function damage(victim: Player, attacker: Player, amount: number, push: Ve
 	Juice.sound(attacker, "pop")
 end
 
-local function beamColor(player: Player): Color3
+local function arrowEffect(player: Player): string?
 	local data = DataService.get(player)
-	return SkinData.beam(data and data.cosmetics.fx).color
+	return data and data.cosmetics.fx
 end
 
 local function onSwing(player: Player, aim: any)
@@ -311,23 +366,19 @@ local function onSwing(player: Player, aim: any)
 	end
 end
 
-local function arrow(from: Vector3, to: Vector3, color: Color3)
+local function arrow(from: Vector3, to: Vector3, effect: string?)
 	local distance = (to - from).Magnitude
-	local shaft = Instance.new("Part")
-	shaft.Anchored = true
-	shaft.CanCollide = false
-	shaft.CanQuery = false
-	shaft.CanTouch = false
-	shaft.Size = Vector3.new(0.15, 0.15, 2)
-	shaft.Color = color
-	shaft.Material = Enum.Material.Neon
+	local model = ItemModels.arrow(effect)
+	local shaft = model.PrimaryPart :: BasePart
+	-- Models face -Z; the arrow's point is at its -Z end.
 	shaft.CFrame = CFrame.lookAt(from, to)
-	shaft.Parent = workspace
+	model.Parent = workspace
 	local tween = TweenService:Create(shaft, TweenInfo.new(math.max(0.05, distance / 180), Enum.EasingStyle.Linear), {
 		CFrame = CFrame.lookAt(to, to + (to - from).Unit),
 	})
 	tween:Play()
-	Debris:AddItem(shaft, distance / 180 + 0.3)
+	-- It sticks where it lands for a moment.
+	Debris:AddItem(model, distance / 180 + 3)
 end
 
 local function onShoot(player: Player, aim: any)
@@ -361,7 +412,7 @@ local function onShoot(player: Player, aim: any)
 	params.FilterDescendantsInstances = { player.Character :: Instance }
 	local result = workspace:Raycast(origin, direction.Unit * Config.Match.BowRange, params)
 	local hitPoint = if result then result.Position else origin + direction.Unit * Config.Match.BowRange
-	arrow(origin, hitPoint, beamColor(player))
+	arrow(origin, hitPoint, arrowEffect(player))
 	if result then
 		local model = result.Instance:FindFirstAncestorOfClass("Model")
 		local victim = model and Players:GetPlayerFromCharacter(model)

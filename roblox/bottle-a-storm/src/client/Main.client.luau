@@ -21,6 +21,7 @@ local order = {
 	"WeaponController",
 	"BlockController",
 	"KitController",
+	"CameraController",
 	"ForecastController",
 	"StormAnimator",
 	"FlashyFx",

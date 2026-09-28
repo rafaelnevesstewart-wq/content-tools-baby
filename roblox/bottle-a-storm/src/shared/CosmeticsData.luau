@@ -521,6 +521,31 @@ CosmeticsData.Items = {
 		robux = true,
 		description = "A flawless sparkling diamond blade.",
 	},
+	{
+		id = "RubyBlade",
+		category = "sword",
+		name = "Ruby Blade",
+		emoji = "♦️",
+		cost = 400,
+		description = "A deep red gem blade that glows.",
+	},
+	{
+		id = "ThunderBlade",
+		category = "sword",
+		name = "Thunder Blade",
+		emoji = "⚡",
+		cost = 25000,
+		description = "Dark steel with glowing yellow edges and crackling lightning.",
+	},
+	{
+		id = "ShadowBlade",
+		category = "sword",
+		name = "Shadow Blade",
+		emoji = "🌑",
+		cost = 0,
+		robux = true,
+		description = "A black blade with violet edges, trailing dark smoke.",
+	},
 
 	-- Arrow effects
 	{

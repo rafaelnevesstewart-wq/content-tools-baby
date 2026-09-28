@@ -187,6 +187,13 @@ Products.Cosmetics = {
 		description = "A flawless sparkling diamond blade.",
 	},
 	{
+		key = "Cosmetic_ShadowBlade",
+		id = 0,
+		price = 149,
+		name = "Shadow Blade",
+		description = "A black blade with violet edges, trailing dark smoke.",
+	},
+	{
 		key = "Cosmetic_GoldenRay",
 		id = 0,
 		price = 49,

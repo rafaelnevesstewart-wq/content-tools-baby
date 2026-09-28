@@ -298,35 +298,66 @@ local function cloudBed(team: MatchTeam): Model
 	local bed = Instance.new("Model")
 	bed.Name = "CloudBed"
 	local frame = team.frame * CFrame.new(0, 0, 22)
-	part(bed, {
-		Name = "Frame",
-		CanQuery = false, -- so only placed blocks hide the bed from breakers
-		Size = Vector3.new(6, 1.2, 9),
-		CFrame = frame * CFrame.new(0, 0.6, 0),
-		Color = Color3.fromRGB(120, 88, 60),
-		Material = Enum.Material.Wood,
-	})
-	-- A blanket in the team's color; the cloud mattress is added by
-	-- CosmeticService.dressBed once the team's players are known.
-	part(bed, {
-		Name = "Blanket",
-		CanQuery = false,
-		Size = Vector3.new(6.2, 0.4, 4.6),
-		CFrame = frame * CFrame.new(0, 3.3, -2),
-		Color = team.info.color,
-		Material = Enum.Material.Fabric,
-		CanCollide = false,
-	})
-	part(bed, {
-		Name = "Pillow",
-		CanQuery = false, -- so only placed blocks hide the bed from breakers
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.new(3, 3, 3),
-		CFrame = frame * CFrame.new(0, 2.8, 3.4),
-		Color = Color3.new(1, 1, 1),
-		Material = Enum.Material.SmoothPlastic,
-		CanCollide = false,
-	})
+	-- A wooden bed: legs, side rails, slats, a paneled headboard and a
+	-- footboard. Nothing here blocks the "Break the bed" prompt; only placed
+	-- blocks do.
+	local wood = Color3.fromRGB(112, 80, 54)
+	local darkWood = Color3.fromRGB(84, 58, 40)
+	local function board(name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material?)
+		return part(bed, {
+			Name = name,
+			CanQuery = false,
+			Size = size,
+			CFrame = frame * offset,
+			Color = color,
+			Material = material or Enum.Material.Wood,
+		})
+	end
+	for _, x in { -2.8, 2.8 } do
+		for _, z in { -4.3, 4.3 } do
+			local tall = z > 0
+			board(
+				"Post",
+				Vector3.new(0.6, if tall then 4.4 else 2.2, 0.6),
+				CFrame.new(x, if tall then 2.2 else 1.1, z),
+				darkWood
+			)
+			board("Knob", Vector3.new(0.7, 0.3, 0.7), CFrame.new(x, if tall then 4.55 else 2.35, z), darkWood)
+		end
+		board("Rail", Vector3.new(0.35, 0.7, 8.6), CFrame.new(x, 1.15, 0), wood)
+	end
+	board("Slats", Vector3.new(5.4, 0.25, 8.4), CFrame.new(0, 1, 0), wood, Enum.Material.WoodPlanks)
+	board("Headboard", Vector3.new(5.2, 2.6, 0.3), CFrame.new(0, 2.6, 4.3), wood, Enum.Material.WoodPlanks)
+	board("HeadRail", Vector3.new(5.8, 0.35, 0.45), CFrame.new(0, 4, 4.3), darkWood)
+	board("Footboard", Vector3.new(5.2, 1, 0.3), CFrame.new(0, 1.7, -4.3), wood, Enum.Material.WoodPlanks)
+	-- A blanket in the team's color hanging over the sides; the cloud
+	-- mattress is added by CosmeticService.dressBed once the team is known.
+	local blanket = team.info.color:Lerp(Color3.new(0, 0, 0), 0.08)
+	board("Blanket", Vector3.new(6, 0.3, 5.4), CFrame.new(0, 3.25, -1.3), blanket, Enum.Material.Fabric).CanCollide =
+		false
+	for _, x in { -3.05, 3.05 } do
+		board("BlanketSide", Vector3.new(0.2, 1.6, 5.4), CFrame.new(x, 2.5, -1.3), blanket, Enum.Material.Fabric).CanCollide =
+			false
+	end
+	board(
+		"BlanketFold",
+		Vector3.new(6.05, 0.35, 0.8),
+		CFrame.new(0, 3.35, 1.35),
+		Color3.fromRGB(245, 242, 235),
+		Enum.Material.Fabric
+	).CanCollide =
+		false
+	local pillow = board(
+		"Pillow",
+		Vector3.new(3.4, 0.9, 1.6),
+		CFrame.new(0, 3.1, 3.1),
+		Color3.fromRGB(250, 248, 242),
+		Enum.Material.Fabric
+	)
+	pillow.CanCollide = false
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = pillow
 	local hitbox = part(bed, {
 		Name = "BedHitbox",
 		Size = Vector3.new(6.5, 4, 9.5),
@@ -368,14 +399,57 @@ local function makeGenerator(
 	kinds: { [string]: { every: number, cap: number } },
 	team: MatchTeam?
 ): Generator
+	-- A stone pedestal with an iron rim, four little pillars with glowing
+	-- orbs, and a glowing plate you stand on to pick things up.
+	local base = part(parent, {
+		Name = "GeneratorBase",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.8, 8, 8),
+		CFrame = at * CFrame.new(0, 0.4, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(120, 118, 114),
+		Material = Enum.Material.Cobblestone,
+	})
+	noBuild(base)
+	part(parent, {
+		Name = "GeneratorRim",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.3, 8.5, 8.5),
+		CFrame = at * CFrame.new(0, 0.7, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(70, 72, 78),
+		Material = Enum.Material.Metal,
+	})
+	for i = 0, 3 do
+		local corner = at * CFrame.Angles(0, i * math.pi / 2 + math.pi / 4, 0) * CFrame.new(0, 0, 3.6)
+		part(parent, {
+			Name = "GeneratorPillar",
+			Size = Vector3.new(0.5, 1.6, 0.5),
+			CFrame = corner * CFrame.new(0, 1.6, 0),
+			Color = Color3.fromRGB(95, 94, 92),
+			Material = Enum.Material.Slate,
+		})
+		local orb = part(parent, {
+			Name = "GeneratorOrb",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * 0.6,
+			CFrame = corner * CFrame.new(0, 2.7, 0),
+			Color = color,
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+		})
+		local light = Instance.new("PointLight")
+		light.Color = color
+		light.Range = 6
+		light.Brightness = 0.8
+		light.Parent = orb
+	end
 	local pad = part(parent, {
 		Name = "Generator",
 		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.5, 7, 7),
-		CFrame = at * CFrame.new(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Size = Vector3.new(0.1, 6.2, 6.2),
+		CFrame = at * CFrame.new(0, 0.85, 0) * CFrame.Angles(0, 0, math.rad(90)),
 		Color = color,
 		Material = Enum.Material.Neon,
-		Transparency = 0.2,
+		Transparency = 0.25,
 		CanCollide = false,
 	})
 	noBuild(pad)
@@ -404,32 +478,101 @@ local function generatorText(generator: Generator): string
 	return table.concat(parts, "   ")
 end
 
+-- A market stall: a planked counter, posts, a striped awning in the team's
+-- colors, crates and a barrel, and a shopkeeper behind the counter.
 local function shopStand(team: MatchTeam)
 	local at = team.frame * CFrame.new(-14, 0, -12)
+	local wood = Color3.fromRGB(110, 78, 52)
 	local stand = part(team.folder, {
 		Name = "ItemShop",
-		Size = Vector3.new(4, 3, 4),
-		CFrame = at * CFrame.new(0, 1.5, 0),
-		Color = Color3.fromRGB(96, 70, 48),
+		Size = Vector3.new(6, 3, 2.2),
+		CFrame = at * CFrame.new(0, 1.5, -1),
+		Color = wood,
 		Material = Enum.Material.WoodPlanks,
 	})
 	noBuild(stand)
 	part(team.folder, {
-		Name = "Awning",
-		Size = Vector3.new(6, 0.4, 6),
-		CFrame = at * CFrame.new(0, 6, 0),
-		Color = team.info.color,
-		Material = Enum.Material.Fabric,
+		Name = "CounterTop",
+		Size = Vector3.new(6.4, 0.3, 2.6),
+		CFrame = at * CFrame.new(0, 3.15, -1),
+		Color = Color3.fromRGB(86, 60, 40),
+		Material = Enum.Material.Wood,
 	})
-	for _, x in { -2.6, 2.6 } do
+	part(team.folder, {
+		Name = "BackWall",
+		Size = Vector3.new(6, 5, 0.3),
+		CFrame = at * CFrame.new(0, 2.5, 2.4),
+		Color = wood,
+		Material = Enum.Material.WoodPlanks,
+	})
+	for _, y in { 2.2, 3.6 } do
 		part(team.folder, {
-			Size = Vector3.new(0.4, 6, 0.4),
-			CFrame = at * CFrame.new(x, 3, -2.6),
-			Color = Color3.fromRGB(96, 70, 48),
+			Name = "Shelf",
+			Size = Vector3.new(5.6, 0.2, 0.8),
+			CFrame = at * CFrame.new(0, y, 2),
+			Color = Color3.fromRGB(86, 60, 40),
 			Material = Enum.Material.Wood,
 		})
 	end
-	billboard(stand, 5, "🛒 Item Shop")
+	for _, x in { -3, 3 } do
+		for _, z in { -2.2, 2.4 } do
+			part(team.folder, {
+				Name = "Post",
+				Size = Vector3.new(0.45, 6.6, 0.45),
+				CFrame = at * CFrame.new(x, 3.3, z),
+				Color = Color3.fromRGB(80, 56, 38),
+				Material = Enum.Material.Wood,
+			})
+		end
+	end
+	-- The striped awning, sloping down toward the front.
+	for i = 0, 6 do
+		part(team.folder, {
+			Name = "Awning",
+			Size = Vector3.new(1, 0.15, 5.6),
+			CFrame = at * CFrame.new(-3 + i, 6.8, 0.1) * CFrame.Angles(math.rad(-12), 0, 0),
+			Color = if i % 2 == 0 then team.info.color else Color3.fromRGB(245, 242, 235),
+			Material = Enum.Material.Fabric,
+			CanCollide = false,
+		})
+	end
+	-- Crates and a barrel beside the stall.
+	for index, offset in { Vector3.new(-4.4, 0.8, -0.6), Vector3.new(-4.2, 0.8, 1.2), Vector3.new(-4.3, 2.4, 0.3) } do
+		part(team.folder, {
+			Name = "Crate",
+			Size = Vector3.one * 1.6,
+			CFrame = at * CFrame.new(offset) * CFrame.Angles(0, math.rad(index * 11), 0),
+			Color = Color3.fromRGB(150, 112, 70),
+			Material = Enum.Material.WoodPlanks,
+		})
+	end
+	part(team.folder, {
+		Name = "Barrel",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(2.2, 1.7, 1.7),
+		CFrame = at * CFrame.new(4.3, 1.1, -0.4) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(120, 84, 52),
+		Material = Enum.Material.Wood,
+	})
+	-- Goods on the counter: glowing potion bottles and apples.
+	for index, color in { Color3.fromRGB(120, 220, 255), Color3.fromRGB(140, 240, 120), Color3.fromRGB(200, 170, 255) } do
+		local bottle = part(team.folder, {
+			Name = "Bottle",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * 0.7,
+			CFrame = at * CFrame.new(-2 + index * 0.9, 3.65, -1.3),
+			Color = color,
+			Material = Enum.Material.Glass,
+			Transparency = 0.2,
+			CanCollide = false,
+		})
+		local light = Instance.new("PointLight")
+		light.Color = color
+		light.Range = 4
+		light.Brightness = 0.6
+		light.Parent = bottle
+	end
+	billboard(stand, 6.5, "🛒 Item Shop")
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "ItemShopPrompt"
 	prompt.ActionText = "Open the Item Shop"
@@ -439,6 +582,37 @@ local function shopStand(team: MatchTeam)
 	prompt.MaxActivationDistance = 10
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = stand
+	-- The shopkeeper (a plain Roblox avatar) stands behind the counter.
+	local folder = team.folder
+	task.spawn(function()
+		local ok, keeper = pcall(function()
+			local description = Instance.new("HumanoidDescription")
+			description.HeadColor = Color3.fromRGB(234, 184, 146)
+			description.TorsoColor = team.info.color
+			description.LeftArmColor = Color3.fromRGB(234, 184, 146)
+			description.RightArmColor = Color3.fromRGB(234, 184, 146)
+			description.LeftLegColor = Color3.fromRGB(70, 60, 55)
+			description.RightLegColor = Color3.fromRGB(70, 60, 55)
+			return Players:CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R15)
+		end)
+		if not ok or not keeper or not folder.Parent then
+			return
+		end
+		keeper.Name = "Shopkeeper"
+		for _, p in keeper:GetDescendants() do
+			if p:IsA("BasePart") then
+				p.Anchored = p.Name == "HumanoidRootPart"
+				p.CanCollide = false
+			end
+		end
+		local humanoid = keeper:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid.DisplayName = "Shopkeeper"
+			humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		end
+		keeper:PivotTo(at * CFrame.new(0, 3, 1.1)) -- facing the customers
+		keeper.Parent = folder
+	end)
 end
 
 local function setUpTeam(info: MatchData.TeamInfo, island: WorldBuilder.PlotInfo): MatchTeam

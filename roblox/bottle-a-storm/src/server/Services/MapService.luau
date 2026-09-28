@@ -1,6 +1,6 @@
 -- Map rotation (see MapData): when a match starts, the sky islands get a new
--- look (ground, cliffs, props and a color wash) that's different from the
--- last match. When everyone goes back to the lobby, the Meadow comes back.
+-- look (the terrain's ground and cliffs, props and a color wash) that's
+-- different from the last match. When everyone goes back to the lobby, the Meadow comes back.
 
 local Lighting = game:GetService("Lighting")
 local ServerStorage = game:GetService("ServerStorage")
@@ -17,15 +17,16 @@ local MapService = {}
 
 local rng = Random.new()
 local lastKey = "Meadow"
+local current: MapData.Map? = nil
 local props: Folder? = nil
 local hiddenDecor: { [Instance]: Instance } = {} -- decor folder -> its island
 
-local function piece(parent: Instance, props_: { [string]: any }): Part
+local function piece(parent: Instance, settings: { [string]: any }): Part
 	local p = Instance.new("Part")
 	p.Anchored = true
 	p.TopSurface = Enum.SurfaceType.Smooth
 	p.BottomSurface = Enum.SurfaceType.Smooth
-	for key, value in props_ do
+	for key, value in settings do
 		(p :: any)[key] = value
 	end
 	p.Parent = parent
@@ -138,23 +139,42 @@ local PROPS: { [string]: (Instance, CFrame) -> () } = {
 	end,
 }
 
-local function paint(island: Instance, map: MapData.Map?)
-	for _, child in island:GetChildren() do
-		if child:IsA("BasePart") then
-			if child:GetAttribute("MapColor") == nil then
-				child:SetAttribute("MapColor", child.Color)
-				child:SetAttribute("MapMaterial", child.Material.Name)
-			end
-			local color, material
-			if map and child.Name == "Ground" then
-				color, material = map.ground, map.groundMaterial
-			elseif map and child.Name == "Rim" then
-				color, material = map.rim, map.rimMaterial
-			elseif map and string.sub(child.Name, 1, 9) == "Underside" then
-				color, material = map.rock, map.rockMaterial
-			end
-			child.Color = color or child:GetAttribute("MapColor")
-			child.Material = material or (Enum.Material :: any)[child:GetAttribute("MapMaterial")]
+-- The whole sky world, for swapping terrain materials (a little bigger than
+-- the islands, lined up with the 4-stud terrain grid).
+local function worldRegion(): Region3
+	local reach = Config.World.PlotRingDistance + Config.World.PlotRadius + 16
+	return Region3.new(Vector3.new(-reach, -48, -reach), Vector3.new(reach, 8, reach)):ExpandToGrid(4)
+end
+
+local originalColors: { [Enum.Material]: Color3 } = {}
+
+-- Turns the islands' grass and dirt into the map's materials (or back).
+local function paint(map: MapData.Map, forward: boolean)
+	local terrain = workspace.Terrain
+	local region = worldRegion()
+	if map.grass then
+		terrain:ReplaceMaterial(
+			region,
+			4,
+			if forward then Enum.Material.Grass else map.grass,
+			if forward then map.grass else Enum.Material.Grass
+		)
+	end
+	if map.dirt then
+		terrain:ReplaceMaterial(
+			region,
+			4,
+			if forward then Enum.Material.Ground else map.dirt,
+			if forward then map.dirt else Enum.Material.Ground
+		)
+	end
+	local colors: { [Enum.Material]: Color3 } = map.colors or {}
+	for material, color in colors do
+		if forward then
+			originalColors[material] = originalColors[material] or terrain:GetMaterialColor(material)
+			terrain:SetMaterialColor(material, color)
+		elseif originalColors[material] then
+			terrain:SetMaterialColor(material, originalColors[material])
 		end
 	end
 end
@@ -197,15 +217,11 @@ function MapService.apply(islands: { WorldBuilder.PlotInfo })
 	end
 	local map = options[rng:NextInteger(1, #options)]
 	lastKey = map.key
+	current = map
 	workspace:SetAttribute("MapTheme", map.key)
 	local world = workspace:FindFirstChild("World")
 	local middle = world and world:FindFirstChild("WildSkies")
-	if middle then
-		paint(middle, map)
-	end
-	for _, info in islands do
-		paint(info.model, map)
-	end
+	paint(map, true)
 	tint(map.tint)
 	if map.props then
 		local folder = Instance.new("Folder")
@@ -243,13 +259,9 @@ function MapService.reset()
 		decor.Parent = island
 	end
 	hiddenDecor = {}
-	local world = workspace:FindFirstChild("World")
-	if world then
-		for _, island in world:GetDescendants() do
-			if island:IsA("Model") and island:FindFirstChild("Ground") then
-				paint(island, nil)
-			end
-		end
+	if current then
+		paint(current, false)
+		current = nil
 	end
 	tint(nil)
 	workspace:SetAttribute("MapTheme", "Meadow")

@@ -751,6 +751,17 @@ local TRAILS: { [string]: TrailStyle } = {
 	},
 }
 
+-- Each aura's main color (the glowing halo on the ground under you).
+local AURA_COLORS: { [string]: Color3 } = {
+	SparkleAura = rgb(255, 235, 140),
+	RainHalo = rgb(140, 190, 255),
+	LightningOrbit = rgb(255, 240, 120),
+	HeartAura = rgb(255, 120, 170),
+	RainbowAura = rgb(220, 160, 255),
+	InfernoAura = rgb(255, 120, 40),
+	ThunderGodAura = rgb(190, 220, 255),
+}
+
 local AURAS: { [string]: (BasePart) -> () } = {
 	SparkleAura = function(root)
 		emitter(root, {
@@ -905,6 +916,33 @@ local function finishFlashy(model: Model, anchor: BasePart)
 	end
 end
 
+-- A finishing touch for hats and backs: glowing parts cast a soft light, and
+-- metal, gold and glass pick up a little shine.
+local function polish(model: Model)
+	local lit = model:FindFirstChildWhichIsA("PointLight", true) ~= nil
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") then
+			if p.Material == Enum.Material.Neon and not lit then
+				local light = Instance.new("PointLight")
+				light.Color = p.Color
+				light.Range = 6
+				light.Brightness = 0.9
+				light.Parent = p
+				lit = true
+			elseif
+				(
+					p.Material == Enum.Material.Metal
+					or p.Material == Enum.Material.Foil
+					or p.Material == Enum.Material.Glass
+				) and p.Reflectance == 0
+			then
+				p.Reflectance = 0.15
+			end
+			p.CastShadow = false
+		end
+	end
+end
+
 local function clearCharacter(character: Model)
 	local folder = character:FindFirstChild("Cosmetics")
 	if folder then
@@ -942,6 +980,7 @@ local function applyCharacter(player: Player)
 		hat(model, head.CFrame * CFrame.new(0, head.Size.Y / 2, 0))
 		weldAll(model, head)
 		finishFlashy(model, head)
+		polish(model)
 		model.Parent = folder
 	end
 
@@ -952,19 +991,31 @@ local function applyCharacter(player: Player)
 		back(model, torso.CFrame * CFrame.new(0, 0.1, torso.Size.Z / 2))
 		weldAll(model, torso)
 		finishFlashy(model, torso)
+		polish(model)
 		model.Parent = folder
 	end
 
 	local trail = cosmetics.trail and TRAILS[cosmetics.trail]
 	if trail and root then
-		local function ribbon(name: string, colors: { Color3 }, width: number, lifetime: number, strength: number)
+		-- Three layers: a bright core ribbon from the waist to the feet, a
+		-- wide soft glow around it, and particles falling off as you move,
+		-- plus a light in the trail's color.
+		local function ribbon(
+			name: string,
+			colors: { Color3 },
+			width: number,
+			lifetime: number,
+			strength: number,
+			texture: string?,
+			emission: number
+		)
 			local top = Instance.new("Attachment")
 			top.Name = name .. "Top"
-			top.Position = Vector3.new(0, width * 0.8, 0.3)
+			top.Position = Vector3.new(0, 0.3 + width * 0.25, 0.4)
 			top.Parent = root
 			local bottom = Instance.new("Attachment")
 			bottom.Name = name .. "Bottom"
-			bottom.Position = Vector3.new(0, -width * 0.8, 0.3)
+			bottom.Position = Vector3.new(0, -2.2 - width * 0.25, 0.4)
 			bottom.Parent = root
 			local effect = Instance.new("Trail")
 			effect.Name = name
@@ -973,59 +1024,106 @@ local function applyCharacter(player: Player)
 			effect.Color = colorSequence(colors)
 			effect.Lifetime = lifetime
 			effect.MinLength = 0.05
-			effect.WidthScale = NumberSequence.new(1, 0.1)
+			effect.WidthScale = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.6, 0.6),
+				NumberSequenceKeypoint.new(1, 0.05),
+			})
 			effect.Transparency = NumberSequence.new({
 				NumberSequenceKeypoint.new(0, 1 - strength),
+				NumberSequenceKeypoint.new(0.7, 1 - strength * 0.5),
 				NumberSequenceKeypoint.new(1, 1),
 			})
-			effect.LightEmission = trail.emission
+			effect.LightEmission = emission
+			effect.LightInfluence = if emission > 0.5 then 0 else 1
 			effect.FaceCamera = true
-			if trail.texture then
-				effect.Texture = trail.texture
-				effect.TextureMode = Enum.TextureMode.Wrap
-				effect.TextureLength = 2
+			if texture then
+				effect.Texture = texture
+				effect.TextureMode = Enum.TextureMode.Stretch
 			end
 			effect.Parent = root
 		end
-		ribbon("CosmeticTrail", trail.colors, trail.width, trail.lifetime, 0.95)
-		local glow = trail.glow
-		if glow then
-			ribbon("CosmeticTrailGlow", glow.colors or trail.colors, glow.width, glow.lifetime, 0.35)
-		end
+		ribbon("CosmeticTrail", trail.colors, trail.width, trail.lifetime * 1.2, 0.95, trail.texture, trail.emission)
+		local glow = trail.glow or { colors = trail.colors, width = trail.width * 2, lifetime = trail.lifetime * 0.7 }
+		ribbon(
+			"CosmeticTrailGlow",
+			glow.colors or trail.colors,
+			glow.width,
+			glow.lifetime,
+			0.3,
+			SOFT,
+			math.max(trail.emission, 0.6)
+		)
 		local fx = trail.particles
-		if fx then
-			local spot = Instance.new("Attachment")
-			spot.Name = "CosmeticTrailFx"
-			spot.Position = Vector3.new(0, -1.2, 0.6)
-			spot.Parent = root
-			emitter(spot, {
-				Texture = fx.texture,
-				Color = colorSequence(fx.colors),
-				Size = NumberSequence.new(fx.size, fx.size * 0.3),
-				Transparency = NumberSequence.new(fx.transparency or 0, 1),
-				Rate = fx.rate,
-				Lifetime = NumberRange.new(fx.lifetime * 0.8, fx.lifetime * 1.2),
-				Speed = NumberRange.new(fx.speed * 0.5, fx.speed),
-				SpreadAngle = Vector2.new(180, 180),
-				Acceleration = fx.accel or Vector3.zero,
-				RotSpeed = NumberRange.new(-(fx.spin or 0), fx.spin or 0),
-				Rotation = NumberRange.new(0, 360),
-				LightEmission = fx.emission or 0,
-			})
-		end
-		if trail.light then
-			local light = Instance.new("PointLight")
-			light.Name = "CosmeticTrailLight"
-			light.Color = trail.light
-			light.Range = 10
-			light.Brightness = 1.2
-			light.Parent = root
-		end
+			or {
+				texture = SPARKLES,
+				colors = trail.colors,
+				size = 0.3,
+				rate = 12,
+				lifetime = 0.9,
+				speed = 1,
+				accel = Vector3.new(0, -1.5, 0),
+				emission = 1,
+			}
+		local spot = Instance.new("Attachment")
+		spot.Name = "CosmeticTrailFx"
+		spot.Position = Vector3.new(0, -1.4, 0.6)
+		spot.Parent = root
+		emitter(spot, {
+			Texture = fx.texture,
+			Color = colorSequence(fx.colors),
+			Size = NumberSequence.new(fx.size, fx.size * 0.3),
+			Transparency = NumberSequence.new(fx.transparency or 0, 1),
+			Rate = fx.rate,
+			Lifetime = NumberRange.new(fx.lifetime * 0.8, fx.lifetime * 1.2),
+			Speed = NumberRange.new(fx.speed * 0.5, fx.speed),
+			SpreadAngle = Vector2.new(180, 180),
+			Acceleration = fx.accel or Vector3.zero,
+			RotSpeed = NumberRange.new(-(fx.spin or 0), fx.spin or 0),
+			Rotation = NumberRange.new(0, 360),
+			LightEmission = fx.emission or 0,
+		})
+		local light = Instance.new("PointLight")
+		light.Name = "CosmeticTrailLight"
+		light.Color = trail.light or trail.colors[1]
+		light.Range = if trail.light then 10 else 7
+		light.Brightness = if trail.light then 1.2 else 0.6
+		light.Parent = root
 	end
 
 	local aura = cosmetics.aura and AURAS[cosmetics.aura]
 	if aura and root then
 		aura(root)
+		-- A soft glowing halo on the ground under you, in the aura's color.
+		local haloColor = AURA_COLORS[cosmetics.aura] or rgb(255, 255, 255)
+		local floor = Instance.new("Attachment")
+		floor.Name = "CosmeticAuraFloor"
+		floor.Position = Vector3.new(0, -2.9, 0)
+		floor.Parent = root
+		emitter(floor, {
+			Name = "CosmeticAuraHalo",
+			Texture = SOFT,
+			Color = ColorSequence.new(haloColor),
+			Size = NumberSequence.new(4.5),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.4, 0.55),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Rate = 3,
+			Lifetime = NumberRange.new(1.2),
+			Speed = NumberRange.new(0),
+			Orientation = Enum.ParticleOrientation.VelocityPerpendicular,
+			EmissionDirection = Enum.NormalId.Top,
+			LockedToPart = true,
+			LightEmission = 1,
+		})
+		local glow = Instance.new("PointLight")
+		glow.Name = "CosmeticAuraLight"
+		glow.Color = haloColor
+		glow.Range = 8
+		glow.Brightness = 0.8
+		glow.Parent = root
 		if cosmetics.aura == "ThunderGodAura" then
 			-- Bolts crackle around you and a light throbs.
 			local fx = Instance.new("Model")
