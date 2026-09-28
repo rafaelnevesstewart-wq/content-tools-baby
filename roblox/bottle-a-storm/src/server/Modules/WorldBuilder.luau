@@ -1,6 +1,6 @@
--- Builds the sky world from code: the big middle island (the lobby between
--- matches, and the Crystal and Core generators during them), 8 team islands
--- around it, bridges, clouds and the weather forecast TV. Replace with
+-- Builds the sky world from code: the castle lobby on its own island, the
+-- big middle island (the Crystal and Core generators during matches), 8 team
+-- islands around it, bridges and clouds. Replace with
 -- hand-built terrain later; MatchService only needs the island CFrames.
 
 local Lighting = game:GetService("Lighting")
@@ -585,19 +585,8 @@ local function decoratePlot(island: Model, frame: CFrame, rng: Random)
 	)
 end
 
--- Keeps decorations off the spawn, forecast TV, leaderboards and bridge ends.
+-- Keeps map props off the middle generators' rings and the bridge ends.
 local function wildBlocked(p: Vector3): boolean
-	local spawn = Vector3.new(0, 0, -(Config.World.CenterRadius - 20))
-	if (p - spawn).Magnitude < 14 or (p - Vector3.new(0, 0, -30)).Magnitude < 16 then
-		return true
-	end
-	if p.Z > -128 and p.Z < -76 and math.abs(p.X) < 136 then
-		return true -- leaderboards and the winners' podium
-	end
-	local degrees = math.deg(math.atan2(p.Z, p.X)) % 360
-	if degrees > 192 and degrees < 222 and p.Magnitude > 130 then
-		return true -- the first steps of the lobby parkour
-	end
 	for _, radius in { Config.Match.Crystals.radius, Config.Match.Cores.radius } do
 		if math.abs(p.Magnitude - radius) < 6 then
 			return true -- the middle generators' rings
@@ -612,6 +601,415 @@ local function wildBlocked(p: Vector3): boolean
 		end
 	end
 	return false
+end
+
+---------------------------------------------------------------------------
+-- The lobby: a stone castle on its own island, far from the match islands.
+-- You spawn inside the gate; the courtyard has the fountain, the forecast TV,
+-- the leaderboards and winners' statues, a duel arena and training dummies.
+-- The parkour climbs around the outside of the island.
+
+local LOBBY = Config.Lobby.Center
+local STONE = Color3.fromRGB(150, 146, 138)
+local DARK_STONE = Color3.fromRGB(108, 104, 98)
+local ROOF = Color3.fromRGB(124, 48, 42)
+local IRON = Color3.fromRGB(60, 60, 64)
+local BANNERS = {
+	Color3.fromRGB(176, 36, 40),
+	Color3.fromRGB(40, 84, 176),
+	Color3.fromRGB(52, 132, 64),
+	Color3.fromRGB(214, 170, 48),
+}
+
+local function lobbyPoint(x: number, y: number, z: number): Vector3
+	return LOBBY + Vector3.new(x, y, z)
+end
+
+-- Where things stand in the castle. Everything faces the spawn by the gate
+-- (+Z), so it's the first thing you see.
+WorldBuilder.LobbySpots = {
+	spawn = CFrame.new(lobbyPoint(0, 0.5, 26)),
+	tv = lobbyPoint(0, 0, -26),
+	boards = { lobbyPoint(-33, 0, -35), lobbyPoint(-18, 0, -37), lobbyPoint(18, 0, -37), lobbyPoint(33, 0, -35) },
+	statues = { lobbyPoint(0, 0, -13), lobbyPoint(-9, 0, -11), lobbyPoint(9, 0, -11) },
+	likeSign = CFrame.lookAt(lobbyPoint(-26, 5, 36), lobbyPoint(0, 5, 14)),
+	arena = lobbyPoint(28, 0, 10),
+	arenaRadius = 10,
+	dummies = { lobbyPoint(-33, 0, -8), lobbyPoint(-33, 0, 0), lobbyPoint(-33, 0, 8), lobbyPoint(-33, 0, 16) },
+}
+
+-- Keeps trees and holiday decor out of the castle, off the path from the
+-- gate and away from the first parkour steps. `p` is relative to the lobby
+-- island's center.
+local function lobbyBlocked(p: Vector3): boolean
+	local half = Config.Lobby.CastleHalf + 9
+	if math.abs(p.X) < half and math.abs(p.Z) < half then
+		return true
+	end
+	if math.abs(p.X) < 9 and p.Z > 0 then
+		return true -- the path out of the gate
+	end
+	local degrees = math.deg(math.atan2(p.Z, p.X)) % 360
+	return degrees > Config.Obby.StartAngle - 12 and degrees < Config.Obby.StartAngle + 30 and p.Magnitude > 60
+end
+
+WorldBuilder.isLobbyBlocked = lobbyBlocked
+
+local function castle(parent: Instance)
+	local model = Instance.new("Model")
+	model.Name = "Castle"
+	local half = Config.Lobby.CastleHalf
+	local height = 16
+	local thick = 4
+	local gate = 7
+	local base = CFrame.new(LOBBY)
+	local function block(name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material?): Part
+		return part({
+			Name = name,
+			Size = size,
+			CFrame = cframe,
+			Color = color,
+			Material = material or Enum.Material.Cobblestone,
+			Parent = model,
+		})
+	end
+	local function cylinder(
+		name: string,
+		length: number,
+		width: number,
+		cframe: CFrame,
+		color: Color3,
+		material: Enum.Material?
+	)
+		local p =
+			block(name, Vector3.new(length, width, width), cframe * CFrame.Angles(0, 0, math.rad(90)), color, material)
+		p.Shape = Enum.PartType.Cylinder
+		return p
+	end
+
+	-- Walls: the gate is in the +Z wall (side 0), facing the path out.
+	for side = 0, 3 do
+		local wall = base * CFrame.Angles(0, side * math.pi / 2, 0) * CFrame.new(0, 0, half)
+		local spans = if side == 0
+			then { { -half - thick / 2, -gate }, { gate, half + thick / 2 } }
+			else { { -half - thick / 2, half + thick / 2 } }
+		for _, span in spans do
+			local a, b = span[1], span[2]
+			local length = b - a
+			local middle = (a + b) / 2
+			block("Wall", Vector3.new(length, height, thick), wall * CFrame.new(middle, height / 2, 0), STONE)
+			block("WallBase", Vector3.new(length, 2, thick + 0.8), wall * CFrame.new(middle, 1, 0), DARK_STONE)
+			block(
+				"WallTop",
+				Vector3.new(length, 0.6, thick + 0.6),
+				wall * CFrame.new(middle, height + 0.3, 0),
+				DARK_STONE
+			)
+			local count = math.floor(length / 4)
+			for i = 0, count - 1 do
+				local x = a + (i + 0.5) * length / count
+				block("Merlon", Vector3.new(2, 2.4, thick), wall * CFrame.new(x, height + 1.8, 0), STONE)
+			end
+		end
+		-- Torches and banners on the inside of the wall (inside is local -Z).
+		for _, x in { -32, -12, 12, 32 } do
+			local at = wall * CFrame.new(x, 8, -thick / 2 - 0.45)
+			block("TorchBracket", Vector3.new(0.5, 0.5, 0.9), at, IRON, Enum.Material.Metal)
+			local torch = block(
+				"Torch",
+				Vector3.new(0.45, 1.8, 0.45),
+				at * CFrame.new(0, 0.9, -0.3) * CFrame.Angles(math.rad(-15), 0, 0),
+				Color3.fromRGB(96, 68, 44),
+				Enum.Material.Wood
+			)
+			local fire = Instance.new("Fire")
+			fire.Size = 2.2
+			fire.Heat = 6
+			fire.Color = Color3.fromRGB(255, 150, 60)
+			fire.SecondaryColor = Color3.fromRGB(255, 70, 20)
+			fire.Parent = torch
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromRGB(255, 170, 90)
+			light.Range = 16
+			light.Brightness = 1.4
+			light.Shadows = true
+			light.Parent = torch
+		end
+		for index, x in { -22, 0, 22 } do
+			if not (side == 0 and x == 0) then
+				local color = BANNERS[(side + index) % #BANNERS + 1]
+				local at = wall * CFrame.new(x, 10.5, -thick / 2 - 0.15)
+				block("BannerRod", Vector3.new(5, 0.3, 0.3), at * CFrame.new(0, 3.6, 0), IRON, Enum.Material.Metal)
+				block("Banner", Vector3.new(4, 7, 0.15), at, color, Enum.Material.Fabric)
+				block(
+					"BannerStripe",
+					Vector3.new(4.02, 0.5, 0.17),
+					at * CFrame.new(0, -2.6, 0),
+					BANNERS[4],
+					Enum.Material.Fabric
+				)
+				block(
+					"BannerEmblem",
+					Vector3.new(1.4, 1.4, 0.18),
+					at * CFrame.new(0, 1, 0) * CFrame.Angles(0, 0, math.rad(45)),
+					BANNERS[4],
+					Enum.Material.Fabric
+				)
+			end
+		end
+		if side == 0 then
+			-- The gate: an arch over the opening and a raised portcullis.
+			block("GateTop", Vector3.new(gate * 2, 5, thick), wall * CFrame.new(0, height - 2.5, 0), STONE)
+			block("GateArch", Vector3.new(gate * 2, 1.2, thick + 1), wall * CFrame.new(0, height - 5.6, 0), DARK_STONE)
+			for _, x in { -gate - 0.6, gate + 0.6 } do
+				block(
+					"GatePillar",
+					Vector3.new(1.6, height - 5, thick + 1.2),
+					wall * CFrame.new(x, (height - 5) / 2, 0),
+					DARK_STONE
+				)
+			end
+			for x = -gate + 1, gate - 1, 2 do
+				block(
+					"Portcullis",
+					Vector3.new(0.35, 3.6, 0.35),
+					wall * CFrame.new(x, height - 7.8, 0),
+					IRON,
+					Enum.Material.Metal
+				)
+			end
+			block(
+				"PortcullisBar",
+				Vector3.new(gate * 2 - 1, 0.35, 0.4),
+				wall * CFrame.new(0, height - 9.4, 0),
+				IRON,
+				Enum.Material.Metal
+			)
+			for i = 0, 2 do
+				block("Merlon", Vector3.new(2, 2.4, thick), wall * CFrame.new(-4 + i * 4, height + 1.8, 0), STONE)
+			end
+		end
+	end
+
+	-- Round towers on the corners with pointed roofs and flags.
+	local tower = 26
+	for index, corner in { Vector3.new(-1, 0, -1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, 1) } do
+		local at = base * CFrame.new(corner.X * half, 0, corner.Z * half)
+		cylinder("Tower", tower, 14, at * CFrame.new(0, tower / 2, 0), STONE)
+		cylinder("TowerBase", 2, 15, at * CFrame.new(0, 1, 0), DARK_STONE)
+		cylinder("TowerRim", 1.4, 16, at * CFrame.new(0, tower + 0.7, 0), DARK_STONE)
+		for step = 0, 9 do
+			local width = 17 - step * 1.65
+			cylinder("Roof", 1.2, width, at * CFrame.new(0, tower + 1.9 + step * 1.1, 0), ROOF, Enum.Material.Slate)
+		end
+		for w = 0, 3 do
+			block(
+				"ArrowSlit",
+				Vector3.new(0.9, 3, 0.6),
+				at * CFrame.Angles(0, w * math.pi / 2 + math.pi / 4, 0) * CFrame.new(0, 17, 6.8),
+				Color3.fromRGB(28, 26, 24),
+				Enum.Material.Slate
+			)
+		end
+		local top = tower + 1.9 + 10 * 1.1
+		block("FlagPole", Vector3.new(0.3, 7, 0.3), at * CFrame.new(0, top + 3, 0), WOOD, Enum.Material.Wood)
+		block(
+			"Flag",
+			Vector3.new(0.12, 2.4, 4),
+			at * CFrame.new(0, top + 5.2, 2.1) * CFrame.Angles(0, math.rad(90), 0),
+			BANNERS[index],
+			Enum.Material.Fabric
+		)
+	end
+
+	-- The fountain in the middle of the courtyard.
+	local fountain = lobbyPoint(0, 0, 6)
+	workspace.Terrain:FillCylinder(CFrame.new(fountain - Vector3.new(0, 1, 0)), 4, 6.5, Enum.Material.Water)
+	for i = 0, 17 do
+		local angle = i / 18 * math.pi * 2
+		block(
+			"FountainRim",
+			Vector3.new(2.6, 1.8, 1.2),
+			CFrame.new(fountain) * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0.6, 7.2),
+			Color3.fromRGB(200, 196, 188),
+			Enum.Material.Marble
+		)
+	end
+	cylinder(
+		"FountainPillar",
+		5,
+		1.8,
+		CFrame.new(fountain + Vector3.new(0, 0.5, 0)),
+		Color3.fromRGB(200, 196, 188),
+		Enum.Material.Marble
+	)
+	cylinder(
+		"FountainBowl",
+		0.8,
+		6,
+		CFrame.new(fountain + Vector3.new(0, 3.2, 0)),
+		Color3.fromRGB(200, 196, 188),
+		Enum.Material.Marble
+	)
+	local spout = cylinder(
+		"FountainTop",
+		1.4,
+		1.2,
+		CFrame.new(fountain + Vector3.new(0, 4.2, 0)),
+		Color3.fromRGB(214, 190, 120),
+		Enum.Material.Foil
+	)
+	local spray = Instance.new("ParticleEmitter")
+	spray.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	spray.Color = ColorSequence.new(Color3.fromRGB(210, 235, 255))
+	spray.Size = NumberSequence.new(0.35, 0.1)
+	spray.Transparency = NumberSequence.new(0.2, 1)
+	spray.Lifetime = NumberRange.new(0.9, 1.2)
+	spray.Rate = 60
+	spray.Speed = NumberRange.new(7, 9)
+	spray.SpreadAngle = Vector2.new(18, 18)
+	spray.Acceleration = Vector3.new(0, -24, 0)
+	spray.EmissionDirection = Enum.NormalId.Right -- up, since the cylinder lies on its side
+	spray.Parent = spout
+
+	-- The duel arena: a sand ring with a low fence and an opening.
+	local spots = WorldBuilder.LobbySpots
+	cylinder(
+		"ArenaFloor",
+		0.4,
+		spots.arenaRadius * 2,
+		CFrame.new(spots.arena + Vector3.new(0, 0.2, 0)),
+		Color3.fromRGB(214, 190, 140),
+		Enum.Material.Sand
+	)
+	for i = 0, 19 do
+		if i ~= 10 and i ~= 11 then -- the opening faces the fountain
+			local angle = i / 20 * math.pi * 2
+			block(
+				"ArenaPost",
+				Vector3.new(0.6, 2.4, 0.6),
+				CFrame.new(spots.arena) * CFrame.Angles(0, angle, 0) * CFrame.new(0, 1.2, spots.arenaRadius),
+				Color3.fromRGB(96, 70, 48),
+				Enum.Material.Wood
+			)
+		end
+	end
+	cylinder(
+		"ArenaCircle",
+		0.42,
+		3,
+		CFrame.new(spots.arena + Vector3.new(0, 0.2, 0)),
+		Color3.fromRGB(176, 40, 40),
+		Enum.Material.Fabric
+	)
+
+	-- Signs over the arena and the practice dummies.
+	local function sign(text: string, at: Vector3)
+		local holder = block(
+			"SignPost",
+			Vector3.new(0.6, 7, 0.6),
+			CFrame.new(at + Vector3.new(0, 3.5, 0)),
+			Color3.fromRGB(96, 70, 48),
+			Enum.Material.Wood
+		)
+		local gui = Instance.new("BillboardGui")
+		gui.Size = UDim2.fromOffset(220, 50)
+		gui.StudsOffset = Vector3.new(0, 4.5, 0)
+		gui.MaxDistance = 90
+		gui.Parent = holder
+		local l = label(gui, "Text", text, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 32, Color3.new(1, 1, 1))
+		l.TextStrokeTransparency = 0.3
+	end
+	sign("⚔️ Duel Arena", spots.arena + Vector3.new(-12, 0, -9))
+	sign("🎯 Practice", spots.dummies[1] + Vector3.new(4, 0, -6))
+
+	-- Stone benches and planters around the courtyard.
+	for _, x in { -14, 14 } do
+		for _, z in { 18, -2 } do
+			local at = CFrame.lookAt(lobbyPoint(x, 0, z), fountain)
+			block(
+				"Bench",
+				Vector3.new(5, 0.5, 1.6),
+				at * CFrame.new(0, 1.3, 0),
+				Color3.fromRGB(200, 196, 188),
+				Enum.Material.Marble
+			)
+			for _, bx in { -2, 2 } do
+				block("BenchLeg", Vector3.new(0.6, 1.1, 1.4), at * CFrame.new(bx, 0.55, 0), DARK_STONE)
+			end
+		end
+	end
+
+	model.Parent = parent
+end
+
+local function lobbyIsland(world: Instance, rng: Random)
+	local island = floatingIsland(world, "Lobby", LOBBY, Config.Lobby.Radius, rng)
+	local terrain = workspace.Terrain
+	local half = Config.Lobby.CastleHalf
+	-- A cobbled courtyard and a path from the gate to the island's edge.
+	terrain:FillBlock(
+		CFrame.new(LOBBY - Vector3.new(0, 2, 0)),
+		Vector3.new(half * 2, 4, half * 2),
+		Enum.Material.Cobblestone
+	)
+	local pathLength = Config.Lobby.Radius - half - 6
+	terrain:FillBlock(
+		CFrame.new(lobbyPoint(0, -2, half + pathLength / 2)),
+		Vector3.new(8, 4, pathLength),
+		Enum.Material.Pavement
+	)
+	castle(island)
+	local frame = CFrame.new(LOBBY)
+	local function blocked(p: Vector3): boolean
+		return lobbyBlocked(p)
+	end
+	boulders(frame, Config.Lobby.Radius, 6, rng, blocked)
+	scatter(island, frame, rng, { trees = 16, flowers = 20, mushrooms = 8, bushes = 10 }, {
+		treeMin = 56,
+		treeMax = Config.Lobby.Radius - 6,
+		max = Config.Lobby.Radius - 4,
+	}, blocked)
+
+	local spawn = Instance.new("SpawnLocation")
+	spawn.Name = "LobbySpawn"
+	spawn.Anchored = true
+	spawn.Neutral = true
+	spawn.Shape = Enum.PartType.Cylinder
+	spawn.Size = Vector3.new(1, 12, 12)
+	spawn.CFrame = WorldBuilder.LobbySpots.spawn * CFrame.Angles(0, 0, math.rad(90))
+	spawn.Material = Enum.Material.Marble
+	spawn.Color = Color3.fromRGB(226, 222, 212)
+	spawn.Duration = 0
+	spawn.Parent = island
+	part({
+		Name = "SpawnGlow",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(1.05, 8, 8),
+		CFrame = spawn.CFrame,
+		Color = Color3.fromRGB(150, 220, 255),
+		Material = Enum.Material.Neon,
+		Transparency = 0.35,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = island,
+	})
+
+	forecastTV(island, WorldBuilder.LobbySpots.tv, WorldBuilder.LobbySpots.tv + Vector3.new(0, 0, 10))
+
+	local clouds = Instance.new("Folder")
+	clouds.Name = "Clouds"
+	clouds.Parent = island
+	for _ = 1, 8 do
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local distance = rng:NextNumber(60, 160)
+		cloudCluster(
+			clouds,
+			LOBBY + Vector3.new(math.cos(angle) * distance, rng:NextNumber(-60, -25), math.sin(angle) * distance),
+			rng:NextNumber(14, 26),
+			rng
+		)
+	end
 end
 
 -- Other services use these to keep things off the islands' busy spots
@@ -641,7 +1039,9 @@ function WorldBuilder.build(): { PlotInfo }
 	local rng = Random.new(42)
 	local center = Vector3.new(0, 0, 0)
 	local terrain = workspace.Terrain
-	terrain.Decoration = true -- swaying grass blades on the grass
+	pcall(function()
+		terrain.Decoration = true -- swaying grass blades on the grass (not allowed everywhere)
+	end)
 	terrain:SetMaterialColor(Enum.Material.Grass, GRASS)
 	terrain:SetMaterialColor(Enum.Material.Ground, DIRT)
 	terrain:SetMaterialColor(Enum.Material.Rock, ROCK)
@@ -654,19 +1054,7 @@ function WorldBuilder.build(): { PlotInfo }
 		max = Config.World.CenterRadius - 4,
 	}, wildBlocked)
 
-	local spawn = Instance.new("SpawnLocation")
-	spawn.Name = "WildSpawn"
-	spawn.Anchored = true
-	spawn.Neutral = true
-	spawn.Size = Vector3.new(10, 1, 10)
-	spawn.CFrame = CFrame.new(0, 0.5, -Config.World.CenterRadius + 20)
-	spawn.Material = Enum.Material.Neon
-	spawn.Color = Color3.fromRGB(150, 220, 255)
-	spawn.Transparency = 0.4
-	spawn.Duration = 0
-	spawn.Parent = world
-
-	forecastTV(world, Vector3.new(0, 0, -30), Vector3.new(0, 0, -100))
+	lobbyIsland(world, rng)
 
 	local plotsFolder = Instance.new("Folder")
 	plotsFolder.Name = "Plots"

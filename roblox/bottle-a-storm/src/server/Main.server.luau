@@ -37,10 +37,19 @@ for _, name in order do
 	services[name] = require(Services:FindFirstChild(name))
 end
 
+-- One broken piece must never stop the rest of the game from starting, so
+-- each step runs on its own and problems are printed to the Output.
+local function run(name: string, step: string, fn: () -> ())
+	local ok, problem = pcall(fn)
+	if not ok then
+		warn("[Bottle a Storm] " .. name .. "." .. step .. " failed: " .. tostring(problem))
+	end
+end
+
 for _, name in order do
 	local service = services[name]
 	if service.init then
-		service.init()
+		run(name, "init", service.init)
 	end
 end
 
@@ -49,7 +58,7 @@ end
 for _, name in order do
 	local service = services[name]
 	if service.start and name ~= "DataService" then
-		service.start()
+		run(name, "start", service.start)
 	end
 end
 services.DataService.start()

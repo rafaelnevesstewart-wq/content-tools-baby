@@ -278,6 +278,11 @@ local function breakBed(team: MatchTeam, breaker: Player?)
 				.. "!",
 			"rare"
 		)
+		Remotes.event("KillFeed"):FireAllClients({
+			killer = breaker.DisplayName,
+			killerTeam = breaker:GetAttribute("TeamKey"),
+			bed = team.info.key,
+		})
 		reward(breaker, "Bed")
 		addStat(breaker, "bedsBroken")
 		MatchService.BedBroken:Fire(breaker, team)
@@ -723,10 +728,31 @@ end
 -- Spawning, deaths and winning
 ---------------------------------------------------------------------------
 
+-- Moves a character safely: it's held still while the area around the
+-- destination loads on the player's screen, so nobody drops through ground
+-- that hasn't appeared yet.
+local function teleport(player: Player, character: Model, target: CFrame)
+	local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if root then
+		root.Anchored = true
+	end
+	character:PivotTo(target)
+	task.spawn(function()
+		pcall(function()
+			player:RequestStreamAroundAsync(target.Position, 5)
+		end)
+		task.wait(0.4)
+		if root and root.Parent then
+			root.Anchored = false
+			root.AssemblyLinearVelocity = Vector3.zero
+		end
+	end)
+end
+
 local function spawnInto(player: Player, character: Model)
 	local team = teamByPlayer[player]
 	if phase == "playing" and team and not eliminated[player] then
-		character:PivotTo(team.spawn)
+		teleport(player, character, team.spawn)
 		local shield = Instance.new("ForceField")
 		shield.Visible = true
 		shield.Parent = character
@@ -735,9 +761,9 @@ local function spawnInto(player: Player, character: Model)
 		end)
 		MatchService.PlayerSpawned:Fire(player, team)
 	elseif phase == "playing" and team and eliminated[player] then
-		character:PivotTo(spectatorSpot)
+		teleport(player, character, spectatorSpot)
 	else
-		character:PivotTo(lobbySpot)
+		teleport(player, character, lobbySpot)
 	end
 end
 
@@ -779,20 +805,20 @@ local function onDied(player: Player)
 		player:SetAttribute("Spectating", true)
 	end
 	clearResources(player)
-	local tag = if final then "  💀 FINAL KILL!" else ""
+	Remotes.event("KillFeed"):FireAllClients({
+		killer = if killer then killer.DisplayName else nil,
+		killerTeam = if killer then killer:GetAttribute("TeamKey") else nil,
+		victim = player.DisplayName,
+		victimTeam = team.info.key,
+		final = final,
+	})
 	if killer then
-		Notify.all(
-			"⚔️ " .. killer.DisplayName .. " knocked out " .. player.DisplayName .. tag,
-			if final then "rare" else "info"
-		)
 		reward(killer, if final then "FinalKill" else "Kill")
 		addStat(killer, "kills")
 		if final then
 			addStat(killer, "finalKills")
 		end
 		MatchService.Killed:Fire(killer, player, final)
-	else
-		Notify.all("💨 " .. player.DisplayName .. " fell out of the sky" .. tag, "info")
 	end
 	if final then
 		Notify.player(player, "💀 You're out! Watch the rest of the match from the sky box.", "warn")
@@ -803,7 +829,7 @@ end
 
 local function resetToLobby()
 	MatchService.MatchEnded:Fire()
-	MapService.reset()
+	pcall(MapService.reset)
 	for _, team in teams do
 		team.folder:Destroy()
 		team.roblox:Destroy()
@@ -925,7 +951,10 @@ local function startMatch()
 	Teams:ClearAllChildren()
 	teams = {}
 	buildMiddle()
-	MapService.apply(islands)
+	local mapOk, mapProblem = pcall(MapService.apply, islands)
+	if not mapOk then
+		warn("[Bottle a Storm] The map theme failed: " .. tostring(mapProblem))
+	end
 	for i = 1, teamCount do
 		local islandIndex = math.floor((i - 1) * #islands / teamCount) + 1
 		table.insert(teams, setUpTeam(MatchData.Teams[i], islands[islandIndex]))
@@ -1045,7 +1074,7 @@ function MatchService.init()
 	matchFolder.Name = "Match"
 	matchFolder.Parent = workspace
 	Players.RespawnTime = Config.Match.RespawnSeconds
-	lobbySpot = CFrame.new(0, 4, -(Config.World.CenterRadius - 20))
+	lobbySpot = WorldBuilder.LobbySpots.spawn + Vector3.new(0, 4, 0)
 	buildSpectatorBox()
 	publish()
 end
@@ -1093,66 +1122,84 @@ function MatchService.start()
 			local dt = os.clock() - last
 			last = os.clock()
 			local t = now()
-			if phase == "waiting" then
-				local needed = if RunService:IsStudio() then Config.Match.StudioMinPlayers else Config.Match.MinPlayers
-				local count = #eligible()
-				workspace:SetAttribute("MatchNeeded", needed)
-				workspace:SetAttribute("MatchReady", count)
-				if count >= needed then
-					phase = "starting"
-					phaseEndsAt = t + Config.Match.CountdownSeconds
-					publish()
-					Notify.all(
-						"⚔️ A Bed Wars match starts in " .. Config.Match.CountdownSeconds .. " seconds!",
-						"info"
-					)
-				end
-			elseif phase == "starting" then
-				local needed = if RunService:IsStudio() then Config.Match.StudioMinPlayers else Config.Match.MinPlayers
-				if #eligible() < needed then
-					phase = "waiting"
-					publish()
-				elseif t >= phaseEndsAt then
-					startMatch()
-				end
-			elseif phase == "playing" then
-				local multiplier = tierMultiplier()
-				for _, team in teams do
-					local generator = team.generator
-					if generator then
-						runGenerator(
-							generator,
-							dt,
-							(1 + 0.5 * (team.upgrades.Forge or 0)) * WeatherService.generatorMultiplier(false)
+			-- An error in one step never stops the rounds.
+			local ok, problem = pcall(function()
+				if phase == "waiting" then
+					local needed = if RunService:IsStudio()
+						then Config.Match.StudioMinPlayers
+						else Config.Match.MinPlayers
+					local count = #eligible()
+					workspace:SetAttribute("MatchNeeded", needed)
+					workspace:SetAttribute("MatchReady", count)
+					if count >= needed then
+						phase = "starting"
+						phaseEndsAt = t + Config.Match.CountdownSeconds
+						publish()
+						Notify.all(
+							"⚔️ A Bed Wars match starts in " .. Config.Match.CountdownSeconds .. " seconds!",
+							"info"
 						)
 					end
-					-- Healing Aura: teammates heal on their own island.
-					if (team.upgrades.HealAura or 0) > 0 then
-						for player in team.alive do
-							local root = rootOf(player)
-							local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-							if root and humanoid and humanoid.Health > 0 then
-								local flat = (root.Position - team.frame.Position) * Vector3.new(1, 0, 1)
-								if flat.Magnitude < Config.World.PlotRadius then
-									humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + dt * 2)
+				elseif phase == "starting" then
+					local needed = if RunService:IsStudio()
+						then Config.Match.StudioMinPlayers
+						else Config.Match.MinPlayers
+					if #eligible() < needed then
+						phase = "waiting"
+						publish()
+					elseif t >= phaseEndsAt then
+						local started, startProblem = pcall(startMatch)
+						if not started then
+							-- Something broke while setting up: clean up and try again later.
+							warn("[Bottle a Storm] Couldn't start the match: " .. tostring(startProblem))
+							phase = "playing" -- so resetToLobby's checks run
+							pcall(resetToLobby)
+							phase = "waiting"
+							publish()
+						end
+					end
+				elseif phase == "playing" then
+					local multiplier = tierMultiplier()
+					for _, team in teams do
+						local generator = team.generator
+						if generator then
+							runGenerator(
+								generator,
+								dt,
+								(1 + 0.5 * (team.upgrades.Forge or 0)) * WeatherService.generatorMultiplier(false)
+							)
+						end
+						-- Healing Aura: teammates heal on their own island.
+						if (team.upgrades.HealAura or 0) > 0 then
+							for player in team.alive do
+								local root = rootOf(player)
+								local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+								if root and humanoid and humanoid.Health > 0 then
+									local flat = (root.Position - team.frame.Position) * Vector3.new(1, 0, 1)
+									if flat.Magnitude < Config.World.PlotRadius then
+										humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + dt * 2)
+									end
 								end
 							end
 						end
 					end
-				end
-				for _, generator in middleGenerators do
-					runGenerator(generator, dt, multiplier * WeatherService.generatorMultiplier(true))
-				end
-				if not suddenDeath and t - startedAt >= Config.Match.SuddenDeathAt then
-					suddenDeath = true
-					Notify.all("⚠️ SUDDEN DEATH! Every cloud bed has broken!", "rare")
-					for _, team in teams do
-						breakBed(team, nil)
+					for _, generator in middleGenerators do
+						runGenerator(generator, dt, multiplier * WeatherService.generatorMultiplier(true))
+					end
+					if not suddenDeath and t - startedAt >= Config.Match.SuddenDeathAt then
+						suddenDeath = true
+						Notify.all("⚠️ SUDDEN DEATH! Every cloud bed has broken!", "rare")
+						for _, team in teams do
+							breakBed(team, nil)
+						end
+					end
+					if t >= phaseEndsAt then
+						MatchService.endNow()
 					end
 				end
-				if t >= phaseEndsAt then
-					MatchService.endNow()
-				end
+			end)
+			if not ok then
+				warn("[Bottle a Storm] Match loop problem: " .. tostring(problem))
 			end
 		end
 	end)

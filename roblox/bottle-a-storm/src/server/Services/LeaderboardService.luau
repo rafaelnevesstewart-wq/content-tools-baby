@@ -9,6 +9,8 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
 
+local WorldBuilder = require(script.Parent.Parent.Modules.WorldBuilder)
+
 local DataService = require(script.Parent.DataService)
 
 local LeaderboardService = {}
@@ -29,28 +31,28 @@ local boards: { Board } = {
 		key = "Wins",
 		title = "🏆 Most Bed Wars Wins",
 		stat = "wins",
-		position = Vector3.new(-60, 0, -110),
+		position = WorldBuilder.LobbySpots.boards[1],
 		rows = {},
 	},
 	{
 		key = "Kills",
 		title = "⚔️ Most Knockouts",
 		stat = "kills",
-		position = Vector3.new(0, 0, -116),
+		position = WorldBuilder.LobbySpots.boards[2],
 		rows = {},
 	},
 	{
 		key = "Ranked",
 		title = "👑 Top Ranked",
 		stat = "rankPoints",
-		position = Vector3.new(120, 0, -104),
+		position = WorldBuilder.LobbySpots.boards[4],
 		rows = {},
 	},
 	{
 		key = "Beds",
 		title = "🛏️ Most Beds Broken",
 		stat = "bedsBroken",
-		position = Vector3.new(60, 0, -110),
+		position = WorldBuilder.LobbySpots.boards[3],
 		rows = {},
 	},
 }
@@ -75,8 +77,8 @@ local function buildBoard(board: Board)
 	part.Name = "Leaderboard_" .. board.key
 	part.Anchored = true
 	part.Size = Vector3.new(14, 17, 0.8)
-	-- Faces the spawn (toward -Z).
-	part.CFrame = CFrame.lookAt(board.position + Vector3.new(0, 10, 0), board.position + Vector3.new(0, 10, -10))
+	-- Faces the lobby spawn by the castle gate (toward +Z).
+	part.CFrame = CFrame.lookAt(board.position + Vector3.new(0, 10, 0), board.position + Vector3.new(0, 10, 10))
 	part.Color = Color3.fromRGB(36, 40, 52)
 	part.Material = Enum.Material.Slate
 	part.Parent = folder
@@ -129,7 +131,7 @@ end
 
 local function buildPodium()
 	local colors = { Color3.fromRGB(230, 190, 70), Color3.fromRGB(200, 205, 215), Color3.fromRGB(190, 125, 70) }
-	local spots = { Vector3.new(0, 0, -88), Vector3.new(-11, 0, -86), Vector3.new(11, 0, -86) }
+	local spots = WorldBuilder.LobbySpots.statues
 	for place = 1, 3 do
 		local height = 4 - place
 		local plinth = Instance.new("Part")
@@ -180,7 +182,7 @@ local function updateStatues(userIds: { number })
 				humanoid.NameDisplayDistance = 60
 			end
 			local top = plinth.Position + Vector3.new(0, plinth.Size.Y / 2 + 3, 0)
-			model:PivotTo(CFrame.lookAt(top, top + Vector3.new(0, 0, -1)))
+			model:PivotTo(CFrame.lookAt(top, top + Vector3.new(0, 0, 1)))
 			model.Parent = folder
 		end
 	end

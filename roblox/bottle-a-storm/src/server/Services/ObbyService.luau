@@ -24,7 +24,8 @@ local reached: { [Player]: { [number]: boolean } } = {}
 local function stepPosition(step: number): Vector3
 	local angle = math.rad(Config.Obby.StartAngle + (step - 1) * Config.Obby.StepAngle)
 	local height = Config.Obby.BaseHeight + (step - 1) * Config.Obby.Rise
-	return Vector3.new(math.cos(angle) * Config.Obby.Radius, height, math.sin(angle) * Config.Obby.Radius)
+	return Config.Lobby.Center
+		+ Vector3.new(math.cos(angle) * Config.Obby.Radius, height, math.sin(angle) * Config.Obby.Radius)
 end
 
 local function cloudPlatform(position: Vector3, size: number, checkpoint: boolean): Part

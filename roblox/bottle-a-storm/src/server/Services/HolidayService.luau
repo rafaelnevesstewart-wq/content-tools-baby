@@ -193,11 +193,14 @@ local function buildDecor(holiday: HolidayData.Holiday)
 	while placed < 18 and tries < 400 do
 		tries += 1
 		local angle = random:NextNumber(0, math.pi * 2)
-		local radius = random:NextNumber(35, Config.World.CenterRadius * 0.7)
+		local radius = random:NextNumber(20, Config.Lobby.Radius - 8)
 		local spot = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
-		if not WorldBuilder.isWildBlocked(spot) then
+		if not WorldBuilder.isLobbyBlocked(spot) then
 			placed += 1
-			build(folder, CFrame.new(spot) * CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0))
+			build(
+				folder,
+				CFrame.new(Config.Lobby.Center + spot) * CFrame.Angles(0, random:NextNumber(0, math.pi * 2), 0)
+			)
 		end
 	end
 	folder.Parent = workspace

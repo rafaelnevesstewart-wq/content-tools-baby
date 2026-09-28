@@ -9,7 +9,7 @@ local ForecastController = {}
 
 local function screens(): { Instance }
 	local world = workspace:FindFirstChild("World")
-	local tv = world and world:FindFirstChild("ForecastTV")
+	local tv = world and world:FindFirstChild("ForecastTV", true)
 	local screen = tv and tv:FindFirstChild("Screen")
 	if not screen then
 		return {}

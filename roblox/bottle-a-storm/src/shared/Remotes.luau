@@ -17,6 +17,8 @@ local EVENTS = {
 	"PartyAction", -- client -> server: ("invite" | "accept" | "decline" | "leave" | "kick", userId)
 	"PartyInvite", -- server -> client: (fromUserId, fromName)
 	"Victory", -- server -> client: (teamKey) your team won: dance!
+	"DamageShown", -- server -> client: (position, amount) you hit someone
+	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed
 	"UseGadget", -- client -> server: ("TNT" | "Fireball" | potion key | "Mine", aimPoint)
 }
 

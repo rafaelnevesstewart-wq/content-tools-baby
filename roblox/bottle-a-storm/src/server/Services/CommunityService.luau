@@ -10,6 +10,7 @@ local Remotes = require(Shared.Remotes)
 local Modules = script.Parent.Parent.Modules
 local Codes = require(Modules.Codes)
 local Notify = require(Modules.Notify)
+local WorldBuilder = require(Modules.WorldBuilder)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
@@ -65,13 +66,13 @@ local function checkGroup(player: Player): boolean
 	return inGroup
 end
 
--- The like-goal sign near the lobby spawn.
+-- The like-goal sign by the castle gate, facing the courtyard.
 local function buildLikeSign()
 	local board = Instance.new("Part")
 	board.Name = "LikeGoalSign"
 	board.Anchored = true
 	board.Size = Vector3.new(12, 6, 0.6)
-	board.CFrame = CFrame.new(44, 5, -88)
+	board.CFrame = WorldBuilder.LobbySpots.likeSign
 	board.Color = Color3.fromRGB(96, 70, 48)
 	board.Material = Enum.Material.Wood
 	board.Parent = workspace
@@ -79,7 +80,7 @@ local function buildLikeSign()
 		local post = Instance.new("Part")
 		post.Anchored = true
 		post.Size = Vector3.new(0.6, 5, 0.6)
-		post.CFrame = CFrame.new(44 + x, 1, -88)
+		post.CFrame = board.CFrame * CFrame.new(x, -4, 0)
 		post.Color = Color3.fromRGB(80, 60, 42)
 		post.Material = Enum.Material.Wood
 		post.Parent = board

@@ -349,6 +349,40 @@ function ItemModels.arrow(effect: string?): Model
 	return model
 end
 
+-- The Knockback Stick: a gnarled branch wrapped in a glowing enchantment.
+function ItemModels.stick(): Tool
+	local tool, handle = newTool(
+		"Knockback Stick",
+		"Barely hurts, knocks people flying",
+		{ Size = Vector3.new(0.24, 0.24, 1), Color = LEATHER, Material = M.Fabric }
+	)
+	piece(tool, {
+		Size = Vector3.new(0.22, 0.22, 3),
+		CFrame = CFrame.new(0, 0, 1.3) * CFrame.Angles(math.rad(3), math.rad(2), 0),
+		Color = rgb(120, 86, 56),
+		Material = M.Wood,
+	})
+	piece(tool, {
+		Size = Vector3.new(0.14, 0.14, 0.6),
+		CFrame = CFrame.new(0, 0.2, 2.2) * CFrame.Angles(math.rad(-35), 0, 0),
+		Color = rgb(110, 78, 50),
+		Material = M.Wood,
+	})
+	for i = 0, 3 do
+		piece(tool, {
+			Size = Vector3.new(0.28, 0.28, 0.08),
+			CFrame = CFrame.new(0, 0, 1.2 + i * 0.5),
+			Color = rgb(190, 120, 255),
+			Material = M.Neon,
+		})
+	end
+	local sparkles = Instance.new("Sparkles")
+	sparkles.SparkleColor = rgb(200, 150, 255)
+	sparkles.Parent = handle
+	weldAll(tool, handle)
+	return tool
+end
+
 ---------------------------------------------------------------------------
 -- Pickaxes and axes
 ---------------------------------------------------------------------------

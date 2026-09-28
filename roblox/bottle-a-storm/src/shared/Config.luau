@@ -26,6 +26,8 @@ Config.Match = {
 	TierUpAt = { 360, 720 }, -- the middle generators speed up at these times
 	-- Combat.
 	HitCooldown = 0.45,
+	StickDamage = 4, -- the Knockback Stick barely hurts...
+	StickKnockback = 2.6, -- ...but sends people flying
 	SwordRange = 9,
 	Knockback = 32,
 	BowDamage = 22,
@@ -53,6 +55,15 @@ Config.Match = {
 	BedBreakSeconds = 2.5,
 }
 
+-- The lobby: a floating castle island of its own next to the battle map,
+-- where you wait between matches (spawn, leaderboards, forecast TV, duel
+-- arena, training dummies and the parkour).
+Config.Lobby = {
+	Center = Vector3.new(0, 20, -620), -- the island's grass top
+	Radius = 90,
+	CastleHalf = 44, -- the castle walls are a square this far from the center
+}
+
 -- Parties (👥 Party): friends who always end up on the same team.
 Config.Party = {
 	MaxSize = 4,
@@ -64,7 +75,7 @@ Config.Party = {
 Config.MaxPlots = 8
 
 Config.World = {
-	CenterRadius = 165, -- the middle island: the lobby, and the Crystal and Core generators
+	CenterRadius = 165, -- the middle island: the Crystal and Core generators (the lobby is the castle island)
 	PlotRadius = 58,
 	PlotRingDistance = 340, -- distance from the world center to each team island
 	VoidKillY = -120, -- fall below this and you're knocked out
@@ -171,8 +182,8 @@ Config.Admin = {
 -- Lobby parkour: a hidden path of cloud platforms from the edge of the middle
 -- island up to a secret island with a free Epic kit once a day.
 Config.Obby = {
-	StartAngle = 200, -- degrees around the middle island
-	Radius = 150,
+	StartAngle = 60, -- degrees around the lobby island (it starts outside the castle gate)
+	Radius = 95,
 	Steps = 30,
 	StepAngle = 3.3, -- degrees between platforms
 	Rise = 3.4, -- studs up per platform

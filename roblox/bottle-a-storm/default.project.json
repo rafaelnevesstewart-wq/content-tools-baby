@@ -29,6 +29,11 @@
         "Technology": "Future",
         "GlobalShadows": true
       }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false
+      }
     }
   }
 }

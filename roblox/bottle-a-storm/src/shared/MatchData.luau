@@ -170,6 +170,15 @@ MatchData.Shop = {
 		description = "38 damage per hit.",
 	},
 	{
+		key = "KnockbackStick",
+		name = "Knockback Stick",
+		emoji = "🪄",
+		tab = "Weapons",
+		cost = 5,
+		currency = "Silver",
+		description = "Barely hurts, but knocks people flying off bridges! Lost when you die.",
+	},
+	{
 		key = "Bow",
 		name = "Bow",
 		emoji = "🏹",

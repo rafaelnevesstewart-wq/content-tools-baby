@@ -28,14 +28,30 @@ local CombatService = {}
 
 -- (attacker) whenever a player hurts an enemy (an invisible player shows up).
 CombatService.Attacked = Signal.new()
+-- (player, aim, weaponName) a swing that didn't hit a player (lucky blocks,
+-- training dummies).
+CombatService.Swung = Signal.new()
 
-type Gear = { sword: number, armor: number, bow: boolean, arrows: number, apples: number, pearls: number }
+-- Set by LobbyService: who a player is dueling in the lobby (nil if nobody).
+CombatService.duelOpponent = function(_player: Player): Player?
+	return nil
+end
+
+type Gear = {
+	sword: number,
+	armor: number,
+	bow: boolean,
+	arrows: number,
+	apples: number,
+	pearls: number,
+	stick: boolean,
+}
 
 local gear: { [Player]: Gear } = {}
 local lastSwing: { [Player]: number } = {}
 local lastShot: { [Player]: number } = {}
 
-local ITEM_TOOLS = { "Sword", "Bow", "Storm Apple", "Wind Pearl" }
+local ITEM_TOOLS = { "Sword", "Bow", "Storm Apple", "Wind Pearl", "Knockback Stick" }
 
 local function rootOf(player: Player): BasePart?
 	local character = player.Character
@@ -50,7 +66,7 @@ end
 local function gearOf(player: Player): Gear
 	local g = gear[player]
 	if not g then
-		g = { sword = 1, armor = 1, bow = false, arrows = 0, apples = 0, pearls = 0 }
+		g = { sword = 1, armor = 1, bow = false, arrows = 0, apples = 0, pearls = 0, stick = false }
 		gear[player] = g
 	end
 	return g
@@ -121,6 +137,11 @@ local function refreshTools(player: Player)
 		giveTool(player, ItemModels.pearl())
 	elseif g.pearls <= 0 then
 		removeTool(player, "Wind Pearl")
+	end
+	if g.stick and not hasTool(player, "Knockback Stick") then
+		giveTool(player, ItemModels.stick())
+	elseif not g.stick then
+		removeTool(player, "Knockback Stick")
 	end
 	publish(player)
 end
@@ -314,6 +335,10 @@ local function damage(victim: Player, attacker: Player, amount: number, push: Ve
 	local taken = math.max(0.3, armor.taken - 0.06 * protection)
 	MatchService.recordHit(victim, attacker)
 	humanoid:TakeDamage(amount * taken)
+	local head = character:FindFirstChild("Head") :: BasePart?
+	if head then
+		Remotes.event("DamageShown"):FireClient(attacker, head.Position, math.floor(amount * taken + 0.5))
+	end
 	CombatService.Attacked:Fire(attacker)
 	Juice.knock(victim, push * WeatherService.knockbackMultiplier())
 	Juice.sound(victim, "zap")
@@ -326,7 +351,12 @@ local function arrowEffect(player: Player): string?
 end
 
 local function onSwing(player: Player, aim: any)
-	if not MatchService.isPlaying(player) or not (player.Character and player.Character:FindFirstChild("Sword")) then
+	local character = player.Character
+	local weapon = character and (character:FindFirstChild("Sword") or character:FindFirstChild("Knockback Stick"))
+	local playing = MatchService.isPlaying(player)
+	local opponent = CombatService.duelOpponent(player)
+	-- In a match you must still be in it; in the lobby you can practice and duel.
+	if not weapon or (player:GetAttribute("InMatch") and not playing) then
 		return
 	end
 	if os.clock() - (lastSwing[player] or 0) < Config.Match.HitCooldown then
@@ -337,12 +367,14 @@ local function onSwing(player: Player, aim: any)
 	if not root then
 		return
 	end
-	-- Hit the closest enemy in front of you.
+	-- Hit the closest enemy (or duel opponent) in front of you.
 	local best: Player? = nil
 	local bestDistance = Config.Match.SwordRange
 	for _, other in Players:GetPlayers() do
 		local otherRoot = rootOf(other)
-		if other ~= player and otherRoot and MatchService.isEnemy(player, other) and MatchService.isPlaying(other) then
+		local foe = (playing and MatchService.isEnemy(player, other) and MatchService.isPlaying(other))
+			or (opponent ~= nil and other == opponent)
+		if other ~= player and otherRoot and foe then
 			local offset = otherRoot.Position - root.Position
 			local distance = offset.Magnitude
 			local facing = root.CFrame.LookVector:Dot(offset.Unit)
@@ -352,17 +384,24 @@ local function onSwing(player: Player, aim: any)
 		end
 	end
 	if best then
+		local stick = (weapon :: Instance).Name == "Knockback Stick"
 		local sword = MatchData.Swords[gearOf(player).sword]
-		local amount = sword.damage + 4 * MatchService.upgradeLevel(player, "Sharpness")
+		local amount = if stick
+			then Config.Match.StickDamage
+			else sword.damage + 4 * MatchService.upgradeLevel(player, "Sharpness")
+		local push = Config.Match.Knockback * (if stick then Config.Match.StickKnockback else 1)
 		local otherRoot = rootOf(best) :: BasePart
 		local flat = (otherRoot.Position - root.Position) * Vector3.new(1, 0, 1)
 		local direction = if flat.Magnitude > 0.1 then flat.Unit else root.CFrame.LookVector
-		damage(best, player, amount, direction * Config.Match.Knockback + Vector3.new(0, 14, 0))
+		damage(best, player, amount, direction * push + Vector3.new(0, if stick then 30 else 14, 0))
 		return
 	end
-	-- Nobody there: maybe a block.
 	if typeof(aim) == "Vector3" then
-		BlockService.hit(player, aim)
+		CombatService.Swung:Fire(player, aim, (weapon :: Instance).Name)
+		-- Nobody there: maybe a block.
+		if playing then
+			BlockService.hit(player, aim)
+		end
 	end
 end
 
@@ -479,6 +518,8 @@ function CombatService.check(player: Player, key: string): string?
 		return "You already have armor that good!"
 	elseif key == "Bow" and g.bow then
 		return "You already have a bow."
+	elseif key == "KnockbackStick" and g.stick then
+		return "You already have a Knockback Stick."
 	elseif key == "Arrows" and not g.bow then
 		return "Buy a bow first!"
 	elseif
@@ -488,6 +529,7 @@ function CombatService.check(player: Player, key: string): string?
 		and key ~= "Arrows"
 		and key ~= "StormApple"
 		and key ~= "WindPearl"
+		and key ~= "KnockbackStick"
 	then
 		return "Unknown item."
 	end
@@ -516,6 +558,8 @@ function CombatService.give(player: Player, key: string, amount: number?): strin
 		g.apples += 1
 	elseif key == "WindPearl" then
 		g.pearls += 1
+	elseif key == "KnockbackStick" then
+		g.stick = true
 	end
 	refreshTools(player)
 	return nil
@@ -534,13 +578,18 @@ function CombatService.start()
 		g.arrows = 0
 		g.apples = 0
 		g.pearls = 0
+		g.stick = false
 		task.wait(0.1)
 		refreshTools(player)
 		dressArmor(player)
 	end)
 	-- A new sword skin shows right away.
 	CosmeticService.Changed:Connect(function(player, category)
-		if category == "sword" and gear[player] and MatchService.isPlaying(player) then
+		if
+			category == "sword"
+			and gear[player]
+			and (MatchService.isPlaying(player) or not player:GetAttribute("InMatch"))
+		then
 			refreshTools(player)
 		end
 	end)
@@ -555,11 +604,39 @@ function CombatService.start()
 		end
 		gear = {}
 	end)
+	-- In the lobby everyone carries a practice sword (training dummies and
+	-- duels).
+	local function onPlayer(player: Player)
+		player.CharacterAdded:Connect(function()
+			task.wait(0.5)
+			if player.Parent and not player:GetAttribute("InMatch") then
+				CombatService.lobbyGear(player, 1)
+			end
+		end)
+	end
+	Players.PlayerAdded:Connect(onPlayer)
+	for _, player in Players:GetPlayers() do
+		onPlayer(player)
+	end
 	Players.PlayerRemoving:Connect(function(player)
 		gear[player] = nil
 		lastSwing[player] = nil
 		lastShot[player] = nil
 	end)
+end
+
+-- Lobby gear: just a sword of this tier (1 = wood for practice, duels use
+-- iron) with cloth armor.
+function CombatService.lobbyGear(player: Player, swordTier: number)
+	local g = gearOf(player)
+	g.sword = swordTier
+	g.armor = 1
+	g.bow = false
+	g.arrows = 0
+	g.apples = 0
+	g.pearls = 0
+	g.stick = false
+	refreshTools(player)
 end
 
 return CombatService
