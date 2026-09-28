@@ -1,14 +1,12 @@
--- Global leaderboards on the Wild Skies: the top 10 players in the world for
--- Sparks earned, storms caught and storms stolen (in Bed Wars: wins,
--- knockouts and beds broken), saved in OrderedDataStores, plus avatar statues
--- of the top 3 on the first board. If the data stores can't be reached
+-- Global leaderboards in the lobby: the top 10 players in the world for
+-- wins, knockouts and beds broken (saved in OrderedDataStores), plus avatar
+-- statues of the top 3 winners. If the data stores can't be reached
 -- (Studio without API access), the boards show this server's players instead.
 
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 
 local DataService = require(script.Parent.DataService)
@@ -26,53 +24,29 @@ type Board = {
 
 local UPDATE_SECONDS = 120
 
-local boards: { Board } = if Config.GameMode == "BedWars"
-	then {
-		{
-			key = "Wins",
-			title = "🏆 Most Bed Wars Wins",
-			stat = "wins",
-			position = Vector3.new(-60, 0, -110),
-			rows = {},
-		},
-		{
-			key = "Kills",
-			title = "⚔️ Most Knockouts",
-			stat = "kills",
-			position = Vector3.new(0, 0, -116),
-			rows = {},
-		},
-		{
-			key = "Beds",
-			title = "🛏️ Most Beds Broken",
-			stat = "bedsBroken",
-			position = Vector3.new(60, 0, -110),
-			rows = {},
-		},
-	}
-	else {
-		{
-			key = "Earned",
-			title = "⚡ Most Sparks Earned",
-			stat = "sparksEarned",
-			position = Vector3.new(-60, 0, -110),
-			rows = {},
-		},
-		{
-			key = "Caught",
-			title = "🫙 Most Storms Caught",
-			stat = "captured",
-			position = Vector3.new(0, 0, -116),
-			rows = {},
-		},
-		{
-			key = "Stolen",
-			title = "😈 Most Storms Stolen",
-			stat = "stolen",
-			position = Vector3.new(60, 0, -110),
-			rows = {},
-		},
-	}
+local boards: { Board } = {
+	{
+		key = "Wins",
+		title = "🏆 Most Bed Wars Wins",
+		stat = "wins",
+		position = Vector3.new(-60, 0, -110),
+		rows = {},
+	},
+	{
+		key = "Kills",
+		title = "⚔️ Most Knockouts",
+		stat = "kills",
+		position = Vector3.new(0, 0, -116),
+		rows = {},
+	},
+	{
+		key = "Beds",
+		title = "🛏️ Most Beds Broken",
+		stat = "bedsBroken",
+		position = Vector3.new(60, 0, -110),
+		rows = {},
+	},
+}
 
 local names: { [number]: string } = {}
 local statueIds: { number } = {}
@@ -261,7 +235,7 @@ local function update()
 		end
 		local shown = entries or localEntries(board.stat)
 		show(board, shown)
-		if board.key == "Earned" then
+		if board.key == "Wins" then
 			local top = {}
 			for i = 1, math.min(3, #shown) do
 				table.insert(top, shown[i].userId)

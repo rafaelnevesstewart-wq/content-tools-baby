@@ -1,8 +1,8 @@
 -- Bed Wars kits: every storm you own is a kit. Pick one in the 🌪️ Kits
 -- window; in a match it floats beside you and gives you its power on Shift
--- (the same powers as riding: Updraft, Blink Dash, Surf Boost, Cloud Jump —
--- the client runs them in RideController). Get more storms from Mystery Jars,
--- the Storm Market, the spin wheel and the season pass.
+-- (Updraft, Blink Dash, Surf Boost, Cloud Jump or Cloud Flight; the client
+-- runs them in KitController). Rarer kits recharge faster. Get more kits
+-- from Kit Crates, the Kit Shop, the spin wheel and the battle pass.
 
 local Players = game:GetService("Players")
 
@@ -64,6 +64,7 @@ local function clear(player: Player)
 	if player.Parent then
 		player:SetAttribute("KitName", nil)
 		player:SetAttribute("RideAbility", nil)
+		player:SetAttribute("KitCooldown", nil)
 	end
 end
 
@@ -77,9 +78,14 @@ local function equip(player: Player)
 	end
 	player:SetAttribute("KitName", StormData.displayName(record))
 	player:SetAttribute("RideAbility", StormData.abilityOf(def))
-	local model = StormModel.build(def, { mutation = record.mut, scale = Config.Buddy.Scale, anchored = true })
+	player:SetAttribute("KitCooldown", StormData.rarityOf(def).cooldown)
+	local model = StormModel.build(def, { mutation = record.mut, scale = Config.Kit.BuddyScale, anchored = true })
 	model.Name = "Kit_" .. player.UserId
 	model:SetAttribute("OwnerUserId", player.UserId)
+	local tag = StormModel.nameTag(def, record.mut, player.DisplayName .. "'s kit")
+	tag.MaxDistance = 50
+	tag.StudsOffsetWorldSpace *= 0.6
+	tag.Parent = model.PrimaryPart
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("BasePart") then
 			descendant.CanCollide = false
@@ -115,7 +121,7 @@ local function getKits(player: Player)
 				color = rarity.color,
 				power = info.emoji .. " " .. info.name,
 				powerText = info.description,
-				cooldown = Config.Ride.Cooldowns[ability] or 1,
+				cooldown = math.floor((Config.Kit.Cooldowns[ability] or 1) * rarity.cooldown * 10 + 0.5) / 10,
 				chosen = chosen ~= nil and chosen.uid == record.uid,
 			})
 		end
@@ -133,7 +139,7 @@ local function chooseKit(player: Player, uid: any): (boolean, string)
 	local data = DataService.get(player)
 	local record = data and findRecord(data, uid)
 	if not record then
-		return false, "You don't have that storm."
+		return false, "You don't have that kit."
 	end
 	data.kit = record.uid
 	player:SetAttribute("KitChoice", StormData.displayName(record))
@@ -144,8 +150,8 @@ local function chooseKit(player: Player, uid: any): (boolean, string)
 end
 
 function KitService.init()
-	folder = workspace:FindFirstChild("Buddies") :: Folder? or Instance.new("Folder")
-	folder.Name = "Buddies"
+	folder = workspace:FindFirstChild("Kits") :: Folder? or Instance.new("Folder")
+	folder.Name = "Kits"
 	folder.Parent = workspace
 end
 

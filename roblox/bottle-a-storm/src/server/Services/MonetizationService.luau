@@ -19,7 +19,6 @@ local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
 local MarketService = require(script.Parent.MarketService)
 local IncomeService = require(script.Parent.IncomeService)
-local PlotService = require(script.Parent.PlotService)
 local SeasonService = require(script.Parent.SeasonService)
 local SpinService = require(script.Parent.SpinService)
 local WeatherService = require(script.Parent.WeatherService)
@@ -28,54 +27,39 @@ local MonetizationService = {}
 
 local function grantPass(player: Player, key: string)
 	player:SetAttribute(Products.passAttribute(key), true)
-	if key == "AutoCollect" then
-		IncomeService.collect(player)
-	elseif key == "DoubleSlots" then
-		PlotService.rebuildPedestals(player) -- more pedestals fit on each floor now
-	end
 	IncomeService.sync(player)
 end
 
 -- Returns true when the product was delivered.
 local productHandlers: { [string]: (Player, any) -> boolean } = {
 	SparksSmall = function(player, data)
-		local amount =
-			math.max(Config.Products.SparksSmallMin, IncomeService.rateOf(player) * Config.Products.SparksSmallSeconds)
-		data.sparks += math.floor(amount)
+		local amount = Config.Products.SparksSmall
+		data.sparks += amount
 		Notify.player(player, "💰 +⚡" .. Format.number(amount) .. " Sparks! Thank you!", "success")
 		return true
 	end,
 	SparksLarge = function(player, data)
-		local amount =
-			math.max(Config.Products.SparksLargeMin, IncomeService.rateOf(player) * Config.Products.SparksLargeSeconds)
-		data.sparks += math.floor(amount)
+		local amount = Config.Products.SparksLarge
+		data.sparks += amount
 		Notify.player(player, "💰 +⚡" .. Format.number(amount) .. " Sparks! Thank you!", "success")
-		return true
-	end,
-	EmergencyLock = function(player)
-		return PlotService.lock(player, Config.Lock.EmergencyDuration, true)
-	end,
-	RaidShield = function(player, data)
-		data.raidShields += 1
-		Notify.player(player, "🛡️ Raid Shield ready! You have " .. data.raidShields .. ".", "success")
 		return true
 	end,
 	SeasonPremium = function(player)
 		return SeasonService.grantPremium(player)
 	end,
 	SeasonSkip = function(player)
-		SeasonService.addXp(player, Config.Season.SkipTierXp)
-		Notify.player(player, "⏭️ Skipped a season tier!", "success")
+		SeasonService.addXp(player, Config.Season.SkipTierXp, true)
+		Notify.player(player, "⏭️ Skipped a battle pass tier!", "success")
 		return true
 	end,
 	SpinWheel3 = function(player)
 		return SpinService.addSpins(player, 3)
 	end,
-	MysteryGoldenJar = function(player)
-		return MarketService.openGoldenJar(player)
+	GoldenKitCrate = function(player)
+		return MarketService.openGoldenCrate(player)
 	end,
 	SummonWeather = function(player)
-		WeatherService.summon("RainbowHour", player.DisplayName)
+		WeatherService.summon("RainbowHour", player.DisplayName, Config.Weather.SummonSeconds)
 		return true
 	end,
 }

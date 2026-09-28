@@ -1,12 +1,11 @@
--- Builds the sky world from code: the Wild Skies island in the middle, one
--- floating island per player around it, bridges, clouds and the forecast TV.
--- Replace with hand-built terrain later; the services only need the plot
--- CFrames and the part names used here.
+-- Builds the sky world from code: the big middle island (the lobby between
+-- matches, and the Crystal and Core generators during them), 8 team islands
+-- around it, bridges, clouds and the weather forecast TV. Replace with
+-- hand-built terrain later; MatchService only needs the island CFrames.
 
 local Lighting = game:GetService("Lighting")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local ClimateData = require(Shared.ClimateData)
 local Config = require(Shared.Config)
 
 local WorldBuilder = {}
@@ -175,66 +174,6 @@ local function cloudCluster(parent: Instance, center: Vector3, size: number, rng
 	puffs:Emit(10)
 end
 
--- The Storm Parade's sky river: a shallow glowing stream across the Wild Skies.
-local function paradeRiver(parent: Instance)
-	local model = Instance.new("Model")
-	model.Name = "ParadeRiver"
-	local length = Config.Parade.HalfLength * 2
-	local z = Config.Parade.Z
-	part({
-		Name = "Bed",
-		Size = Vector3.new(length, 0.6, 12),
-		CFrame = CFrame.new(0, 0.1, z),
-		Color = Color3.fromRGB(92, 84, 76),
-		Material = Enum.Material.Pebble,
-		Parent = model,
-	})
-	local water = part({
-		Name = "Water",
-		Size = Vector3.new(length, 0.3, 10),
-		CFrame = CFrame.new(0, 0.5, z),
-		Color = Color3.fromRGB(90, 160, 210),
-		Material = Enum.Material.Glass,
-		Transparency = 0.35,
-		CanCollide = false,
-		Parent = model,
-	})
-	water.Reflectance = 0.15
-	for _, side in { -1, 1 } do
-		part({
-			Name = "Bank",
-			Size = Vector3.new(length, 0.8, 1.2),
-			CFrame = CFrame.new(0, 0.4, z + side * 5.6),
-			Color = Color3.fromRGB(118, 110, 100),
-			Material = Enum.Material.Cobblestone,
-			Parent = model,
-		})
-	end
-	local signPost = part({
-		Name = "ParadeSign",
-		Size = Vector3.new(8, 3, 0.6),
-		CFrame = CFrame.new(-Config.Parade.HalfLength + 4, 6, z - 7),
-		Color = Color3.fromRGB(96, 70, 48),
-		Material = Enum.Material.Wood,
-		Parent = model,
-	})
-	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
-		local gui = Instance.new("SurfaceGui")
-		gui.Face = face
-		gui.CanvasSize = Vector2.new(400, 150)
-		gui.Parent = signPost
-		local text = Instance.new("TextLabel")
-		text.BackgroundTransparency = 1
-		text.Size = UDim2.fromScale(1, 1)
-		text.Font = Enum.Font.GothamBold
-		text.TextScaled = true
-		text.TextColor3 = Color3.fromRGB(245, 240, 225)
-		text.Text = "🌊 Storm Parade\nBuy storms as they float by!"
-		text.Parent = gui
-	end
-	model.Parent = parent
-end
-
 local function label(
 	parent: Instance,
 	name: string,
@@ -374,135 +313,6 @@ local function setupLighting()
 end
 
 -- A glowing pad that teleports you (handled by ClimateService).
-local function portalPad(
-	parent: Instance,
-	name: string,
-	position: Vector3,
-	color: Color3,
-	title: string,
-	subtitle: string
-): Part
-	local pad = part({
-		Name = name,
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(1, 12, 12),
-		CFrame = CFrame.new(position + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = color,
-		Material = Enum.Material.Neon,
-		Transparency = 0.2,
-		Parent = parent,
-	})
-	part({
-		Name = "Ring",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.4, 16, 16),
-		CFrame = CFrame.new(position + Vector3.new(0, 9, 0)) * CFrame.Angles(0, math.rad(90), 0),
-		Color = color,
-		Material = Enum.Material.ForceField,
-		CanCollide = false,
-		CanTouch = false,
-		Parent = pad,
-	})
-	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(260, 70)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, 19, 0)
-	gui.MaxDistance = 250
-	gui.LightInfluence = 0
-	gui.Parent = pad
-	label(gui, "Title", title, UDim2.fromScale(1, 0.6), UDim2.fromScale(0, 0), 32, Color3.new(1, 1, 1))
-	label(gui, "Subtitle", subtitle, UDim2.fromScale(1, 0.4), UDim2.fromScale(0, 0.6), 22, color)
-	local sparkles = Instance.new("Sparkles")
-	sparkles.SparkleColor = color
-	sparkles.Parent = pad
-	return pad
-end
-
--- Themed props for each Climate Shift island.
-local function decorateBiome(parent: Instance, climate: ClimateData.Climate, center: Vector3, rng: Random)
-	local radius = ClimateData.BiomeRadius
-	local function spot(minR: number, maxR: number): Vector3
-		local angle = rng:NextNumber(0, math.pi * 2)
-		local r = rng:NextNumber(minR, maxR)
-		return center + Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
-	end
-	if climate.key == "Arctic" then
-		for _ = 1, 10 do
-			local height = rng:NextNumber(8, 20)
-			part({
-				Name = "IceSpike",
-				Size = Vector3.new(3, height, 3),
-				CFrame = CFrame.new(spot(30, radius - 8) + Vector3.new(0, height / 2 - 1, 0))
-					* CFrame.Angles(rng:NextNumber(-0.25, 0.25), rng:NextNumber(0, 6), rng:NextNumber(-0.25, 0.25)),
-				Color = Color3.fromRGB(170, 220, 255),
-				Material = Enum.Material.Ice,
-				Transparency = 0.2,
-				Parent = parent,
-			})
-		end
-	elseif climate.key == "Volcano" then
-		for _ = 1, 4 do
-			local size = rng:NextNumber(10, 16)
-			part({
-				Name = "LavaPool",
-				Shape = Enum.PartType.Cylinder,
-				Size = Vector3.new(0.4, size, size),
-				CFrame = CFrame.new(spot(28, radius - 12) + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-				Color = Color3.fromRGB(255, 110, 30),
-				Material = Enum.Material.Neon,
-				CanCollide = false,
-				Parent = parent,
-			})
-		end
-		for _ = 1, 6 do
-			local height = rng:NextNumber(12, 24)
-			local spire = part({
-				Name = "Spire",
-				Shape = Enum.PartType.Cylinder,
-				Size = Vector3.new(height, 5, 5),
-				CFrame = CFrame.new(spot(30, radius - 6) + Vector3.new(0, height / 2, 0))
-					* CFrame.Angles(0, 0, math.rad(90)),
-				Color = Color3.fromRGB(55, 40, 40),
-				Material = Enum.Material.Basalt,
-				Parent = parent,
-			})
-			local fire = Instance.new("Fire")
-			fire.Size = 6
-			fire.Heat = 12
-			fire.Parent = spire
-		end
-	elseif climate.key == "Space" then
-		for _ = 1, 10 do
-			local height = rng:NextNumber(5, 12)
-			part({
-				Name = "Crystal",
-				Size = Vector3.new(2.5, height, 2.5),
-				CFrame = CFrame.new(spot(28, radius - 6) + Vector3.new(0, height / 2 - 1, 0))
-					* CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6), rng:NextNumber(-0.4, 0.4)),
-				Color = if rng:NextNumber() < 0.5 then Color3.fromRGB(150, 110, 255) else Color3.fromRGB(90, 220, 255),
-				Material = Enum.Material.Neon,
-				Parent = parent,
-			})
-		end
-		for _ = 1, 6 do
-			local size = rng:NextNumber(2, 5)
-			part({
-				Name = "Orb",
-				Shape = Enum.PartType.Ball,
-				Size = Vector3.new(size, size, size),
-				CFrame = CFrame.new(spot(10, radius) + Vector3.new(0, rng:NextNumber(25, 45), 0)),
-				Color = Color3.fromRGB(255, 240, 200),
-				Material = Enum.Material.Neon,
-				CanCollide = false,
-				Parent = parent,
-			})
-		end
-	end
-end
-
----------------------------------------------------------------------------
--- Cute decorations: candy trees, flower patches, mushrooms and bushes
----------------------------------------------------------------------------
-
 local function pastel(rng: Random): Color3
 	return PASTELS[rng:NextInteger(1, #PASTELS)]
 end
@@ -663,45 +473,15 @@ local function scatter(
 	place(counts.flowers, 6, ring.max, flowerPatch)
 end
 
--- Keeps decorations off the pedestals, pads, spawn, arch and bridge.
--- Spots that island cosmetics use (see CosmeticService SPOTS).
-local COSMETIC_SPOTS = {
-	Vector3.new(-36, 0, -4),
-	Vector3.new(36, 0, -4),
-	Vector3.new(-36, 0, 30),
-	Vector3.new(36, 0, 30),
-	Vector3.new(-41, 0, 14),
-	Vector3.new(41, 0, 14),
-	Vector3.new(36, 0, -24),
-	Vector3.new(-36, 0, -24),
-	Vector3.new(-24, 0, -38),
-	Vector3.new(24, 0, -38),
-	Vector3.new(-46, 0, -8),
-	Vector3.new(46, 0, -8),
-	Vector3.new(-44, 0, 33),
-	Vector3.new(44, 0, 33),
-	Vector3.new(-51, 0, 12),
-	Vector3.new(51, 0, 12),
-	Vector3.new(-30, 0, -48),
-	Vector3.new(-40, 0, -42),
-	Vector3.new(0, 0, 51),
-}
-
+-- Keeps trees off the team base: spawn, generator, bed, shop and bridge.
 local function plotBlocked(p: Vector3): boolean
-	if p.X > -35 and p.X < 35 and p.Z > -8 and p.Z < 50 then
-		return true -- pedestals and the house over them
+	if math.abs(p.X) < 14 and p.Z > -32 and p.Z < 34 then
+		return true -- spawn, generator and the cloud bed
 	end
-	for _, spot in COSMETIC_SPOTS do
-		if (p - spot).Magnitude < 6 then
-			return true
-		end
+	if (p - Vector3.new(-14, 0, -12)).Magnitude < 9 then
+		return true -- the Item Shop
 	end
-	for _, spot in { Vector3.new(-20, 0, -18), Vector3.new(20, 0, -18), Vector3.new(0, 0, -14), Vector3.new(0, 0, -30) } do
-		if (p - spot).Magnitude < 9 then
-			return true -- collect pad, lock button, mixer, spawn
-		end
-	end
-	return math.abs(p.X) < 12 and p.Z < -36 -- the arch and the bridge
+	return math.abs(p.X) < 12 and p.Z < -36 -- the bridge
 end
 
 local function decoratePlot(island: Model, frame: CFrame, rng: Random)
@@ -715,24 +495,23 @@ local function decoratePlot(island: Model, frame: CFrame, rng: Random)
 	)
 end
 
--- Keeps decorations off the spawn, forecast TV, portals and bridge ends.
+-- Keeps decorations off the spawn, forecast TV, leaderboards and bridge ends.
 local function wildBlocked(p: Vector3): boolean
 	local spawn = Vector3.new(0, 0, -(Config.World.CenterRadius - 20))
 	if (p - spawn).Magnitude < 14 or (p - Vector3.new(0, 0, -30)).Magnitude < 16 then
 		return true
-	end
-	if p.X > -55 and p.X < 55 and p.Z > 58 and p.Z < 90 then
-		return true -- portal row
-	end
-	if math.abs(p.Z - Config.Parade.Z) < 10 and math.abs(p.X) < Config.Parade.HalfLength + 6 then
-		return true -- Storm Parade river
 	end
 	if p.Z > -128 and p.Z < -76 and math.abs(p.X) < 78 then
 		return true -- leaderboards and the winners' podium
 	end
 	local degrees = math.deg(math.atan2(p.Z, p.X)) % 360
 	if degrees > 192 and degrees < 222 and p.Magnitude > 130 then
-		return true -- the first steps of the secret sky path
+		return true -- the first steps of the lobby parkour
+	end
+	for _, radius in { Config.Match.Crystals.radius, Config.Match.Cores.radius } do
+		if math.abs(p.Magnitude - radius) < 6 then
+			return true -- the middle generators' rings
+		end
 	end
 	local angle = math.atan2(p.Z, p.X)
 	for index = 1, Config.MaxPlots do
@@ -745,78 +524,8 @@ local function wildBlocked(p: Vector3): boolean
 	return false
 end
 
--- Other services use this to keep things off the Wild Skies' busy spots.
+-- Other services use this to keep things off the middle island's busy spots.
 WorldBuilder.isWildBlocked = wildBlocked
-
-export type BiomeInfo = {
-	climate: ClimateData.Climate,
-	center: Vector3, -- island top center
-	spawn: CFrame, -- where the portal drops you
-}
-
--- Filled in by build(): the Climate Shift islands and where the Wild Skies
--- return portal drops you.
-WorldBuilder.Biomes = {} :: { [string]: BiomeInfo }
-WorldBuilder.WildArrival = CFrame.new(0, 4, 50)
-
--- The portal row on the Wild Skies, and one island per climate.
-local function buildBiomes(world: Instance, rng: Random)
-	local portals = Instance.new("Folder")
-	portals.Name = "Portals"
-	portals.Parent = world
-	local biomes = Instance.new("Folder")
-	biomes.Name = "Biomes"
-	biomes.Parent = world
-
-	for _, climate in ClimateData.List do
-		if climate.level > 0 then
-			local color = climate.tint or Color3.new(1, 1, 1)
-			local x = (climate.level - 2) * 36
-			local pad = portalPad(
-				portals,
-				"Portal_" .. climate.key,
-				Vector3.new(x, 0, 72),
-				color,
-				climate.emoji .. " " .. climate.name,
-				"Climate Shift " .. climate.level
-			)
-			pad:SetAttribute("Climate", climate.key)
-			pad:SetAttribute("Level", climate.level)
-
-			local center = ClimateData.center(climate)
-			local island = floatingIsland(
-				biomes,
-				climate.key,
-				center,
-				ClimateData.BiomeRadius,
-				climate.ground or GRASS,
-				climate.groundMaterial,
-				climate.rock
-			)
-			island:SetAttribute("Climate", climate.key)
-			island:SetAttribute("Center", center)
-			island:SetAttribute("Radius", ClimateData.BiomeRadius)
-			decorateBiome(island, climate, center, rng)
-
-			-- Arrive near one edge, facing the middle.
-			local arrive = center + Vector3.new(0, 4, -(ClimateData.BiomeRadius - 18))
-			local back = portalPad(
-				island,
-				"ReturnPortal",
-				center + Vector3.new(0, 0, -(ClimateData.BiomeRadius - 8)),
-				Color3.fromRGB(150, 220, 255),
-				"🌤️ Back to the Wild Skies",
-				""
-			)
-			back:SetAttribute("Destination", "Wild")
-			WorldBuilder.Biomes[climate.key] = {
-				climate = climate,
-				center = center,
-				spawn = CFrame.lookAt(arrive, center + Vector3.new(0, 4, 0)),
-			}
-		end
-	end
-end
 
 export type PlotInfo = {
 	index: number,
@@ -859,8 +568,6 @@ function WorldBuilder.build(): { PlotInfo }
 	spawn.Parent = world
 
 	forecastTV(world, Vector3.new(0, 0, -30), Vector3.new(0, 0, -100))
-	paradeRiver(world)
-	buildBiomes(world, rng)
 
 	local plotsFolder = Instance.new("Folder")
 	plotsFolder.Name = "Plots"

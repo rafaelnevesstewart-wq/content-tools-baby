@@ -1,106 +1,47 @@
--- Every storm on a pedestal earns Sparks each second. Sparks pile up on the
--- island's Collect pad until the owner steps on it (or go straight to the
--- wallet with the Auto-Collect pass). Also mirrors profile numbers onto
--- player attributes and leaderstats so the client UI can read them.
+-- Your Sparks wallet. Sparks come from Bed Wars matches (knockouts, beds,
+-- wins, playing), rewards and purchases. This keeps the numbers the client
+-- UI reads (player attributes) and the leaderboard columns (Sparks, Wins,
+-- Kills) up to date, and works out the Sparks bonus for match rewards.
 
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local ClimateData = require(Shared.ClimateData)
 local Config = require(Shared.Config)
-local Economy = require(Shared.Economy)
-local Format = require(Shared.Format)
 local Products = require(Shared.Products)
-local Signal = require(Shared.Signal)
-local StormData = require(Shared.StormData)
-
-local Modules = script.Parent.Parent.Modules
-local Juice = require(Modules.Juice)
-local Notify = require(Modules.Notify)
 
 local DataService = require(script.Parent.DataService)
-local PlotService = require(script.Parent.PlotService)
 local WeatherService = require(script.Parent.WeatherService)
 
 local IncomeService = {}
 
--- (player, amount) whenever Sparks reach a player's wallet from their storms.
-IncomeService.Collected = Signal.new()
-
-local lastCollectToast: { [Player]: number } = {}
-
-local function hasPass(player: Player, key: string): boolean
-	return player:GetAttribute(Products.passAttribute(key)) == true
-end
-
--- Sparks per second for this player right now, VIP included.
-function IncomeService.rateOf(player: Player): number
+-- How much bigger this player's match Sparks are right now: VIP, Style
+-- Bonus, Kit Collection rows, group members, Admin Abuse and Rainbow Hour.
+function IncomeService.multiplier(player: Player): number
 	local data = DataService.get(player)
 	if not data then
-		return 0
+		return 1
 	end
-	local total = 0
-	for _, record in data.storms do
-		if not PlotService.isSlotStolen(player, record.slot) then
-			total += StormData.earningOf(record)
-		end
-	end
-	if hasPass(player, "VIP") then
-		total *= Config.Income.VIPMultiplier
-	end
-	local event = WeatherService.current()
-	local eventBonus = if event then event.incomeMultiplier or 1 else 1
-	local indexBonus = 1 + Config.Index.RowBonus * (data.indexRows or 0)
-	local groupBonus = if player:GetAttribute("InGroup") == true then 1 + Config.Group.Bonus else 1
+	local vip = if player:GetAttribute(Products.passAttribute("VIP")) == true then Config.Income.VIPMultiplier else 1
+	local style = 1 + (data.styleBonus or 0)
+	local collection = 1 + Config.Index.RowBonus * (data.indexRows or 0)
+	local group = if player:GetAttribute("InGroup") == true then 1 + Config.Group.Bonus else 1
 	local abuseUntil = workspace:GetAttribute("AbuseUntil")
-	local abuseBonus = if type(abuseUntil) == "number" and abuseUntil > workspace:GetServerTimeNow()
+	local abuse = if type(abuseUntil) == "number" and abuseUntil > workspace:GetServerTimeNow()
 		then Config.Admin.AbuseIncomeMultiplier
 		else 1
-	local beginnerBonus = if (data.playSeconds or 0) < Config.Beginner.BoostSeconds
-		then Config.Beginner.Multiplier
-		else 1
-	return total
-		* ClimateData.at(data.climate).multiplier
-		* eventBonus
-		* indexBonus
-		* beginnerBonus
-		* groupBonus
-		* abuseBonus
-		* (1 + (data.styleBonus or 0))
+	return vip * style * collection * group * abuse * WeatherService.sparksMultiplier()
 end
 
--- Pushes the profile's numbers to attributes, leaderstats and the collect pad.
+-- Pushes the profile's numbers to attributes and leaderstats.
 function IncomeService.sync(player: Player)
 	local data = DataService.get(player)
 	if not data then
 		return
 	end
 	player:SetAttribute("Sparks", math.floor(data.sparks))
-	player:SetAttribute("Unclaimed", math.floor(data.unclaimed))
-	player:SetAttribute("IncomePerSec", IncomeService.rateOf(player))
-	player:SetAttribute("JarTier", data.jarTier)
-	player:SetAttribute("Pedestals", data.pedestals)
-	player:SetAttribute("MaxPedestals", Economy.maxPedestals(hasPass(player, "DoubleSlots"), data.floors))
-	player:SetAttribute("Floors", data.floors or 1)
-	player:SetAttribute("BootsLevel", data.bootsLevel)
-	player:SetAttribute("Captured", data.stats.captured)
+	player:SetAttribute("SparksBonus", IncomeService.multiplier(player))
+	player:SetAttribute("KitCount", #data.storms)
 	player:SetAttribute("IndexRows", data.indexRows or 0)
-	player:SetAttribute("TrapLevel", data.trapLevel)
-	player:SetAttribute("RaidShields", data.raidShields)
-	player:SetAttribute("ThiefStyle", data.thiefStyle)
-	player:SetAttribute("Climate", data.climate)
-	local unlocked = {}
-	for key in data.thiefStyles do
-		table.insert(unlocked, key)
-	end
-	player:SetAttribute("UnlockedStyles", table.concat(unlocked, ","))
-	player:SetAttribute("StormCount", #data.storms)
-	local baseIncome = 0
-	for _, record in data.storms do
-		baseIncome += StormData.incomeOf(record)
-	end
-	player:SetAttribute("SnackCost", Economy.snackCost(baseIncome))
-
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then
 		local function set(name: string, value: number)
@@ -110,15 +51,8 @@ function IncomeService.sync(player: Player)
 			end
 		end
 		set("Sparks", data.sparks)
-		set("Storms", #data.storms)
 		set("Wins", data.stats.wins or 0)
 		set("Kills", data.stats.kills or 0)
-	end
-
-	if hasPass(player, "AutoCollect") then
-		PlotService.setCollectText(player, "💰 Auto-Collect ON")
-	else
-		PlotService.setCollectText(player, "💰 Collect\n⚡ " .. Format.number(data.unclaimed))
 	end
 end
 
@@ -131,133 +65,16 @@ function IncomeService.addSparks(player: Player, amount: number)
 	end
 end
 
-function IncomeService.collect(player: Player)
-	local data = DataService.get(player)
-	if not data or data.unclaimed < 1 then
-		return
-	end
-	local amount = math.floor(data.unclaimed)
-	data.unclaimed -= amount
-	data.sparks += amount
-	IncomeService.sync(player)
-	local pad = PlotService.collectPadPosition(player)
-	if pad then
-		Juice.float(player, "+⚡" .. Format.number(amount), pad + Vector3.new(0, 3, 0), Color3.fromRGB(255, 200, 60))
-	end
-	if os.clock() - (lastCollectToast[player] or 0) > 1.2 then
-		lastCollectToast[player] = os.clock()
-		Juice.sound(player, "coins")
-	end
-	IncomeService.Collected:Fire(player, amount)
-end
-
--- While you were away, your storms kept earning at a reduced rate.
-local function payOffline(player: Player)
-	local data = DataService.get(player)
-	if not data or not data.lastSeen then
-		return
-	end
-	local away = os.time() - data.lastSeen
-	data.lastSeen = os.time()
-	if away < Config.Offline.MinSeconds then
-		return
-	end
-	local seconds = math.min(away, Config.Offline.MaxHours * 3600)
-	local amount = math.floor(IncomeService.rateOf(player) * seconds * Config.Offline.Rate)
-	if amount < 1 then
-		return
-	end
-	data.sparks += amount
-	IncomeService.sync(player)
-	Juice.welcome(player, amount, away)
-end
-
--- Storms level up the longer you own them (see StormData.LevelSeconds).
-local function levelUp(player: Player, record: StormData.StormRecord)
-	local level = StormData.levelOf(record)
-	PlotService.refreshSlot(player, record.slot)
-	local position = PlotService.slotPosition(player, record.slot)
-	if position then
-		Juice.float(player, "LEVEL UP! Lv " .. level, position + Vector3.new(0, 7, 0), Color3.fromRGB(120, 200, 255))
-	end
-	Juice.sound(player, "chime")
-	Notify.player(
-		player,
-		"⬆️ "
-			.. StormData.displayName(record)
-			.. " reached Lv "
-			.. level
-			.. "! It now earns +"
-			.. math.floor((StormData.levelMultiplier(record) - 1) * 100 + 0.5)
-			.. "% more.",
-		"success"
-	)
-end
-
-local function growStorms(player: Player, data: any, dt: number)
-	for _, record in data.storms do
-		if not PlotService.isSlotStolen(player, record.slot) then
-			local before = StormData.levelOf(record)
-			record.xp = (record.xp or 0) + dt
-			if StormData.levelOf(record) > before then
-				levelUp(player, record)
-			end
-		end
-	end
-end
-
-local function tick(dt: number)
-	for _, player in Players:GetPlayers() do
-		local data = DataService.get(player)
-		if data and PlotService.getPlot(player) then
-			data.lastSeen = os.time()
-			local wasBoosted = (data.playSeconds or 0) < Config.Beginner.BoostSeconds
-			data.playSeconds = (data.playSeconds or 0) + dt
-			local boostLeft = Config.Beginner.BoostSeconds - data.playSeconds
-			if boostLeft > 0 and not player:GetAttribute("BoostEndsAt") then
-				-- For the HUD timer. Set once per visit so it doesn't change every second.
-				player:SetAttribute("BoostEndsAt", workspace:GetServerTimeNow() + boostLeft)
-			elseif boostLeft <= 0 and player:GetAttribute("BoostEndsAt") then
-				player:SetAttribute("BoostEndsAt", nil)
-			end
-			if wasBoosted and boostLeft <= 0 then
-				Notify.player(player, "🚀 Your Beginner Boost is over. You're a real storm catcher now!", "info")
-			end
-			growStorms(player, data, dt)
-			local earned = IncomeService.rateOf(player) * dt
-			if earned > 0 then
-				data.stats.sparksEarned += earned
-				if hasPass(player, "AutoCollect") then
-					data.sparks += earned
-					IncomeService.Collected:Fire(player, earned)
-				else
-					data.unclaimed += earned
-				end
-			end
-			IncomeService.sync(player)
-		end
-	end
-end
-
 local function createLeaderstats(player: Player)
 	if player:FindFirstChild("leaderstats") then
 		return
 	end
 	local folder = Instance.new("Folder")
 	folder.Name = "leaderstats"
-	local sparks = Instance.new("IntValue")
-	sparks.Name = "Sparks"
-	sparks.Parent = folder
-	if Config.GameMode == "BedWars" then
-		for _, name in { "Wins", "Kills" } do
-			local value = Instance.new("IntValue")
-			value.Name = name
-			value.Parent = folder
-		end
-	else
-		local stormCount = Instance.new("IntValue")
-		stormCount.Name = "Storms"
-		stormCount.Parent = folder
+	for _, name in { "Wins", "Kills", "Sparks" } do
+		local value = Instance.new("IntValue")
+		value.Name = name
+		value.Parent = folder
 	end
 	folder.Parent = player
 end
@@ -267,22 +84,13 @@ function IncomeService.start()
 		createLeaderstats(player)
 		IncomeService.sync(player)
 	end)
-	PlotService.PlotAssigned:Connect(function(player)
-		IncomeService.sync(player)
-		payOffline(player)
-	end)
-	PlotService.CollectTouched:Connect(IncomeService.collect)
-	Players.PlayerRemoving:Connect(function(player)
-		lastCollectToast[player] = nil
-	end)
-
+	-- The bonus shown in the HUD changes with Admin Abuse and Rainbow Hour.
 	task.spawn(function()
-		local last = os.clock()
 		while true do
-			task.wait(Config.Income.TickSeconds)
-			local t = os.clock()
-			tick(t - last)
-			last = t
+			task.wait(5)
+			for _, player in Players:GetPlayers() do
+				IncomeService.sync(player)
+			end
 		end
 	end)
 end

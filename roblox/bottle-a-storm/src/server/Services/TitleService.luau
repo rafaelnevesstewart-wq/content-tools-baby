@@ -11,7 +11,6 @@ local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 
 local DataService = require(script.Parent.DataService)
-local RaidService = require(script.Parent.RaidService)
 
 local TitleService = {}
 
@@ -130,13 +129,6 @@ end
 function TitleService.start()
 	Remotes.func("GetTitles").OnServerInvoke = getTitles
 	Remotes.func("SetTitle").OnServerInvoke = setTitle
-
-	RaidService.Fought:Connect(function(player)
-		local data = DataService.get(player)
-		if data then
-			data.stats.raids += 1
-		end
-	end)
 
 	local function onPlayer(player: Player)
 		player.CharacterAdded:Connect(function(character)

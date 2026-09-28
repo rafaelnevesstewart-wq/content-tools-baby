@@ -1,57 +1,33 @@
 -- Always-on screen info, kept tidy:
---   top:  one Sparks bar, then a row of small chips (weather, Mega-Storm, lock)
---         and the boss HP bar during a raid
---   left: an icon bar (Shop, Robux, Trade, Climate, Season, Emergency Lock)
---   bottom: the "carrying a stolen storm" banner
+--   top:  your Sparks (and your match Sparks bonus), then a row of small chips:
+--         match weather and events (Admin Abuse, holidays)
+--   left: an icon bar (Rewards, Shop, Kit Market, Kits, Style, Battle Pass,
+--         Admin)
+-- The match itself (timer, teams, beds, resources) is in MatchHUD.
 
-local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local Config = require(Shared.Config)
 local Format = require(Shared.Format)
-local Products = require(Shared.Products)
-local Remotes = require(Shared.Remotes)
-local RaidData = require(Shared.RaidData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
-local Climate = require(script.Parent.Climate)
 local AdminPanel = require(script.Parent.AdminPanel)
 local Kits = require(script.Parent.Kits)
-local Battle = require(script.Parent.Battle)
 local Market = require(script.Parent.Market)
 local Rewards = require(script.Parent.Rewards)
 local Season = require(script.Parent.Season)
-local Style = require(script.Parent.Style)
 local Shop = require(script.Parent.Shop)
-local Toasts = require(script.Parent.Toasts)
-local Trade = require(script.Parent.Trade)
+local Style = require(script.Parent.Style)
 local UI = require(script.Parent.UI)
 
 local player = Players.LocalPlayer
 
 local HUD = {}
 
--- In Bed Wars there's no island income, stealing, locks or Mega-Storms, so
--- those buttons and chips are hidden (MatchHUD shows the match instead).
-local BED_WARS = Config.GameMode == "BedWars"
-
 local sparksLabel: TextLabel
-local incomeLabel: TextLabel
-local unclaimedChip: TextLabel
+local bonusLabel: TextLabel
 local weatherChip: TextLabel
-local raidChip: TextLabel
-local lockChip: TextLabel
-local boostChip: TextLabel
 local eventChip: TextLabel
-local carryBanner: TextLabel
-local bossBar: Frame
-local bossTitle: TextLabel
-local bossTime: TextLabel
-local bossFill: Frame
-local bossHpText: TextLabel
-local bossDamage: TextLabel
 
 -- A small rounded label with an outline, sized to its text.
 local function chip(parent: Instance, order: number, height: number, textSize: number): TextLabel
@@ -70,126 +46,32 @@ local function chip(parent: Instance, order: number, height: number, textSize: n
 	return label
 end
 
-local function weatherText(now: number): string
+-- The weather event on now, or the next one during a match.
+local function weatherText(now: number): string?
 	local current = WeatherEvents.get(workspace:GetAttribute("WeatherEvent"))
 	if current then
-		return current.emoji .. " " .. Format.time((workspace:GetAttribute("WeatherEndsAt") or now) - now)
+		return current.emoji
+			.. " "
+			.. current.name
+			.. " "
+			.. Format.time((workspace:GetAttribute("WeatherEndsAt") or now) - now)
 	end
 	local nextEvent = WeatherEvents.get(workspace:GetAttribute("NextWeather"))
-	if nextEvent then
-		return "📺 "
-			.. nextEvent.emoji
-			.. " in "
-			.. Format.time((workspace:GetAttribute("NextWeatherAt") or now) - now)
+	local nextAt = workspace:GetAttribute("NextWeatherAt")
+	if nextEvent and type(nextAt) == "number" and nextAt > now then
+		return "📺 Next: " .. nextEvent.emoji .. " " .. nextEvent.name .. " in " .. Format.time(nextAt - now)
 	end
-	return "☀️"
-end
-
-local function lockText(now: number): (string, Color3)
-	local plot = UI.myPlot()
-	if not plot then
-		return "🏝️ ...", UI.Colors.Muted
-	end
-	local lockedUntil = plot:GetAttribute("LockedUntil") or 0
-	local readyAt = plot:GetAttribute("LockReadyAt") or 0
-	if lockedUntil > now then
-		return "🔒 " .. Format.time(lockedUntil - now), Color3.fromRGB(50, 160, 95)
-	elseif readyAt > now then
-		return "🔓 " .. Format.time(readyAt - now), UI.Colors.Warn
-	end
-	return "🔓 Open", UI.Colors.Bad
-end
-
--- The Mega-Storm HP bar, shown under the chips during a raid.
-local function buildBossBar(parent: Instance)
-	bossBar = UI.new("Frame", {
-		Name = "BossBar",
-		LayoutOrder = 3,
-		Size = UDim2.fromOffset(360, 72),
-		BackgroundColor3 = UI.Colors.Panel,
-		Visible = false,
-		Parent = parent,
-	}, { UI.corner(16), UI.stroke(UI.Colors.Bad, 3), UI.padding(8) })
-	bossTitle = UI.label({
-		Size = UDim2.new(1, -70, 0, 22),
-		TextSize = 20,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = bossBar,
-	})
-	bossTime = UI.label({
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.fromScale(1, 0),
-		Size = UDim2.fromOffset(70, 22),
-		TextSize = 20,
-		TextColor3 = UI.Colors.Spark,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Parent = bossBar,
-	})
-	local track = UI.new("Frame", {
-		Position = UDim2.fromOffset(0, 26),
-		Size = UDim2.new(1, 0, 0, 20),
-		BackgroundColor3 = UI.Colors.Track,
-		Parent = bossBar,
-	}, { UI.corner(10) })
-	bossFill = UI.new("Frame", {
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = UI.Colors.Bad,
-		Parent = track,
-	}, { UI.corner(10) })
-	bossHpText = UI.label({
-		Size = UDim2.fromScale(1, 1),
-		TextSize = 15,
-		TextColor3 = Color3.new(1, 1, 1),
-		TextStrokeColor3 = UI.Colors.Outline,
-		TextStrokeTransparency = 0.2,
-		ZIndex = 2,
-		Parent = track,
-	})
-	bossDamage = UI.label({
-		Position = UDim2.fromOffset(0, 48),
-		Size = UDim2.new(1, 0, 0, 16),
-		TextSize = 14,
-		TextColor3 = UI.Colors.Muted,
-		Parent = bossBar,
-	})
-end
-
-local function refreshRaid(now: number)
-	local state = workspace:GetAttribute("RaidState")
-	local startsAt = workspace:GetAttribute("RaidStartsAt") or now
-	bossBar.Visible = state == "active"
-	raidChip.Visible = state ~= "active"
-	if state == "active" then
-		local boss = RaidData.get(workspace:GetAttribute("RaidBoss"))
-		local hp = workspace:GetAttribute("RaidHp") or 0
-		local maxHp = math.max(1, workspace:GetAttribute("RaidMaxHp") or 1)
-		bossTitle.Text = if boss then boss.emoji .. " " .. boss.name else "Mega-Storm"
-		bossTime.Text = Format.time((workspace:GetAttribute("RaidEndsAt") or now) - now)
-		bossFill.Size = UDim2.fromScale(math.clamp(hp / maxHp, 0, 1), 1)
-		bossHpText.Text = Format.number(hp) .. " / " .. Format.number(maxHp)
-		bossDamage.Text = "Your damage: "
-			.. Format.number(player:GetAttribute("RaidDamage") or 0)
-			.. "  ·  Click to fire!"
-	elseif state == "warning" then
-		raidChip.Text = "⚠️ Mega-Storm " .. Format.time(startsAt - now) .. "!"
-		raidChip.TextColor3 = UI.Colors.Bad
-	else
-		raidChip.Text = "🌪️ " .. Format.time(startsAt - now)
-		raidChip.TextColor3 = UI.Colors.Text
-	end
+	return nil
 end
 
 local function refreshStats()
 	sparksLabel.Text = "⚡ " .. Format.number(player:GetAttribute("Sparks") or 0)
-	incomeLabel.Text = "+" .. Format.number(player:GetAttribute("IncomePerSec") or 0) .. "/s"
-	local unclaimed = player:GetAttribute("Unclaimed") or 0
-	local auto = player:GetAttribute(Products.passAttribute("AutoCollect")) == true
-	unclaimedChip.Visible = unclaimed >= 1 and not auto and not BED_WARS
-	incomeLabel.Visible = not BED_WARS
-	unclaimedChip.Text = "💰 " .. Format.number(unclaimed)
-	local carrying = player:GetAttribute("Carrying")
-	carryBanner.Visible = carrying ~= nil
-	carryBanner.Text = "🏃 Carrying " .. tostring(carrying) .. "! Run home!"
+	local bonus = player:GetAttribute("SparksBonus")
+	local shown = type(bonus) == "number" and bonus > 1.001
+	bonusLabel.Visible = shown
+	if shown then
+		bonusLabel.Text = string.format("x%.1f match Sparks", bonus)
+	end
 end
 
 -- A square icon button with a tiny label under the emoji.
@@ -221,7 +103,7 @@ local function iconButton(parent: Instance, order: number, emoji: string, captio
 end
 
 -- A little red number in the corner of a button.
-local function badge(button: GuiObject): TextLabel
+local function badge(button: GuiObject, attribute: string)
 	local label = UI.label({
 		Name = "Badge",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -237,27 +119,19 @@ local function badge(button: GuiObject): TextLabel
 	})
 	UI.corner(12).Parent = label
 	UI.stroke(Color3.new(1, 1, 1), 2).Parent = label
-	return label
-end
-
-local function buyEmergencyLock()
-	local lockItem = Products.get("EmergencyLock")
-	if not lockItem then
-		return
+	local function refresh()
+		local waiting = player:GetAttribute(attribute) or 0
+		label.Visible = waiting > 0
+		label.Text = tostring(waiting)
 	end
-	if lockItem.id ~= 0 then
-		MarketplaceService:PromptProductPurchase(player, lockItem.id)
-	elseif RunService:IsStudio() then
-		Remotes.event("DevPurchase"):FireServer(lockItem.key)
-	else
-		Toasts.show("Emergency Lock is coming soon!", "info")
-	end
+	player:GetAttributeChangedSignal(attribute):Connect(refresh)
+	refresh()
 end
 
 function HUD.start()
 	local screen = UI.screen("HUD", 1)
 
-	-- Top: Sparks bar, then the chips row, then the boss bar.
+	-- Top: Sparks bar, then the chips row.
 	local top = UI.new("Frame", {
 		Name = "Top",
 		AnchorPoint = Vector2.new(0.5, 0),
@@ -277,7 +151,7 @@ function HUD.start()
 	}, {
 		UI.corner(23),
 		UI.stroke(UI.Colors.Spark, 3),
-		UI.new("UIPadding", { PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 10) }),
+		UI.new("UIPadding", { PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 16) }),
 		UI.list(10, Enum.FillDirection.Horizontal),
 	})
 	sparksLabel = UI.label({
@@ -288,17 +162,15 @@ function HUD.start()
 		TextColor3 = UI.Colors.Spark,
 		Parent = sparksBar,
 	})
-	incomeLabel = UI.label({
+	bonusLabel = UI.label({
 		LayoutOrder = 2,
 		Size = UDim2.new(0, 0, 1, 0),
 		AutomaticSize = Enum.AutomaticSize.X,
-		TextSize = 18,
+		TextSize = 16,
 		TextColor3 = Color3.fromRGB(110, 220, 150),
+		Visible = false,
 		Parent = sparksBar,
 	})
-	unclaimedChip = chip(sparksBar, 3, 30, 16)
-	unclaimedChip.BackgroundColor3 = Color3.fromRGB(70, 56, 26)
-	unclaimedChip.AnchorPoint = Vector2.new(0, 0.5)
 
 	local chips = UI.new("Frame", {
 		LayoutOrder = 2,
@@ -308,15 +180,10 @@ function HUD.start()
 		Parent = top,
 	}, { UI.list(6, Enum.FillDirection.Horizontal) })
 	weatherChip = chip(chips, 1, 28, 15)
-	raidChip = chip(chips, 2, 28, 15)
-	lockChip = chip(chips, 3, 28, 15)
-	boostChip = chip(chips, 4, 28, 15)
-	boostChip.BackgroundColor3 = Color3.fromRGB(70, 56, 26)
-	boostChip.Visible = false
-	eventChip = chip(chips, 5, 28, 15)
+	weatherChip.Visible = false
+	eventChip = chip(chips, 2, 28, 15)
 	eventChip.BackgroundColor3 = Color3.fromRGB(70, 56, 26)
 	eventChip.Visible = false
-	buildBossBar(top)
 
 	-- Left: the icon bar, two buttons wide. It shrinks on short (phone) screens.
 	local bar = UI.new("Frame", {
@@ -347,58 +214,15 @@ function HUD.start()
 	end
 
 	local rewardsButton = iconButton(bar, 0, "🎁", "Rewards", Color3.fromRGB(150, 225, 170))
-	rewardsButton.Activated:Connect(function()
-		Rewards.toggle()
-	end)
-	local rewardsBadge = badge(rewardsButton)
-	local function refreshRewardsBadge()
-		local waiting = player:GetAttribute("RewardsReady") or 0
-		rewardsBadge.Visible = waiting > 0
-		rewardsBadge.Text = tostring(waiting)
-	end
-	player:GetAttributeChangedSignal("RewardsReady"):Connect(refreshRewardsBadge)
-	refreshRewardsBadge()
-	iconButton(bar, 1, "🛒", "Shop", UI.Colors.PanelLight).Activated:Connect(function()
-		Shop.toggle(nil)
-	end)
-	iconButton(bar, 2, "🏪", "Market", Color3.fromRGB(96, 170, 210)).Activated:Connect(function()
-		Market.toggle()
-	end)
-	iconButton(bar, 3, "🎨", "Style", Color3.fromRGB(255, 170, 220)).Activated:Connect(function()
-		Style.toggle()
-	end)
-	iconButton(bar, 4, "💎", "Robux", UI.Colors.Robux).Activated:Connect(function()
-		Shop.toggle("Robux")
-	end)
-	local seasonButton = iconButton(bar, 5, "🎟️", "Season", Color3.fromRGB(255, 205, 90))
-	seasonButton.Activated:Connect(function()
-		Season.toggle()
-	end)
-	local seasonBadge = badge(seasonButton)
-	local function refreshSeasonBadge()
-		local waiting = player:GetAttribute("SeasonClaimable") or 0
-		seasonBadge.Visible = waiting > 0
-		seasonBadge.Text = tostring(waiting)
-	end
-	player:GetAttributeChangedSignal("SeasonClaimable"):Connect(refreshSeasonBadge)
-	refreshSeasonBadge()
-	if BED_WARS then
-		iconButton(bar, 6, "🌪️", "Kits", Color3.fromRGB(150, 200, 255)).Activated:Connect(function()
-			Kits.toggle()
-		end)
-	else
-		iconButton(bar, 6, "🤝", "Trade", Color3.fromRGB(255, 180, 140)).Activated:Connect(function()
-			Trade.openMenu()
-		end)
-	end
-	iconButton(bar, 7, "⚔️", "Battle", Color3.fromRGB(255, 150, 150)).Activated:Connect(function()
-		Battle.openMenu()
-	end)
-	if not BED_WARS then
-		iconButton(bar, 8, "🌍", "Climate", Color3.fromRGB(140, 195, 255)).Activated:Connect(function()
-			Climate.toggle()
-		end)
-	end
+	rewardsButton.Activated:Connect(Rewards.toggle)
+	badge(rewardsButton, "RewardsReady")
+	local passButton = iconButton(bar, 1, "🎟️", "Pass", Color3.fromRGB(255, 205, 90))
+	passButton.Activated:Connect(Season.toggle)
+	badge(passButton, "SeasonClaimable")
+	iconButton(bar, 2, "🌪️", "Kits", Color3.fromRGB(150, 200, 255)).Activated:Connect(Kits.toggle)
+	iconButton(bar, 3, "🏪", "Market", Color3.fromRGB(96, 170, 210)).Activated:Connect(Market.toggle)
+	iconButton(bar, 4, "🎨", "Style", Color3.fromRGB(255, 170, 220)).Activated:Connect(Style.toggle)
+	iconButton(bar, 5, "💎", "Robux", UI.Colors.Robux).Activated:Connect(Shop.toggle)
 	local adminButton = iconButton(bar, 20, "👑", "Admin", UI.Colors.Spark)
 	adminButton.Activated:Connect(AdminPanel.toggle)
 	local function refreshAdmin()
@@ -406,32 +230,6 @@ function HUD.start()
 	end
 	player:GetAttributeChangedSignal("IsAdmin"):Connect(refreshAdmin)
 	refreshAdmin()
-	local lockItem = Products.get("EmergencyLock")
-	if lockItem and not BED_WARS then
-		iconButton(bar, 9, "🔒", "R$" .. lockItem.price, Color3.fromRGB(255, 160, 190)).Activated:Connect(
-			buyEmergencyLock
-		)
-	end
-
-	-- Bottom: carrying banner.
-	carryBanner = UI.label({
-		Name = "CarryBanner",
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -110),
-		Size = UDim2.fromOffset(0, 44),
-		AutomaticSize = Enum.AutomaticSize.X,
-		BackgroundColor3 = UI.Colors.Bad,
-		BackgroundTransparency = 0,
-		TextSize = 22,
-		TextColor3 = Color3.new(1, 1, 1),
-		TextStrokeColor3 = UI.Colors.Outline,
-		TextStrokeTransparency = 0.2,
-		Visible = false,
-		Parent = screen,
-	})
-	UI.corner(22).Parent = carryBanner
-	UI.stroke(Color3.new(1, 1, 1), 3).Parent = carryBanner
-	UI.new("UIPadding", { PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18), Parent = carryBanner })
 
 	player.AttributeChanged:Connect(refreshStats)
 	refreshStats()
@@ -439,36 +237,20 @@ function HUD.start()
 	task.spawn(function()
 		while true do
 			local now = workspace:GetServerTimeNow()
-			weatherChip.Text = weatherText(now)
-			local text, color = lockText(now)
-			lockChip.Text = text
-			lockChip.TextColor3 = color
-			lockChip.Visible = not BED_WARS
-			-- Admin Abuse / luck / holiday event chip.
+			local weather = weatherText(now)
+			weatherChip.Visible = weather ~= nil
+			weatherChip.Text = weather or ""
+			-- Admin Abuse / holiday event chip.
 			local abuseUntil = workspace:GetAttribute("AbuseUntil")
-			local luckUntil = workspace:GetAttribute("LuckUntil")
 			local holiday = workspace:GetAttribute("Holiday")
 			if type(abuseUntil) == "number" and abuseUntil > now then
 				eventChip.Visible = true
-				eventChip.Text = "👑 ADMIN ABUSE " .. Format.time(abuseUntil - now)
-			elseif type(luckUntil) == "number" and luckUntil > now then
-				eventChip.Visible = true
-				eventChip.Text = "🍀 10x LUCK " .. Format.time(luckUntil - now)
+				eventChip.Text = "👑 ADMIN ABUSE: x2 Sparks " .. Format.time(abuseUntil - now)
 			elseif type(holiday) == "string" then
 				eventChip.Visible = true
 				eventChip.Text = "🎉 Event: " .. Format.number(player:GetAttribute("HolidayPoints") or 0) .. " points"
 			else
 				eventChip.Visible = false
-			end
-			local boostEndsAt = player:GetAttribute("BoostEndsAt")
-			boostChip.Visible = type(boostEndsAt) == "number" and boostEndsAt > now
-			if boostChip.Visible then
-				boostChip.Text = "🚀 x2 Beginner Boost " .. Format.time(boostEndsAt - now)
-			end
-			if BED_WARS then
-				raidChip.Visible = false
-			else
-				refreshRaid(now)
 			end
 			task.wait(0.25)
 		end

@@ -1,11 +1,12 @@
--- Riding controls. Q (or the Ride button on phones) hops on and off your
--- storm. Shift (or the power button) uses its power (in Bed Wars: your kit's
--- power). Movement powers run here
--- because the player's own client moves their character.
---   Updraft    (wind storms)             launch high into the air
---   Blink Dash (lightning storms)        teleport forward
---   Surf Boost (ice and sand storms)     a burst of speed
---   Cloud Jump (rain, fog, rainbow)      jump again in mid-air; you also glide
+-- Kit powers (Bed Wars). In a match your kit storm floats beside you and
+-- Shift (or the power button on phones) uses its power. The powers run here
+-- because the player's own client moves their character. Rarer kits recharge
+-- faster (the KitCooldown attribute, set by KitService).
+--   Updraft      (wind, hurricane, fire)   launch high into the air
+--   Blink Dash   (lightning, stars)        teleport forward
+--   Surf Boost   (ice, hail, sand)         a burst of speed
+--   Cloud Jump   (rain, fog, rainbow)      jump again in mid-air; you also glide
+--   Cloud Flight (a few rare kits)         fly where you look for a few seconds
 
 local ContextActionService = game:GetService("ContextActionService")
 local Debris = game:GetService("Debris")
@@ -14,17 +15,15 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
-local Remotes = require(Shared.Remotes)
 local StormData = require(Shared.StormData)
 
 local UI = require(script.Parent.UI)
 
 local player = Players.LocalPlayer
 
-local RideController = {}
+local KitController = {}
 
-local TOGGLE_ACTION = "BottleAStormRide"
-local POWER_ACTION = "BottleAStormRidePower"
+local POWER_ACTION = "BottleAStormKitPower"
 
 local readyAt: { [string]: number } = {}
 local usedAirJump = false
@@ -50,7 +49,7 @@ local powers: { [string]: (Model, BasePart, Humanoid) -> boolean } = {
 		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 		task.defer(function()
 			local v = root.AssemblyLinearVelocity
-			root.AssemblyLinearVelocity = Vector3.new(v.X, Config.Ride.UpdraftPower, v.Z)
+			root.AssemblyLinearVelocity = Vector3.new(v.X, Config.Kit.UpdraftPower, v.Z)
 		end)
 		return true
 	end,
@@ -60,10 +59,10 @@ local powers: { [string]: (Model, BasePart, Humanoid) -> boolean } = {
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Exclude
 		params.FilterDescendantsInstances = { character }
-		local hit = workspace:Raycast(root.Position, look * Config.Ride.DashDistance, params)
+		local hit = workspace:Raycast(root.Position, look * Config.Kit.DashDistance, params)
 		local distance = if hit
 			then math.max(0, (hit.Position - root.Position).Magnitude - 3)
-			else Config.Ride.DashDistance
+			else Config.Kit.DashDistance
 		character:PivotTo(character:GetPivot() + look * distance)
 		return true
 	end,
@@ -77,10 +76,50 @@ local powers: { [string]: (Model, BasePart, Humanoid) -> boolean } = {
 		push.RelativeTo = Enum.ActuatorRelativeTo.World
 		push.ForceLimitMode = Enum.ForceLimitMode.PerAxis
 		push.MaxAxesForce = Vector3.new(1e5, 0, 1e5) -- gravity still works
-		push.VectorVelocity = flatLook(root) * Config.Ride.SurfSpeed
+		push.VectorVelocity = flatLook(root) * Config.Kit.SurfSpeed
 		push.Parent = root
-		Debris:AddItem(push, Config.Ride.SurfSeconds)
-		Debris:AddItem(attachment, Config.Ride.SurfSeconds)
+		Debris:AddItem(push, Config.Kit.SurfSeconds)
+		Debris:AddItem(attachment, Config.Kit.SurfSeconds)
+		return true
+	end,
+
+	Flight = function(_character, root)
+		local camera = workspace.CurrentCamera
+		local attachment = Instance.new("Attachment")
+		attachment.Name = "FlightAttachment"
+		attachment.Parent = root
+		local lift = Instance.new("LinearVelocity")
+		lift.Attachment0 = attachment
+		lift.RelativeTo = Enum.ActuatorRelativeTo.World
+		lift.MaxForce = 1e6
+		lift.Parent = root
+		local cloud = Instance.new("Part")
+		cloud.Name = "FlightCloud"
+		cloud.Shape = Enum.PartType.Ball
+		cloud.Size = Vector3.new(4, 2, 4)
+		cloud.Color = Color3.fromRGB(250, 251, 255)
+		cloud.Material = Enum.Material.SmoothPlastic
+		cloud.CanCollide = false
+		cloud.CanQuery = false
+		cloud.CanTouch = false
+		cloud.Massless = true
+		cloud.CFrame = root.CFrame * CFrame.new(0, -3.2, 0)
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = root
+		weld.Part1 = cloud
+		weld.Parent = cloud
+		cloud.Parent = root.Parent
+		local endsAt = os.clock() + Config.Kit.FlightSeconds
+		task.spawn(function()
+			while os.clock() < endsAt and lift.Parent do
+				local look = if camera then camera.CFrame.LookVector else root.CFrame.LookVector
+				lift.VectorVelocity = look * Config.Kit.FlightSpeed
+				RunService.Heartbeat:Wait()
+			end
+			lift:Destroy()
+			attachment:Destroy()
+			cloud:Destroy()
+		end)
 		return true
 	end,
 
@@ -90,7 +129,7 @@ local powers: { [string]: (Model, BasePart, Humanoid) -> boolean } = {
 		end
 		usedAirJump = true
 		local v = root.AssemblyLinearVelocity
-		root.AssemblyLinearVelocity = Vector3.new(v.X, Config.Ride.CloudJumpPower, v.Z)
+		root.AssemblyLinearVelocity = Vector3.new(v.X, Config.Kit.CloudJumpPower, v.Z)
 		return true
 	end,
 }
@@ -109,7 +148,9 @@ local function usePower(_, state: Enum.UserInputState)
 		return Enum.ContextActionResult.Sink
 	end
 	if power(character, root, humanoid) then
-		readyAt[ability] = os.clock() + (Config.Ride.Cooldowns[ability] or 1)
+		local scale = player:GetAttribute("KitCooldown")
+		readyAt[ability] = os.clock()
+			+ (Config.Kit.Cooldowns[ability] or 1) * (if type(scale) == "number" then scale else 1)
 	end
 	return Enum.ContextActionResult.Sink
 end
@@ -125,15 +166,14 @@ local function refreshBindings()
 end
 
 local function refreshLabel()
-	local riding = player:GetAttribute("Riding")
 	local kit = player:GetAttribute("KitName")
 	local ability = player:GetAttribute("RideAbility")
-	label.Visible = riding ~= nil or kit ~= nil
-	if not riding and not kit then
+	label.Visible = kit ~= nil
+	if not kit then
 		return
 	end
 	local info = ability and StormData.AbilityInfo[ability]
-	local text = if riding then "🐎 Riding " .. tostring(riding) else "🌪️ Kit: " .. tostring(kit)
+	local text = "🌪️ Kit: " .. tostring(kit)
 	if info then
 		local wait = (readyAt[ability] or 0) - os.clock()
 		local status = if wait > 0 then string.format("%.0fs", math.ceil(wait)) else "ready"
@@ -142,10 +182,10 @@ local function refreshLabel()
 	label.Text = text
 end
 
-function RideController.start()
-	local screen = UI.screen("Ride", 2)
+function KitController.start()
+	local screen = UI.screen("Kit", 2)
 	label = UI.label({
-		Name = "RideLabel",
+		Name = "KitLabel",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -160),
 		Size = UDim2.fromOffset(0, 32),
@@ -158,17 +198,6 @@ function RideController.start()
 	})
 	UI.corner(10).Parent = label
 	UI.new("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = label })
-
-	-- In Bed Wars your storm is a kit instead (its power works without riding).
-	if Config.GameMode ~= "BedWars" then
-		ContextActionService:BindAction(TOGGLE_ACTION, function(_, state)
-			if state == Enum.UserInputState.Begin then
-				Remotes.event("ToggleRide"):FireServer()
-			end
-			return Enum.ContextActionResult.Sink
-		end, true, Enum.KeyCode.Q, Enum.KeyCode.ButtonY)
-		ContextActionService:SetTitle(TOGGLE_ACTION, "Ride")
-	end
 
 	player:GetAttributeChangedSignal("RideAbility"):Connect(refreshBindings)
 	refreshBindings()
@@ -185,11 +214,11 @@ function RideController.start()
 		-- Cloud riders glide instead of falling fast.
 		if player:GetAttribute("RideAbility") == "CloudJump" then
 			local v = root.AssemblyLinearVelocity
-			if v.Y < -Config.Ride.GlideFallSpeed then
-				root.AssemblyLinearVelocity = Vector3.new(v.X, -Config.Ride.GlideFallSpeed, v.Z)
+			if v.Y < -Config.Kit.GlideFallSpeed then
+				root.AssemblyLinearVelocity = Vector3.new(v.X, -Config.Kit.GlideFallSpeed, v.Z)
 			end
 		end
 	end)
 end
 
-return RideController
+return KitController

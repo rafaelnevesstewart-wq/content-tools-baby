@@ -1,17 +1,18 @@
 --!strict
--- Server-wide weather events. The forecast TV counts down to the next one.
+-- Match weather: events that shake up a Bed Wars match while it runs (see
+-- WeatherService for when they happen). The forecast TV in the lobby and the
+-- HUD show what's on and what's next.
 
 export type WeatherEvent = {
 	key: string,
 	name: string,
 	emoji: string,
 	description: string,
-	rarityMultipliers: { number }, -- spawn weight multiplier per rarity index
-	spawnRateMultiplier: number,
-	extraStorms: number, -- raises the wild storm cap while the event runs
-	mutationChanceMultiplier: number,
-	mutationBoosts: { [string]: number }, -- mutation id -> weight multiplier
-	incomeMultiplier: number?, -- everyone's Sparks income during the event
+	generators: number?, -- every generator runs this much faster
+	middle: number?, -- only the middle island's Crystal and Core generators
+	knockback: number?, -- hits push this much harder
+	sparks: number?, -- Sparks from matches are multiplied by this
+	gravity: number?, -- share of normal gravity (lower = jump higher)
 	lighting: {
 		ClockTime: number,
 		Ambient: Color3,
@@ -25,32 +26,11 @@ local WeatherEvents = {}
 
 WeatherEvents.List = {
 	{
-		key = "RainbowHour",
-		name = "Rainbow Hour",
-		emoji = "🌈",
-		description = "Rare, Epic and Legendary storms are 3x more common!",
-		rarityMultipliers = { 1, 1, 3, 3, 3 },
-		spawnRateMultiplier = 1,
-		extraStorms = 4,
-		mutationChanceMultiplier = 1.5,
-		mutationBoosts = { Prismatic = 5 },
-		lighting = {
-			ClockTime = 16,
-			Ambient = Color3.fromRGB(170, 130, 190),
-			OutdoorAmbient = Color3.fromRGB(230, 180, 230),
-			AtmosphereColor = Color3.fromRGB(255, 190, 230),
-		},
-	},
-	{
-		key = "ThunderFrenzy",
-		name = "Thunder Frenzy",
+		key = "Thunderstorm",
+		name = "Thunderstorm",
 		emoji = "⛈️",
-		description = "Storms spawn twice as fast and Charged mutations are everywhere!",
-		rarityMultipliers = { 1, 1, 1.5, 1.5, 1.5 },
-		spawnRateMultiplier = 2,
-		extraStorms = 8,
-		mutationChanceMultiplier = 3,
-		mutationBoosts = { Charged = 3 },
+		description = "Every generator runs twice as fast. Stock up!",
+		generators = 2,
 		lighting = {
 			ClockTime = 18.2,
 			Ambient = Color3.fromRGB(90, 90, 130),
@@ -59,15 +39,50 @@ WeatherEvents.List = {
 		},
 	},
 	{
+		key = "RainbowHour",
+		name = "Rainbow Hour",
+		emoji = "🌈",
+		description = "Double Sparks for every knockout, bed and win!",
+		sparks = 2,
+		lighting = {
+			ClockTime = 16,
+			Ambient = Color3.fromRGB(170, 130, 190),
+			OutdoorAmbient = Color3.fromRGB(230, 180, 230),
+			AtmosphereColor = Color3.fromRGB(255, 190, 230),
+		},
+	},
+	{
+		key = "Windstorm",
+		name = "Windstorm",
+		emoji = "🌬️",
+		description = "Hits knock people 60% farther. Careful near the edge!",
+		knockback = 1.6,
+		lighting = {
+			ClockTime = 14,
+			Ambient = Color3.fromRGB(150, 165, 175),
+			OutdoorAmbient = Color3.fromRGB(190, 205, 215),
+			AtmosphereColor = Color3.fromRGB(200, 215, 225),
+		},
+	},
+	{
+		key = "FogNight",
+		name = "Fog Night",
+		emoji = "🌫️",
+		description = "Thick fog! Nobody can see you sneaking up on their bed.",
+		lighting = {
+			ClockTime = 21,
+			Ambient = Color3.fromRGB(120, 125, 150),
+			OutdoorAmbient = Color3.fromRGB(140, 145, 175),
+			AtmosphereColor = Color3.fromRGB(200, 205, 225),
+			AtmosphereDensity = 0.62,
+		},
+	},
+	{
 		key = "MeteorNight",
-		name = "Meteor Night",
+		name = "Meteor Shower",
 		emoji = "🌠",
-		description = "Epic and Legendary storms fall from the sky!",
-		rarityMultipliers = { 1, 1, 2, 5, 5 },
-		spawnRateMultiplier = 1.25,
-		extraStorms = 4,
-		mutationChanceMultiplier = 1,
-		mutationBoosts = { Void = 5, Golden = 2 },
+		description = "The middle island's Crystal and Core generators run 3x faster!",
+		middle = 3,
 		lighting = {
 			ClockTime = 0,
 			Ambient = Color3.fromRGB(110, 100, 170),
@@ -76,56 +91,16 @@ WeatherEvents.List = {
 		},
 	},
 	{
-		key = "DoubleSparks",
-		name = "Double Sparks Hour",
-		emoji = "💰",
-		description = "Every storm earns double Sparks!",
-		rarityMultipliers = { 1, 1, 1, 1, 1 },
-		spawnRateMultiplier = 1,
-		extraStorms = 0,
-		mutationChanceMultiplier = 1,
-		mutationBoosts = {},
-		incomeMultiplier = 2,
+		key = "MoonGravity",
+		name = "Moon Gravity",
+		emoji = "🌙",
+		description = "Low gravity: jump super high and fly farther when hit!",
+		gravity = 0.45,
 		lighting = {
-			ClockTime = 13,
-			Ambient = Color3.fromRGB(190, 170, 120),
-			OutdoorAmbient = Color3.fromRGB(240, 215, 150),
-			AtmosphereColor = Color3.fromRGB(255, 230, 160),
-		},
-	},
-	{
-		key = "MutationStorm",
-		name = "Mutation Storm",
-		emoji = "🧬",
-		description = "Mutations are 5x more likely on every catch!",
-		rarityMultipliers = { 1, 1, 1.2, 1.2, 1.2 },
-		spawnRateMultiplier = 1.25,
-		extraStorms = 4,
-		mutationChanceMultiplier = 5,
-		mutationBoosts = { Molten = 2, Void = 2, Golden = 2 },
-		lighting = {
-			ClockTime = 17,
-			Ambient = Color3.fromRGB(130, 170, 120),
-			OutdoorAmbient = Color3.fromRGB(170, 220, 160),
-			AtmosphereColor = Color3.fromRGB(170, 255, 170),
-		},
-	},
-	{
-		key = "FogNight",
-		name = "Fog Night",
-		emoji = "🌫️",
-		description = "Rare storms hide in the thick fog. Look closely!",
-		rarityMultipliers = { 1, 1, 2.5, 3, 3 },
-		spawnRateMultiplier = 1,
-		extraStorms = 6,
-		mutationChanceMultiplier = 1,
-		mutationBoosts = {},
-		lighting = {
-			ClockTime = 21,
-			Ambient = Color3.fromRGB(120, 125, 150),
-			OutdoorAmbient = Color3.fromRGB(140, 145, 175),
-			AtmosphereColor = Color3.fromRGB(200, 205, 225),
-			AtmosphereDensity = 0.62,
+			ClockTime = 23,
+			Ambient = Color3.fromRGB(120, 130, 170),
+			OutdoorAmbient = Color3.fromRGB(150, 160, 210),
+			AtmosphereColor = Color3.fromRGB(110, 120, 170),
 		},
 	},
 } :: { WeatherEvent }

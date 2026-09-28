@@ -1,4 +1,4 @@
--- Bed Wars rounds. Players wait in the lobby (the Wild Skies). When enough
+-- Bed Wars rounds. Players wait in the lobby (the middle island). When enough
 -- are here, a match starts: teams are made (solos with few players, teams of
 -- 2 when fuller), each team gets an island with a cloud bed, a resource
 -- generator and an item shop. While your bed stands you respawn; once it's
@@ -15,7 +15,6 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local MatchData = require(Shared.MatchData)
-local Products = require(Shared.Products)
 local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
@@ -24,9 +23,11 @@ local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 local WorldBuilder = require(Modules.WorldBuilder)
 
+local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local SeasonService = require(script.Parent.SeasonService)
+local WeatherService = require(script.Parent.WeatherService)
 
 local MatchService = {}
 
@@ -42,6 +43,8 @@ MatchService.BedBroken = Signal.new()
 -- (player) for everyone on the winning team, and everyone who played.
 MatchService.Won = Signal.new()
 MatchService.Played = Signal.new()
+-- (player, resourceKey, amount) when someone picks up from a generator.
+MatchService.Collected = Signal.new()
 
 export type Stock = { [string]: number }
 export type Generator = {
@@ -186,13 +189,7 @@ local function reward(player: Player, kind: string)
 	if not data or not prize or not player.Parent then
 		return
 	end
-	local boost = (1 + (data.styleBonus or 0))
-		* (if player:GetAttribute(Products.passAttribute("VIP")) == true then Config.Income.VIPMultiplier else 1)
-	local abuseUntil = workspace:GetAttribute("AbuseUntil")
-	if type(abuseUntil) == "number" and abuseUntil > now() then
-		boost *= Config.Admin.AbuseIncomeMultiplier
-	end
-	local sparks = math.floor(prize.sparks * boost)
+	local sparks = math.floor(prize.sparks * IncomeService.multiplier(player))
 	IncomeService.addSparks(player, sparks)
 	SeasonService.addXp(player, prize.stars)
 	local root = rootOf(player)
@@ -301,20 +298,17 @@ local function cloudBed(team: MatchTeam): Model
 		Color = Color3.fromRGB(120, 88, 60),
 		Material = Enum.Material.Wood,
 	})
-	local tint = team.info.color:Lerp(Color3.new(1, 1, 1), 0.45)
-	for i = 0, 5 do
-		local puff = part(bed, {
-			Name = "Mattress",
-			CanQuery = false, -- so only placed blocks hide the bed from breakers
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.one * 3.4,
-			CFrame = frame * CFrame.new((i % 2 - 0.5) * 2.2, 2, -3 + math.floor(i / 2) * 2.8),
-			Color = tint,
-			Material = Enum.Material.SmoothPlastic,
-			CanCollide = false,
-		})
-		puff.CastShadow = false
-	end
+	-- A blanket in the team's color; the cloud mattress is added by
+	-- CosmeticService.dressBed once the team's players are known.
+	part(bed, {
+		Name = "Blanket",
+		CanQuery = false,
+		Size = Vector3.new(6.2, 0.4, 4.6),
+		CFrame = frame * CFrame.new(0, 3.3, -2),
+		Color = team.info.color,
+		Material = Enum.Material.Fabric,
+		CanCollide = false,
+	})
 	part(bed, {
 		Name = "Pillow",
 		CanQuery = false, -- so only placed blocks hide the bed from breakers
@@ -531,6 +525,7 @@ local function runGenerator(generator: Generator, dt: number, speed: number)
 				for key, amount in generator.stock do
 					if amount > 0 then
 						MatchService.addResource(player, key, amount)
+						MatchService.Collected:Fire(player, key, amount)
 						generator.stock[key] = 0
 					end
 				end
@@ -592,6 +587,10 @@ local function onDied(player: Player)
 	local killer = if hit and os.clock() - hit.at < 12 and hit.by.Parent then hit.by else nil
 	lastHit[player] = nil
 	local final = not team.bedAlive
+	local root = rootOf(player)
+	if killer and root then
+		CosmeticService.knockout(killer, root.Position)
+	end
 	if final then
 		eliminated[player] = true
 		team.alive[player] = nil
@@ -732,6 +731,11 @@ local function startMatch()
 		player:SetAttribute("Spectating", nil)
 		clearResources(player)
 	end
+	for _, team in teams do
+		if team.bed then
+			CosmeticService.dressBed(team.bed, team.frame * CFrame.new(0, 0, 22), team.members)
+		end
+	end
 	startedTeams = teamCount
 	phase = "playing"
 	startedAt = now()
@@ -808,7 +812,6 @@ function MatchService.init()
 	matchFolder = Instance.new("Folder")
 	matchFolder.Name = "Match"
 	matchFolder.Parent = workspace
-	workspace:SetAttribute("GameMode", "BedWars")
 	Players.RespawnTime = Config.Match.RespawnSeconds
 	lobbySpot = CFrame.new(0, 4, -(Config.World.CenterRadius - 20))
 	buildSpectatorBox()
@@ -878,7 +881,11 @@ function MatchService.start()
 				for _, team in teams do
 					local generator = team.generator
 					if generator then
-						runGenerator(generator, dt, 1 + 0.5 * (team.upgrades.Forge or 0))
+						runGenerator(
+							generator,
+							dt,
+							(1 + 0.5 * (team.upgrades.Forge or 0)) * WeatherService.generatorMultiplier(false)
+						)
 					end
 					-- Healing Aura: teammates heal on their own island.
 					if (team.upgrades.HealAura or 0) > 0 then
@@ -895,7 +902,7 @@ function MatchService.start()
 					end
 				end
 				for _, generator in middleGenerators do
-					runGenerator(generator, dt, multiplier)
+					runGenerator(generator, dt, multiplier * WeatherService.generatorMultiplier(true))
 				end
 				if not suddenDeath and t - startedAt >= Config.Match.SuddenDeathAt then
 					suddenDeath = true

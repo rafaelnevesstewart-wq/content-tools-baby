@@ -1,18 +1,14 @@
--- The shop window: Sparks upgrades, island themes, thief styles and Robux items.
+-- The 💎 Robux shop window: game passes (VIP, Star Booster) and products
+-- (Sparks, Golden Kit Crate, wheel spins, Battle Pass Premium, tier skips,
+-- Rainbow Hour). Robux cosmetics are sold in 🎨 Style instead.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local Config = require(Shared.Config)
-local Economy = require(Shared.Economy)
-local Format = require(Shared.Format)
 local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
-local StormData = require(Shared.StormData)
-local ThemeData = require(Shared.ThemeData)
-local ThiefStyles = require(Shared.ThiefStyles)
 
 local Toasts = require(script.Parent.Toasts)
 local UI = require(script.Parent.UI)
@@ -20,16 +16,6 @@ local UI = require(script.Parent.UI)
 local player = Players.LocalPlayer
 
 local Shop = {}
-
-local BED_WARS = Config.GameMode == "BedWars"
--- Robux items that only make sense in the storm-catching tycoon.
-local TYCOON_ONLY = {
-	DoubleSlots = true,
-	AutoCollect = true,
-	StormTamer = true,
-	EmergencyLock = true,
-	RaidShield = true,
-}
 
 type Card = {
 	frame: Frame,
@@ -39,16 +25,8 @@ type Card = {
 }
 
 local window: Frame
-local upgradeList: ScrollingFrame
-local robuxList: ScrollingFrame
-local styleList: ScrollingFrame
-local themeList: ScrollingFrame
-local tabButtons: { [string]: TextButton } = {}
+local list: ScrollingFrame
 local refreshers: { () -> () } = {}
-
-local function attr(name: string): number
-	return player:GetAttribute(name) or 0
-end
 
 local function makeCard(parent: Instance, order: number): Card
 	local frame = UI.new("Frame", {
@@ -91,108 +69,6 @@ local function setBuyable(card: Card, text: string, enabled: boolean, color: Col
 	card.button.TextColor3 = Color3.new(1, 1, 1)
 end
 
-local function buySparks(itemKey: string)
-	local ok, message = Remotes.func("BuyItem"):InvokeServer(itemKey)
-	Toasts.show(message, if ok then "success" else "warn")
-end
-
-local function sparksPrice(cost: number?): (string, boolean)
-	if not cost then
-		return "MAX", false
-	end
-	return "⚡ " .. Format.number(cost), attr("Sparks") >= cost
-end
-
-local function buildUpgrades()
-	local order = 0
-	local function add(key: string, refresh: (Card) -> ())
-		order += 1
-		local card = makeCard(upgradeList, order)
-		card.button.Activated:Connect(function()
-			if card.button.Active then
-				buySparks(key)
-			end
-		end)
-		local function run()
-			refresh(card)
-		end
-		table.insert(refreshers, run)
-		run()
-	end
-
-	add("Jar", function(card)
-		local tier = math.max(1, attr("JarTier"))
-		local jar = Config.Jars[tier]
-		local nextJar = Config.Jars[tier + 1]
-		card.title.Text = "🫙 " .. jar.name
-		card.body.Text = if nextJar
-			then "Upgrade to "
-				.. nextJar.name
-				.. ": catch "
-				.. StormData.Rarities[nextJar.maxRarity].name
-				.. " storms, fewer dodges and hits."
-			else "The best jar there is. Every storm fears it."
-		local needed = if nextJar then nextJar.climate or 0 else 0
-		if attr("Climate") < needed then
-			setBuyable(card, "🔒 Climate " .. needed, false)
-			return
-		end
-		local text, can = sparksPrice(Economy.jarCost(tier))
-		setBuyable(card, text, can)
-	end)
-
-	add("Pedestal", function(card)
-		local owned = attr("Pedestals")
-		local max = attr("MaxPedestals")
-		card.title.Text = "🏛️ Pedestals " .. owned .. "/" .. max
-		card.body.Text = "Each pedestal displays one storm. More storms, more Sparks!"
-		local cost = if owned < max then Economy.pedestalCost(owned) else nil
-		local text, can = sparksPrice(cost)
-		setBuyable(card, text, can)
-	end)
-
-	add("Floor", function(card)
-		local floors = math.max(1, attr("Floors"))
-		card.title.Text = "🏠 Island Floors " .. floors .. "/" .. Config.Floors.Max
-		card.body.Text = if floors < Config.Floors.Max
-			then "Build floor " .. (floors + 1) .. " over your pedestals: room for more storms!"
-			else "Your island is a full sky tower!"
-		local text, can = sparksPrice(Economy.floorCost(floors))
-		setBuyable(card, text, can)
-	end)
-
-	add("Boots", function(card)
-		local level = attr("BootsLevel")
-		card.title.Text = "👟 Boots of Wind  Lv " .. level .. "/" .. Config.Boots.MaxLevel
-		card.body.Text = "+"
-			.. Config.Boots.SpeedPerLevel
-			.. " run speed per level. Catch fast storms and outrun thieves."
-		local text, can = sparksPrice(Economy.bootsCost(level))
-		setBuyable(card, text, can)
-	end)
-
-	add("Snacks", function(card)
-		card.title.Text = "🍪 Storm Snacks"
-		card.body.Text = "Makes every storm 😄 Happy (+25% Sparks). Bored storms earn less and can escape!"
-		if attr("StormCount") == 0 then
-			setBuyable(card, "No storms", false)
-			return
-		end
-		local text, can = sparksPrice(attr("SnackCost"))
-		setBuyable(card, text, can)
-	end)
-
-	add("Trap", function(card)
-		local level = attr("TrapLevel")
-		card.title.Text = "⚡ Lightning Rod  Lv " .. level .. "/" .. #Config.Traps.Costs
-		card.body.Text = "Stuns thieves for "
-			.. (level + 1) * Config.Traps.StunPerLevel
-			.. "s the moment they grab your storm."
-		local text, can = sparksPrice(Economy.trapCost(level))
-		setBuyable(card, text, can)
-	end)
-end
-
 local function buyRobux(item: Products.Item, isPass: boolean)
 	if item.id == 0 then
 		if RunService:IsStudio() then
@@ -209,11 +85,11 @@ local function buyRobux(item: Products.Item, isPass: boolean)
 	end
 end
 
-local function buildRobux()
+local function build()
 	local order = 0
 	local function add(item: Products.Item, isPass: boolean)
 		order += 1
-		local card = makeCard(robuxList, order)
+		local card = makeCard(list, order)
 		card.title.Text = (if isPass then "🎟️ " else "💎 ") .. item.name
 		card.body.Text = item.description
 		card.button.Activated:Connect(function()
@@ -224,9 +100,6 @@ local function buildRobux()
 		local function run()
 			local owned = (isPass and player:GetAttribute(Products.passAttribute(item.key)) == true)
 				or (item.key == "SeasonPremium" and player:GetAttribute("SeasonPremium") == true)
-			if item.key == "RaidShield" then
-				card.body.Text = item.description .. " (You have " .. attr("RaidShields") .. ")"
-			end
 			if owned then
 				setBuyable(card, "Owned ✓", false)
 			else
@@ -237,104 +110,15 @@ local function buildRobux()
 		run()
 	end
 	for _, pass in Products.Passes do
-		if not (BED_WARS and TYCOON_ONLY[pass.key]) then
-			add(pass, true)
-		end
+		add(pass, true)
 	end
 	for _, product in Products.DevProducts do
-		if not (BED_WARS and TYCOON_ONLY[product.key]) then
-			add(product, false)
-		end
+		add(product, false)
 	end
 end
 
-local function buildStyles()
-	for order, style in ThiefStyles.List do
-		local card = makeCard(styleList, order)
-		card.title.Text = style.emoji .. " " .. style.name
-		card.body.Text = style.description
-		card.button.Activated:Connect(function()
-			if card.button.Active then
-				buySparks("Style:" .. style.key)
-			end
-		end)
-		local function run()
-			local unlocked = table.find(string.split(player:GetAttribute("UnlockedStyles") or "", ","), style.key)
-			if player:GetAttribute("ThiefStyle") == style.key then
-				setBuyable(card, "✓ Equipped", true, UI.Colors.Good)
-			elseif unlocked then
-				setBuyable(card, "Equip", true, UI.Colors.Stroke)
-			else
-				local text, can = sparksPrice(style.cost)
-				setBuyable(card, text, can)
-			end
-		end
-		table.insert(refreshers, run)
-		run()
-	end
-end
-
-local function buildThemes()
-	for order, theme in ThemeData.List do
-		local card = makeCard(themeList, order)
-		card.title.Text = theme.emoji .. " " .. theme.name
-		card.body.Text = theme.description
-		if theme.ground then
-			card.frame.BackgroundColor3 = UI.Colors.PanelLight:Lerp(theme.ground, 0.2)
-		end
-		card.button.Activated:Connect(function()
-			if card.button.Active then
-				buySparks("Theme:" .. theme.key)
-			end
-		end)
-		local function run()
-			local owned = theme.cost == 0
-				or table.find(string.split(player:GetAttribute("UnlockedThemes") or "", ","), theme.key) ~= nil
-			if player:GetAttribute("Theme") == theme.key then
-				setBuyable(card, "✓ Using", false)
-				card.button.BackgroundColor3 = UI.Colors.Good
-			elseif owned then
-				setBuyable(card, "Use", true, UI.Colors.Stroke)
-			else
-				local text, can = sparksPrice(theme.cost)
-				setBuyable(card, text, can)
-			end
-		end
-		table.insert(refreshers, run)
-		run()
-	end
-end
-
-local function showTab(name: string)
-	upgradeList.Visible = name == "Upgrades"
-	themeList.Visible = name == "Themes"
-	robuxList.Visible = name == "Robux"
-	styleList.Visible = name == "Styles"
-	for tab, button in tabButtons do
-		button.BackgroundColor3 = if tab == name then UI.Colors.Stroke else UI.Colors.PanelLight
-	end
-end
-
-function Shop.toggle(tab: string?)
-	window.Visible = not window.Visible or tab ~= nil
-	if tab and not BED_WARS then
-		showTab(tab)
-	end
-end
-
-local function makeList(name: string): ScrollingFrame
-	local list = UI.new("ScrollingFrame", {
-		Name = name,
-		Position = UDim2.fromOffset(0, 104),
-		Size = UDim2.new(1, 0, 1, -104),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 6,
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		CanvasSize = UDim2.new(),
-		Parent = window,
-	}, { UI.list(8) })
-	return list
+function Shop.toggle()
+	window.Visible = not window.Visible
 end
 
 function Shop.start()
@@ -349,20 +133,20 @@ function Shop.start()
 		Parent = screen,
 	}, {
 		UI.corner(18),
-		UI.stroke(UI.Colors.Stroke, 3),
+		UI.stroke(UI.Colors.Robux, 3),
 		UI.padding(14),
 		UI.new("UISizeConstraint", { MaxSize = Vector2.new(560, 520) }),
 	})
 
 	UI.label({
 		Size = UDim2.new(1, -60, 0, 40),
-		Text = "🛒 Storm Shop",
+		Text = "💎 Robux Shop",
 		TextSize = 30,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = UI.Colors.Spark,
 		Parent = window,
 	})
-	local close = UI.button({
+	UI.button({
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.fromScale(1, 0),
 		Size = UDim2.fromOffset(44, 40),
@@ -370,56 +154,39 @@ function Shop.start()
 		TextSize = 22,
 		BackgroundColor3 = UI.Colors.Bad,
 		Parent = window,
-	})
-	close.Activated:Connect(function()
-		window.Visible = false
-	end)
-
-	local tabs = UI.new("Frame", {
-		Position = UDim2.fromOffset(0, 50),
-		Size = UDim2.new(1, 0, 0, 44),
-		BackgroundTransparency = 1,
-		Parent = window,
-	}, { UI.list(8, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left) })
-	-- Bed Wars has no island upgrades, themes or thief styles.
-	local tabList = if BED_WARS
-		then { { "Robux", "💎 Robux" } }
-		else {
-			{ "Upgrades", "⚡ Upgrades" },
-			{ "Themes", "🏝️ Themes" },
-			{ "Styles", "🥷 Styles" },
-			{ "Robux", "💎 Robux" },
-		}
-	for index, tab in tabList do
-		local button = UI.button({
-			LayoutOrder = index,
-			Size = UDim2.new(1 / #tabList, -6, 1, 0),
-			Text = tab[2],
-			TextSize = 17,
-			Parent = tabs,
-		})
-		button.Activated:Connect(function()
-			showTab(tab[1])
+	}).Activated
+		:Connect(function()
+			window.Visible = false
 		end)
-		tabButtons[tab[1]] = button
-	end
+	UI.label({
+		Position = UDim2.fromOffset(0, 42),
+		Size = UDim2.new(1, 0, 0, 22),
+		Text = "Nothing here makes you stronger in a match. It's all Sparks, kits, looks and the battle pass.",
+		TextSize = 13,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = UI.Colors.Muted,
+		Parent = window,
+	})
 
-	upgradeList = makeList("Upgrades")
-	robuxList = makeList("Robux")
-	styleList = makeList("Styles")
-	themeList = makeList("Themes")
-	buildUpgrades()
-	buildThemes()
-	buildRobux()
-	buildStyles()
-	showTab(if BED_WARS then "Robux" else "Upgrades")
+	list = UI.new("ScrollingFrame", {
+		Name = "Robux",
+		Position = UDim2.fromOffset(0, 72),
+		Size = UDim2.new(1, 0, 1, -72),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Parent = window,
+	}, { UI.list(8) })
+	build()
 
-	local function refreshAll()
+	player.AttributeChanged:Connect(function()
 		for _, refresh in refreshers do
 			refresh()
 		end
-	end
-	player.AttributeChanged:Connect(refreshAll)
+	end)
 end
 
 return Shop

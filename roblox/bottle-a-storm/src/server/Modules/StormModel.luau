@@ -1,11 +1,10 @@
--- Builds the storm creatures (living little weather clouds) out of plain
--- parts and particles, so the game runs with no uploaded art. Swap in real
--- meshes later by changing build() only.
+-- Builds the storm kits (living little weather clouds that float beside you
+-- in a match) out of plain parts and particles, so the game runs with no
+-- uploaded art. Swap in real meshes later by changing build() only.
 
 local CollectionService = game:GetService("CollectionService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local SkinData = require(Shared.SkinData)
 local StormData = require(Shared.StormData)
 
 local StormModel = {}
@@ -426,7 +425,7 @@ export type BuildOptions = {
 	mutation: string?,
 	scale: number?, -- multiplies the rarity's size
 	anchored: boolean?, -- false when the model gets welded to a character
-	angry: boolean?, -- frowning eyebrows, for Mega-Storm bosses
+	angry: boolean?, -- frowning eyebrows
 }
 
 -- Returns a Model whose PrimaryPart "Root" is the pivot. The creature faces -Z.
@@ -610,57 +609,7 @@ function StormModel.build(def: StormData.StormDef, options: BuildOptions?): Mode
 	return model
 end
 
--- A glass jar with a lid, sized around a storm of the given rarity. The jar's
--- base sits at the pivot, so place it on top of a pedestal.
-function StormModel.buildJar(scale: number, anchored: boolean, skin: string?): Model
-	local jar = Instance.new("Model")
-	jar.Name = "Jar"
-
-	local height = 7.5 * scale
-	local width = 7 * scale
-
-	local glass = Instance.new("Part")
-	glass.Name = "Glass"
-	glass.Shape = Enum.PartType.Cylinder
-	glass.Size = Vector3.new(height, width, width)
-	glass.CFrame = CFrame.new(0, height / 2, 0) * CFrame.Angles(0, 0, math.rad(90))
-	glass.Material = Enum.Material.Glass
-	glass.Color = Color3.fromRGB(200, 235, 255)
-	glass.Transparency = 0.75
-	glass.CanCollide = false
-	glass.CanTouch = false
-	glass.CanQuery = false
-	glass.Massless = true
-	glass.CastShadow = false
-	glass.Anchored = anchored
-	glass.Parent = jar
-	jar.PrimaryPart = glass
-
-	local lid = Instance.new("Part")
-	lid.Name = "Lid"
-	lid.Shape = Enum.PartType.Cylinder
-	lid.Size = Vector3.new(0.8 * scale, width * 0.8, width * 0.8)
-	lid.CFrame = CFrame.new(0, height + 0.4 * scale, 0) * CFrame.Angles(0, 0, math.rad(90))
-	lid.Material = Enum.Material.Metal
-	lid.Color = Color3.fromRGB(190, 140, 70)
-	lid.CanCollide = false
-	lid.CanTouch = false
-	lid.CanQuery = false
-	lid.Massless = true
-	lid.Anchored = anchored
-	lid.Parent = jar
-	if not anchored then
-		weld(glass, lid)
-	end
-	if skin and skin ~= SkinData.DefaultJar then
-		SkinData.applyJar(glass, lid, skin)
-		glass.Transparency = math.max(glass.Transparency, 0.5) -- keep the storm inside visible
-	end
-
-	return jar
-end
-
--- Floating label above a storm.
+-- Floating label above a kit storm.
 function StormModel.nameTag(def: StormData.StormDef, mutation: string?, subtitle: string?): BillboardGui
 	local rarity = StormData.rarityOf(def)
 	local mutationDef = StormData.getMutation(mutation)

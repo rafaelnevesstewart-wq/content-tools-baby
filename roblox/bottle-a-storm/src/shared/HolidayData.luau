@@ -1,14 +1,15 @@
 --!strict
 -- Holiday events: limited-time themed events on real calendar dates (UTC).
--- While one is on, its storms roam the Wild Skies, every catch earns the
--- event currency, the Wild Skies gets themed decorations, and the event shop
--- (🏪 Market → event tab) sells its storms. Outside the dates nothing shows.
+-- While one is on, every Bed Wars match earns the event currency (playing,
+-- knockouts, beds, wins), the lobby gets themed decorations, and the event
+-- shop (🏪 Market → event tab) sells its exclusive kits. Outside the dates
+-- nothing shows.
 
 export type ShopItem = {
 	label: string,
 	cost: number, -- event currency
-	stormId: string?, -- a storm, or...
-	reward: { [string]: any }?, -- ...a season-pass style reward
+	stormId: string?, -- an exclusive kit, or...
+	reward: { [string]: any }?, -- ...a battle pass style reward
 }
 
 export type Holiday = {
@@ -20,7 +21,7 @@ export type Holiday = {
 	from: { month: number, day: number },
 	to: { month: number, day: number }, -- may wrap past New Year
 	decor: string, -- "pumpkins" | "snowmen" | "umbrellas"
-	storms: { string }, -- Epic, Legendary
+	storms: { string }, -- exclusive kits: Epic, Legendary
 	shop: { ShopItem },
 }
 
@@ -65,20 +66,18 @@ HolidayData.List = {
 	},
 } :: { Holiday }
 
--- Every event's shop has the same layout: its two storms and a few extras.
+-- Every event's shop has the same layout: its two kits and a few extras.
 for _, holiday in HolidayData.List do
 	holiday.shop = {
-		{ label = "Epic event storm", cost = 400, stormId = holiday.storms[1] },
-		{ label = "LEGENDARY event storm", cost = 2500, stormId = holiday.storms[2] },
-		{ label = "🍪 Storm Snacks", cost = 60, reward = { kind = "snacks" } },
-		{ label = "⚡ 30 min of Sparks", cost = 150, reward = { kind = "sparks", minutes = 30, min = 3000 } },
-		{ label = "🛡️ Raid Shield", cost = 250, reward = { kind = "shield", amount = 1 } },
+		{ label = "Epic event kit", cost = 60, stormId = holiday.storms[1] },
+		{ label = "LEGENDARY event kit", cost = 300, stormId = holiday.storms[2] },
+		{ label = "💙 Random Rare kit", cost = 25, reward = { kind = "kit", rarity = 3 } },
+		{ label = "⚡ 1,000 Sparks", cost = 15, reward = { kind = "sparks", amount = 1000 } },
 	}
 end
 
-HolidayData.CatchPoints = { 1, 2, 3, 5, 8, 10, 12 } -- currency per catch, by rarity
-HolidayData.SpawnChance = 0.06 -- chance a new Wild Skies storm is an event storm
-HolidayData.LegendaryShare = 0.15 -- of those, how many are the Legendary one
+-- Event currency earned in matches.
+HolidayData.Points = { Played = 3, Kill = 2, FinalKill = 4, Bed = 5, Win = 8 }
 
 function HolidayData.get(key: string?): Holiday?
 	for _, holiday in HolidayData.List do

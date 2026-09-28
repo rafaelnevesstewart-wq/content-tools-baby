@@ -1,8 +1,8 @@
--- Fills in the weather forecast TV on the Wild Skies island.
+-- Fills in the weather forecast TV in the lobby: the match weather on now,
+-- or what's coming next.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
-local RaidData = require(Shared.RaidData)
 local WeatherEvents = require(Shared.WeatherEvents)
 
 local ForecastController = {}
@@ -25,20 +25,6 @@ local function screens(): { Instance }
 end
 
 local function text(now: number): (string, string)
-	local raidState = workspace:GetAttribute("RaidState")
-	local boss = RaidData.get(workspace:GetAttribute("RaidBoss"))
-	if raidState == "warning" then
-		local wait = (workspace:GetAttribute("RaidStartsAt") or now) - now
-		return "🌪️ MEGA-STORM INCOMING!", "Arrives in " .. Format.time(wait) .. ". Everyone to the Wild Skies!"
-	elseif raidState == "active" and boss then
-		local left = (workspace:GetAttribute("RaidEndsAt") or now) - now
-		return boss.emoji .. " " .. string.upper(boss.name) .. " ATTACKS!",
-			"HP "
-				.. Format.number(workspace:GetAttribute("RaidHp") or 0)
-				.. "  ·  "
-				.. Format.time(left)
-				.. " left. Fight together!"
-	end
 	local current = WeatherEvents.get(workspace:GetAttribute("WeatherEvent"))
 	if current then
 		local left = (workspace:GetAttribute("WeatherEndsAt") or now) - now
@@ -46,10 +32,13 @@ local function text(now: number): (string, string)
 			current.description .. "  Ends in " .. Format.time(left)
 	end
 	local nextEvent = WeatherEvents.get(workspace:GetAttribute("NextWeather"))
-	if nextEvent then
-		local wait = (workspace:GetAttribute("NextWeatherAt") or now) - now
+	local nextAt = workspace:GetAttribute("NextWeatherAt")
+	if nextEvent and type(nextAt) == "number" and nextAt > now then
 		return "Next: " .. nextEvent.emoji .. " " .. nextEvent.name,
-			"Arrives in " .. Format.time(wait) .. ". " .. nextEvent.description
+			"In " .. Format.time(nextAt - now) .. ". " .. nextEvent.description
+	end
+	if nextEvent then
+		return "Next match: " .. nextEvent.emoji .. " " .. nextEvent.name, nextEvent.description
 	end
 	return "☀️ Clear skies", ""
 end

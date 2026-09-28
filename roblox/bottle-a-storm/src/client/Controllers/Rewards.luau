@@ -1,9 +1,11 @@
--- The 🎁 Rewards window, with four tabs:
+-- The 🎁 Rewards window, with these tabs:
 --   * Daily: 7-day login streak. Claim one reward a day.
---   * Quests: 3 small goals that change every day.
---   * Index: every storm in the game. Ones you haven't found show as "???".
---     Finding all storms of a rarity completes a row (+5% Sparks forever).
+--   * Quests: 3 Bed Wars goals that change every day.
+--   * Kits: your Kit Collection, every kit in the game. Ones you don't have
+--     show as "???". Collecting every kit of a rarity completes a row (+5%
+--     match Sparks forever).
 --   * Titles: earned by playing; pick one to show above your name.
+--   * Codes, and the daily prize wheel (Spin).
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -115,7 +117,9 @@ local function buildDaily(page: Frame, data: Info)
 			Text = RewardsData.describe(reward) .. (if claimed then "\n✓" else ""),
 			TextScaled = true,
 			TextWrapped = true,
-			TextColor3 = if day >= 6 then UI.ink(StormData.Rarities[reward.rarity or 3].color) else UI.Colors.Text,
+			TextColor3 = if reward.kind == "kit"
+				then UI.ink(StormData.Rarities[reward.rarity or 3].color)
+				else UI.Colors.Text,
 			TextTransparency = if claimed then 0.4 else 0,
 			Parent = tile,
 		}, 16)
@@ -140,7 +144,11 @@ local function buildQuests(page: Frame, data: Info)
 	UI.label({
 		LayoutOrder = 0,
 		Size = UDim2.new(1, 0, 0, 24),
-		Text = "New quests every day. Each one pays Sparks and " .. Config.Quests.RewardStars .. " ⭐ Season Stars.",
+		Text = "New Bed Wars quests every day. Each one pays ⚡"
+			.. Config.Quests.RewardSparks
+			.. " and "
+			.. Config.Quests.RewardStars
+			.. " ⭐ battle pass stars.",
 		TextSize = 16,
 		TextColor3 = UI.Colors.Muted,
 		Parent = page,
@@ -196,18 +204,14 @@ local function buildQuests(page: Frame, data: Info)
 	end
 end
 
--- Where to look for a storm you haven't found yet.
+-- Where to get a kit you don't have yet.
 local function hint(def: StormData.StormDef): string
 	if def.holiday then
 		return "Holiday event"
 	elseif def.season then
-		return "Season pass"
-	elseif def.hybrid then
-		return "Storm Mixer"
-	elseif def.biome then
-		return "Climate island"
+		return "Battle pass"
 	end
-	return "Wild Skies"
+	return "Kit Crates"
 end
 
 local function buildIndex(page: Frame, data: Info)
@@ -248,11 +252,11 @@ local function buildIndex(page: Frame, data: Info)
 			.. have
 			.. " / "
 			.. all
-			.. " storms found · "
+			.. " kits collected · "
 			.. data.rows
 			.. " rows complete (+"
 			.. math.floor(data.rows * Config.Index.RowBonus * 100 + 0.5)
-			.. "% Sparks)",
+			.. "% match Sparks)",
 		TextSize = 18,
 		Parent = page,
 	})
@@ -762,7 +766,7 @@ function Rewards.start()
 		{
 			{ "Daily", "📅 Daily" },
 			{ "Quests", "📜 Quests" },
-			{ "Index", "📖 Index" },
+			{ "Index", "📖 Kits" },
 			{ "Titles", "🏷️ Titles" },
 			{ "Codes", "🎟️ Codes" },
 			{ "Spin", "🎡 Spin" },

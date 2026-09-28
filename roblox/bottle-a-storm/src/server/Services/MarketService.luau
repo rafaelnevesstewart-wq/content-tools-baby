@@ -1,9 +1,9 @@
--- The Storm Market and Mystery Jars.
---   * Storm Market (like Grow a Garden's shop): 6 storms with limited stock,
---     restocked every 5 minutes. Every server gets the same stock at the same
---     time, and stock is shared: first come, first served.
---   * Mystery Jars (like Pet Simulator eggs): pay, then hatch a random storm
---     with the jar's odds. The client plays the hatch animation.
+-- The 🏪 Kit Market.
+--   * Kit Shop: 6 kits with limited stock, restocked every 5 minutes. Every
+--     server gets the same stock at the same time, and stock is shared: first
+--     come, first served.
+--   * Kit Crates: pay, then open a random kit with the crate's odds. The
+--     client plays the opening animation.
 
 local Players = game:GetService("Players")
 
@@ -44,6 +44,15 @@ local function pickRarity(weights: { number }, random: Random): number
 	return #weights
 end
 
+local function kitOfRarity(rarity: number, random: Random): StormData.StormDef
+	local options = StormData.ofRarity(rarity)
+	while #options == 0 and rarity > 1 do
+		rarity -= 1
+		options = StormData.ofRarity(rarity)
+	end
+	return options[random:NextInteger(1, #options)]
+end
+
 local function restock(index: number)
 	restockIndex = index
 	local random = Random.new(index)
@@ -52,9 +61,8 @@ local function restock(index: number)
 	local hasLegendary = false
 	for _ = 1, MarketData.Slots do
 		local def
-		for _ = 1, 10 do -- avoid showing the same storm twice
-			local options = StormData.wildOfRarity(pickRarity(MarketData.RarityWeights, random))
-			def = options[random:NextInteger(1, #options)]
+		for _ = 1, 10 do -- avoid showing the same kit twice
+			def = kitOfRarity(pickRarity(MarketData.RarityWeights, random), random)
 			if not used[def.id] then
 				break
 			end
@@ -65,10 +73,10 @@ local function restock(index: number)
 			local list = StormData.Mutations
 			mutation = list[random:NextInteger(1, #list)].id
 		end
-		local price = math.max(
-			MarketData.MinPrice,
-			math.floor(StormData.incomeOf({ id = def.id, mut = mutation }) * MarketData.PriceSeconds)
-		)
+		local price = MarketData.Prices[def.rarity] or 1000
+		if mutation then
+			price *= MarketData.ShinyPriceMultiplier
+		end
 		table.insert(offers, {
 			def = def,
 			mutation = mutation,
@@ -80,16 +88,23 @@ local function restock(index: number)
 	workspace:SetAttribute("MarketRestockAt", (index + 1) * MarketData.RestockSeconds)
 	workspace:SetAttribute("MarketVersion", (workspace:GetAttribute("MarketVersion") or 0) + 1)
 	if hasLegendary then
-		Notify.all("🏪 The Storm Market restocked, and there's a LEGENDARY storm in stock! Hurry!", "rare")
+		Notify.all("🏪 The Kit Shop restocked, and there's a LEGENDARY kit in stock! Hurry!", "rare")
 	else
-		Notify.all("🏪 The Storm Market restocked! Check out the new storms.", "info")
+		Notify.all("🏪 The Kit Shop restocked! Check out the new kits.", "info")
 	end
 end
 
 local function getMarket(_player: Player)
 	local list = {}
 	for _, offer in offers do
-		table.insert(list, { id = offer.def.id, mut = offer.mutation, price = offer.price, stock = offer.stock })
+		local ability = StormData.AbilityInfo[StormData.abilityOf(offer.def)]
+		table.insert(list, {
+			id = offer.def.id,
+			mut = offer.mutation,
+			price = offer.price,
+			stock = offer.stock,
+			power = ability.emoji .. " " .. ability.name,
+		})
 	end
 	return { restockAt = workspace:GetAttribute("MarketRestockAt"), items = list }
 end
@@ -111,14 +126,11 @@ local function buyMarket(player: Player, slot: any): (boolean, string)
 	if offer.stock <= 0 then
 		return false, "Sold out! Wait for the next restock."
 	end
-	if not RewardService.hasRoom(player) then
-		return false, "Your island is full! Buy a pedestal or sell a storm first."
-	end
 	if data.sparks < offer.price then
 		return false, "You need ⚡" .. Format.number(offer.price - data.sparks) .. " more Sparks."
 	end
 	data.sparks -= offer.price
-	local problem = RewardService.giveStorm(player, offer.def, offer.mutation, nil)
+	local problem = RewardService.giveKit(player, offer.def, offer.mutation)
 	if problem then
 		data.sparks += offer.price
 		IncomeService.sync(player)
@@ -130,89 +142,71 @@ local function buyMarket(player: Player, slot: any): (boolean, string)
 	return true, "🏪 Bought " .. StormData.displayName({ id = offer.def.id, mut = offer.mutation }) .. "!"
 end
 
--- Hatches a jar the player has already paid for. Returns an error message
--- if it couldn't (nothing was given).
-local function hatch(player: Player, jar: MarketData.Jar): string?
-	if not RewardService.hasRoom(player) then
-		return "Your island is full! Buy a pedestal or sell a storm first."
-	end
-	local options = StormData.wildOfRarity(pickRarity(jar.odds, rng))
-	local def = options[rng:NextInteger(1, #options)]
-	local mutation = if rng:NextNumber() < jar.mutationChance then RewardService.randomMutation() else nil
-	local problem = RewardService.giveStorm(player, def, mutation, nil)
+-- Opens a crate the player has already paid for. Returns an error message if
+-- it couldn't (nothing was given).
+local function openCrate(player: Player, crate: MarketData.Crate): string?
+	local def = kitOfRarity(pickRarity(crate.odds, rng), rng)
+	local mutation = if rng:NextNumber() < crate.mutationChance then RewardService.randomMutation() else nil
+	local problem = RewardService.giveKit(player, def, mutation)
 	if problem then
 		return problem
 	end
 	local rarity = StormData.rarityOf(def)
 	local mutationDef = StormData.getMutation(mutation)
-	Remotes.event("JarHatched"):FireClient(player, {
-		jar = jar.name,
-		jarEmoji = jar.emoji,
+	local ability = StormData.AbilityInfo[StormData.abilityOf(def)]
+	Remotes.event("CrateOpened"):FireClient(player, {
+		crate = crate.name,
+		crateEmoji = crate.emoji,
 		name = StormData.displayName({ id = def.id, mut = mutation }),
 		rarity = rarity.name,
 		rarityIndex = rarity.index,
 		color = rarity.color,
 		mutation = if mutationDef then mutationDef.emoji .. " " .. mutationDef.name else nil,
+		power = ability.emoji .. " " .. ability.name,
 	})
 	if def.rarity >= 5 then
 		Notify.allExcept(
 			player,
-			"🫙 " .. player.DisplayName .. " hatched a LEGENDARY " .. def.name .. " from a " .. jar.name .. "!",
+			"🎁 " .. player.DisplayName .. " opened a " .. string.upper(rarity.name) .. " " .. def.name .. " kit!",
 			"rare"
 		)
 	end
 	return nil
 end
 
-local function openJar(player: Player, key: any): (boolean, string)
+local function onOpen(player: Player, key: any): (boolean, string)
 	local data = DataService.get(player)
-	local jar = type(key) == "string" and MarketData.jar(key)
-	if not data or not jar or slowDown(player) then
+	local crate = type(key) == "string" and MarketData.crate(key)
+	if not data or not crate or slowDown(player) then
 		return false, "Can't open that right now."
 	end
-	if jar.cost <= 0 then
-		return false, "That jar is bought with Robux."
+	if crate.cost <= 0 then
+		return false, "That crate is bought with Robux."
 	end
-	if data.sparks < jar.cost then
-		return false, "You need ⚡" .. Format.number(jar.cost - data.sparks) .. " more Sparks."
+	if data.sparks < crate.cost then
+		return false, "You need ⚡" .. Format.number(crate.cost - data.sparks) .. " more Sparks."
 	end
-	if not RewardService.hasRoom(player) then
-		return false, "Your island is full! Buy a pedestal or sell a storm first."
-	end
-	data.sparks -= jar.cost
-	local problem = hatch(player, jar)
+	data.sparks -= crate.cost
+	local problem = openCrate(player, crate)
 	if problem then
-		data.sparks += jar.cost
+		data.sparks += crate.cost
 		IncomeService.sync(player)
 		return false, problem
 	end
 	IncomeService.sync(player)
-	return true, jar.emoji .. " Opening your " .. jar.name .. "..."
+	return true, crate.emoji .. " Opening your " .. crate.name .. "..."
 end
 
--- The Robux Golden Jar. If the island is full, it pays 30 minutes of Sparks
--- instead so the purchase is never lost.
-function MarketService.openGoldenJar(player: Player): boolean
-	local jar = MarketData.jar("Golden")
-	if not jar then
-		return false
-	end
-	if hatch(player, jar) then
-		local amount = math.floor(math.max(5000, IncomeService.rateOf(player) * 1800))
-		IncomeService.addSparks(player, amount)
-		Notify.player(
-			player,
-			"👑 Your island was full, so your Golden Jar paid ⚡" .. Format.number(amount) .. " instead.",
-			"warn"
-		)
-	end
-	return true
+-- The Robux Golden Crate.
+function MarketService.openGoldenCrate(player: Player): boolean
+	local crate = MarketData.crate("Golden")
+	return crate ~= nil and openCrate(player, crate) == nil
 end
 
 function MarketService.start()
 	Remotes.func("GetMarket").OnServerInvoke = getMarket
 	Remotes.func("BuyMarket").OnServerInvoke = buyMarket
-	Remotes.func("OpenJar").OnServerInvoke = openJar
+	Remotes.func("OpenCrate").OnServerInvoke = onOpen
 	Players.PlayerRemoving:Connect(function(player)
 		lastRequest[player] = nil
 	end)

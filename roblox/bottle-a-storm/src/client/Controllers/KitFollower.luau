@@ -1,15 +1,15 @@
--- Moves every storm buddy (server BuddyService) next to its owner on this
--- screen, with a smooth follow and a little bob, so it never lags behind.
+-- Moves every kit storm (server KitService) next to its owner on this screen,
+-- with a smooth follow and a little bob, so it never lags behind.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
-local BuddyController = {}
+local KitFollower = {}
 
 local OFFSET = CFrame.new(3.2, 2.4, 1.5) -- right, up and a bit behind you
 
-function BuddyController.start()
-	local folder = workspace:WaitForChild("Buddies")
+function KitFollower.start()
+	local folder = workspace:WaitForChild("Kits")
 	RunService.RenderStepped:Connect(function(dt)
 		local t = os.clock()
 		for _, model in folder:GetChildren() do
@@ -30,4 +30,4 @@ function BuddyController.start()
 	end)
 end
 
-return BuddyController
+return KitFollower

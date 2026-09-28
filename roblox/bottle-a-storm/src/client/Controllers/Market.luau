@@ -1,5 +1,5 @@
--- The 🏪 Market window: the restocking Storm Market and the Mystery Jars,
--- plus the jar-hatching animation (shake, crack, reveal).
+-- The 🏪 Kit Market window: the restocking Kit Shop and the Kit Crates, plus
+-- the crate-opening animation (shake, flash, reveal).
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -36,7 +36,7 @@ local function invoke(remote: string, arg: any)
 	busy = true
 	local ok, message = Remotes.func(remote):InvokeServer(arg)
 	busy = false
-	if not ok or remote ~= "OpenJar" then
+	if not ok or remote ~= "OpenCrate" then
 		Toasts.show(message, if ok then "success" else "warn")
 	end
 end
@@ -92,7 +92,7 @@ local function buildMarket()
 		UI.label({
 			Position = UDim2.fromOffset(0, 66),
 			Size = UDim2.new(1, 0, 0, 20),
-			Text = "+" .. Format.number(StormData.incomeOf({ id = item.id, mut = item.mut })) .. " ⚡/s",
+			Text = "Shift: " .. tostring(item.power),
 			TextSize = 14,
 			TextColor3 = UI.Colors.Muted,
 			Parent = frame,
@@ -124,8 +124,8 @@ local function buildMarket()
 	end
 end
 
-local function buyGoldenJar()
-	local product = Products.get("MysteryGoldenJar")
+local function buyGoldenCrate()
+	local product = Products.get("GoldenKitCrate")
 	if not product then
 		return
 	end
@@ -134,36 +134,36 @@ local function buyGoldenJar()
 	elseif RunService:IsStudio() then
 		Remotes.event("DevPurchase"):FireServer(product.key)
 	else
-		Toasts.show("The Golden Jar is coming soon!", "info")
+		Toasts.show("The Golden Crate is coming soon!", "info")
 	end
 end
 
-local function buildJars()
-	local page = pages.Jars
+local function buildCrates()
+	local page = pages.Crates
 	clear(page)
-	for index, jar in MarketData.Jars do
+	for index, crate in MarketData.Crates do
 		local frame = card(page, index, 230)
-		UI.stroke(jar.color, 2).Parent = frame
-		UI.label({ Size = UDim2.new(1, 0, 0, 44), Text = jar.emoji, TextSize = 38, Parent = frame })
+		UI.stroke(crate.color, 2).Parent = frame
+		UI.label({ Size = UDim2.new(1, 0, 0, 44), Text = crate.emoji, TextSize = 38, Parent = frame })
 		UI.label({
 			Position = UDim2.fromOffset(0, 44),
 			Size = UDim2.new(1, 0, 0, 22),
-			Text = jar.name,
+			Text = crate.name,
 			TextSize = 18,
-			TextColor3 = UI.ink(jar.color),
+			TextColor3 = UI.ink(crate.color),
 			Parent = frame,
 		})
 		local lines = {}
-		for rarity, chance in jar.odds do
+		for rarity, chance in crate.odds do
 			if chance > 0 then
 				table.insert(lines, StormData.Rarities[rarity].name .. " " .. chance .. "%")
 			end
 		end
 		table.insert(
 			lines,
-			if jar.mutationChance >= 1
-				then "Always mutated!"
-				else "Mutation " .. math.floor(jar.mutationChance * 100) .. "%"
+			if crate.mutationChance >= 1
+				then "Always shiny!"
+				else "Shiny " .. math.floor(crate.mutationChance * 100) .. "%"
 		)
 		UI.label({
 			Position = UDim2.fromOffset(0, 70),
@@ -174,57 +174,57 @@ local function buildJars()
 			TextYAlignment = Enum.TextYAlignment.Top,
 			Parent = frame,
 		})
-		local robux = jar.cost <= 0
-		local product = Products.get("MysteryGoldenJar")
+		local robux = crate.cost <= 0
+		local product = Products.get("GoldenKitCrate")
 		local button = UI.button({
 			AnchorPoint = Vector2.new(0.5, 1),
 			Position = UDim2.fromScale(0.5, 1),
 			Size = UDim2.new(1, 0, 0, 38),
 			Text = if robux
 				then "R$ " .. (if product then product.price else "?")
-				else "⚡ " .. Format.number(jar.cost),
+				else "⚡ " .. Format.number(crate.cost),
 			TextSize = 16,
 			BackgroundColor3 = if robux then UI.Colors.Robux else UI.Colors.Spark,
 			Parent = frame,
 		})
 		button.Activated:Connect(function()
 			if robux then
-				buyGoldenJar()
+				buyGoldenCrate()
 			else
-				invoke("OpenJar", jar.key)
+				invoke("OpenCrate", crate.key)
 			end
 		end)
 	end
 end
 
--- The hatch: the jar shakes harder and harder, flashes, then shows the storm.
-local function playHatch(result: any)
+-- The opening: the crate shakes harder and harder, flashes, then shows the kit.
+local function playOpening(result: any)
 	window.Visible = false
-	local screen = UI.screen("JarHatch", 11)
+	local screen = UI.screen("CrateOpening", 11)
 	local dim = UI.new("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Color3.new(0, 0, 0),
 		BackgroundTransparency = 0.35,
 		Parent = screen,
 	})
-	local jar = UI.label({
+	local crate = UI.label({
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.45),
 		Size = UDim2.fromOffset(200, 200),
-		Text = tostring(result.jarEmoji or "🫙"),
+		Text = tostring(result.crateEmoji or "🎁"),
 		TextSize = 150,
 		Parent = dim,
 	})
 	for i = 1, 10 do
 		local angle = (if i % 2 == 0 then 1 else -1) * (4 + i * 1.8)
-		local tween = TweenService:Create(jar, TweenInfo.new(0.09 + (10 - i) * 0.012), { Rotation = angle })
+		local tween = TweenService:Create(crate, TweenInfo.new(0.09 + (10 - i) * 0.012), { Rotation = angle })
 		tween:Play()
 		tween.Completed:Wait()
 		if i % 3 == 0 then
 			Sfx.play("pop", 0.8 + i * 0.05)
 		end
 	end
-	jar.Visible = false
+	crate.Visible = false
 	local flash = UI.new("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Color3.new(1, 1, 1),
@@ -261,7 +261,7 @@ local function playHatch(result: any)
 		UI.label({
 			LayoutOrder = 3,
 			Size = UDim2.new(1, 0, 0, 24),
-			Text = "Mutation: " .. tostring(result.mutation),
+			Text = "Shiny: " .. tostring(result.mutation),
 			TextSize = 18,
 			TextColor3 = UI.Colors.Spark,
 			Parent = reveal,
@@ -270,7 +270,7 @@ local function playHatch(result: any)
 	UI.label({
 		LayoutOrder = 4,
 		Size = UDim2.new(1, 0, 0, 20),
-		Text = "It's on your island now!",
+		Text = "Shift power: " .. tostring(result.power) .. "  ·  Pick it in 🌪️ Kits!",
 		TextSize = 15,
 		TextColor3 = UI.Colors.Muted,
 		Parent = reveal,
@@ -299,8 +299,8 @@ local function showTab(name: string)
 	end
 	if name == "Market" then
 		buildMarket()
-	elseif name == "Jars" then
-		buildJars()
+	elseif name == "Crates" then
+		buildCrates()
 	elseif extraTabs[name] then
 		clear(pages[name])
 		extraTabs[name](pages[name])
@@ -387,7 +387,7 @@ function Market.start()
 	})
 	UI.label({
 		Size = UDim2.new(1, -60, 0, 32),
-		Text = "🏪 Market",
+		Text = "🏪 Kit Market",
 		TextSize = 26,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = window,
@@ -419,7 +419,7 @@ function Market.start()
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = window,
 	})
-	for order, entry in { { "Market", "🏪 Storm Market" }, { "Jars", "🫙 Mystery Jars" } } do
+	for order, entry in { { "Market", "🏪 Kit Shop" }, { "Crates", "🎁 Kit Crates" } } do
 		local key = entry[1]
 		local button = UI.button({
 			LayoutOrder = order,
@@ -445,7 +445,7 @@ function Market.start()
 			Parent = window,
 		}, {
 			UI.new("UIGridLayout", {
-				CellSize = UDim2.fromOffset(180, if key == "Jars" then 230 else 170),
+				CellSize = UDim2.fromOffset(180, if key == "Crates" then 230 else 170),
 				CellPadding = UDim2.fromOffset(8, 8),
 				SortOrder = Enum.SortOrder.LayoutOrder,
 			}),
@@ -458,9 +458,9 @@ function Market.start()
 			buildMarket()
 		end
 	end)
-	Remotes.event("JarHatched").OnClientEvent:Connect(function(result)
+	Remotes.event("CrateOpened").OnClientEvent:Connect(function(result)
 		if type(result) == "table" then
-			task.spawn(playHatch, result)
+			task.spawn(playOpening, result)
 		end
 	end)
 	task.spawn(function()
@@ -470,7 +470,7 @@ function Market.start()
 				local left = restockAt - workspace:GetServerTimeNow()
 				timerLabel.Text = if currentTab == "Market"
 					then "🔄 Restocks in " .. Format.time(left) .. "  ·  Stock is shared with everyone in the server!"
-					elseif currentTab == "Jars" then "🫙 Hatch a random storm! Odds are shown on each jar."
+					elseif currentTab == "Crates" then "🎁 Open a random kit! Odds are shown on each crate."
 					else ""
 			end
 			task.wait(0.5)

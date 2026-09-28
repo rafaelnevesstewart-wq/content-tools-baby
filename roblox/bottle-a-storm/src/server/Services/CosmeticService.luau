@@ -1,13 +1,14 @@
 -- Cosmetics (see CosmeticsData): buying and equipping them, and building
 -- them from parts.
 --   Character: a hat, a trail, something on your back and an aura.
---   Island: pedestal style, decorations, the sign's color and emoji, a flag
---   and up to 3 kinds of island pets.
+--   Match: your team's cloud bed skin, and the knockout effect that bursts
+--   out when you knock someone out (MatchService calls dressBed and
+--   knockout). Sword skins and arrow effects are applied by CombatService.
 -- Everything is built on the server so every player sees it.
 
 local CollectionService = game:GetService("CollectionService")
+local Debris = game:GetService("Debris")
 local HttpService = game:GetService("HttpService")
-local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
@@ -16,20 +17,19 @@ local Config = require(Shared.Config)
 local CosmeticsData = require(Shared.CosmeticsData)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
-local StormData = require(Shared.StormData)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
-local PetModels = require(Modules.PetModels)
-local StormModel = require(Modules.StormModel)
 
-local CaptureService = require(script.Parent.CaptureService)
 local DataService = require(script.Parent.DataService)
-local HouseService = require(script.Parent.HouseService)
 local IncomeService = require(script.Parent.IncomeService)
-local PlotService = require(script.Parent.PlotService)
 
 local CosmeticService = {}
+
+-- (player, category) after a cosmetic is put on or taken off. CombatService
+-- listens for "sword" to reskin the sword you're holding.
+CosmeticService.Changed = Signal.new()
 
 local SPARKLES = "rbxasset://textures/particles/sparkles_main.dds"
 local rgb = Color3.fromRGB
@@ -44,8 +44,6 @@ local RAINBOW = {
 
 local rng = Random.new()
 local lastRequest: { [Player]: number } = {}
-local signBoards: { [Player]: BasePart } = {}
-local fireworkIslands: { [Player]: CFrame } = {}
 
 ---------------------------------------------------------------------------
 -- Building blocks
@@ -98,14 +96,6 @@ local function weldAll(model: Instance, to: BasePart)
 			weld.Part0 = to
 			weld.Part1 = item
 			weld.Parent = item
-		end
-	end
-end
-
-local function anchorAll(model: Instance)
-	for _, item in model:GetDescendants() do
-		if item:IsA("BasePart") then
-			item.Anchored = true
 		end
 	end
 end
@@ -291,13 +281,18 @@ HATS.StormHalo = function(model, top)
 end
 
 local BACKS: { [string]: (Model, CFrame) -> () } = {
-	JarPack = function(model, back)
-		local jar = cylinder(model, 1.6, 1.2, rgb(200, 235, 255), back * CFrame.new(0, 0, 0.7))
-		jar.Material = Enum.Material.Glass
-		jar.Transparency = 0.35
-		cylinder(model, 0.25, 1.25, rgb(190, 140, 70), back * CFrame.new(0, 0.9, 0.7)).Material = Enum.Material.Metal
-		local storm = ball(model, Vector3.one * 0.7, rgb(150, 190, 255), back * CFrame.new(0, 0, 0.7))
-		storm.Material = Enum.Material.Neon
+	ArrowQuiver = function(model, back)
+		local tilt = back * CFrame.new(0.3, 0, 0.6) * CFrame.Angles(0, 0, math.rad(-20))
+		local quiver = cylinder(model, 2.2, 0.8, rgb(110, 70, 40), tilt)
+		quiver.Material = Enum.Material.Leather
+		cylinder(model, 0.15, 0.85, rgb(200, 160, 70), tilt * CFrame.new(0, 1.05, 0)).Material = Enum.Material.Metal
+		for i = 0, 2 do
+			local shaft = cylinder(model, 1, 0.08, rgb(150, 110, 70), tilt * CFrame.new((i - 1) * 0.2, 1.5, 0))
+			shaft.Material = Enum.Material.Wood
+			local tip =
+				ball(model, Vector3.new(0.2, 0.35, 0.2), rgb(140, 220, 255), tilt * CFrame.new((i - 1) * 0.2, 2.05, 0))
+			tip.Material = Enum.Material.Neon
+		end
 	end,
 	CloudWings = function(model, back)
 		for _, side in { -1, 1 } do
@@ -679,6 +674,64 @@ local TRAILS: { [string]: TrailStyle } = {
 		},
 		light = rgb(255, 170, 70),
 	},
+
+	-- Battle pass trails.
+	AutumnLeavesTrail = {
+		colors = { rgb(255, 170, 60), rgb(200, 80, 30) },
+		width = 1.4,
+		lifetime = 0.6,
+		emission = 0.3,
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 150, 40), rgb(220, 90, 30), rgb(250, 200, 70) },
+			size = 0.6,
+			rate = 18,
+			lifetime = 1.4,
+			speed = 2,
+			accel = Vector3.new(0, -3, 0),
+			spin = 180,
+		},
+	},
+	CandyCaneTrail = {
+		colors = { rgb(255, 255, 255), rgb(230, 40, 60), rgb(255, 255, 255), rgb(230, 40, 60) },
+		width = 1.3,
+		lifetime = 0.6,
+		emission = 0.4,
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 255, 255) },
+			size = 0.3,
+			rate = 14,
+			lifetime = 1,
+			speed = 1,
+			accel = Vector3.new(0, -3, 0),
+			emission = 1,
+		},
+	},
+	PetalTrail = {
+		colors = { rgb(255, 190, 215), rgb(255, 140, 190) },
+		width = 1.2,
+		lifetime = 0.6,
+		emission = 0.3,
+		particles = {
+			texture = SPARKLES,
+			colors = { rgb(255, 170, 200), rgb(255, 230, 240) },
+			size = 0.5,
+			rate = 18,
+			lifetime = 1.6,
+			speed = 1.5,
+			accel = Vector3.new(0, -2, 0),
+			spin = 160,
+		},
+	},
+	SunbeamTrail = {
+		colors = { rgb(255, 245, 170), rgb(255, 200, 60) },
+		width = 1.6,
+		lifetime = 0.7,
+		emission = 1,
+		glow = { colors = { rgb(255, 220, 100) }, width = 3.4, lifetime = 0.45 },
+		light = rgb(255, 220, 120),
+	},
 }
 
 local AURAS: { [string]: (BasePart) -> () } = {
@@ -978,515 +1031,7 @@ local function applyCharacter(player: Player)
 	end
 end
 
----------------------------------------------------------------------------
--- Island cosmetics
----------------------------------------------------------------------------
-
-type PedestalStyle = { color: Color3, material: Enum.Material, transparency: number?, rainbow: boolean? }
-
-local PEDESTALS: { [string]: PedestalStyle } = {
-	Marble = { color = rgb(235, 235, 245), material = Enum.Material.Marble },
-	CandyPedestal = { color = rgb(255, 170, 205), material = Enum.Material.SmoothPlastic },
-	GoldPedestal = { color = rgb(255, 200, 70), material = Enum.Material.Metal },
-	CloudPedestal = { color = rgb(250, 250, 255), material = Enum.Material.SmoothPlastic },
-	CrystalPedestal = { color = rgb(170, 220, 255), material = Enum.Material.Glass, transparency = 0.25 },
-	RainbowPedestal = { color = rgb(255, 255, 255), material = Enum.Material.SmoothPlastic, rainbow = true },
-}
-
--- Pedestals get rebuilt when you buy more, so this runs on a timer and only
--- changes the ones that don't match yet.
-local function applyPedestals(player: Player)
-	local data = DataService.get(player)
-	local plot = PlotService.getPlot(player)
-	if not data or not plot then
-		return
-	end
-	local key = data.cosmetics.pedestal or "Marble"
-	local style = PEDESTALS[key] or PEDESTALS.Marble
-	for slot, pedestal in plot.pedestals do
-		local base = pedestal.PrimaryPart
-		if base and base:GetAttribute("Style") ~= key then
-			base:SetAttribute("Style", key)
-			base.Color = if style.rainbow then Color3.fromHSV((slot * 0.13) % 1, 0.45, 1) else style.color
-			base.Material = style.material
-			base.Transparency = style.transparency or 0
-		end
-	end
-end
-
-local function nightness(): number
-	local clock = Lighting.ClockTime
-	if clock >= 7 and clock <= 17 then
-		return 0
-	elseif clock > 17 and clock < 19 then
-		return (clock - 17) / 2
-	elseif clock > 5 and clock < 7 then
-		return (7 - clock) / 2
-	end
-	return 1
-end
-
--- Spots on the island (island space: -Z faces the Wild Skies) that stay clear
--- of the pedestals, pads, mixer, spawn and bridge.
-local SPOTS = {
-	lamps = { Vector3.new(-36, 0, -4), Vector3.new(36, 0, -4), Vector3.new(-36, 0, 30), Vector3.new(36, 0, 30) },
-	fountain = Vector3.new(-41, 0, 14),
-	statue = Vector3.new(41, 0, 14),
-	arch = Vector3.new(0, 0, 51),
-	fireworks = Vector3.new(36, 0, -24),
-	flag = Vector3.new(-36, 0, -24),
-	gardens = { Vector3.new(-24, 0, -38), Vector3.new(24, 0, -38) },
-	picnic = Vector3.new(-46, 0, -8),
-	hotTub = Vector3.new(46, 0, -8),
-	windmill = Vector3.new(-44, 0, 33),
-	crystals = Vector3.new(44, 0, 33),
-	palms = { Vector3.new(-51, 0, 12), Vector3.new(51, 0, 12), Vector3.new(-30, 0, -48) },
-	waterfall = Vector3.new(-40, 0, -42),
-}
-
-local function bestStorm(data: any): StormData.StormRecord?
-	local best, bestEarning = nil, -1
-	for _, record in data.storms do
-		local earning = StormData.incomeOf(record)
-		if earning > bestEarning then
-			best, bestEarning = record, earning
-		end
-	end
-	return best
-end
-
-local DECOR: { [string]: (Instance, CFrame, any) -> () } = {
-	LampPosts = function(parent, frame)
-		for _, spot in SPOTS.lamps do
-			local base = frame * CFrame.new(spot)
-			cylinder(parent, 7, 0.45, rgb(90, 80, 120), base * CFrame.new(0, 3.5, 0))
-			local lamp = ball(parent, Vector3.one * 1.4, rgb(255, 225, 150), base * CFrame.new(0, 7.4, 0))
-			lamp.Material = Enum.Material.Neon
-			local light = Instance.new("PointLight")
-			light.Color = rgb(255, 215, 150)
-			light.Range = 16
-			light.Brightness = 1.4
-			light.Parent = lamp
-		end
-	end,
-	Fountain = function(parent, frame)
-		local base = frame * CFrame.new(SPOTS.fountain)
-		local stone = rgb(225, 220, 235)
-		cylinder(parent, 1.2, 9, stone, base * CFrame.new(0, 0.6, 0))
-		local water = cylinder(parent, 0.2, 8, rgb(120, 190, 255), base * CFrame.new(0, 1.15, 0))
-		water.Transparency = 0.3
-		cylinder(parent, 3, 1.2, stone, base * CFrame.new(0, 2.5, 0))
-		cylinder(parent, 0.6, 3.4, stone, base * CFrame.new(0, 4.1, 0))
-		local spout = ball(parent, Vector3.one * 0.8, rgb(150, 210, 255), base * CFrame.new(0, 4.6, 0))
-		spout.Transparency = 0.4
-		emitter(spout, {
-			Color = ColorSequence.new(rgb(150, 210, 255), rgb(230, 245, 255)),
-			Size = NumberSequence.new(0.35, 0.15),
-			EmissionDirection = Enum.NormalId.Top,
-			SpreadAngle = Vector2.new(25, 25),
-			Speed = NumberRange.new(9, 12),
-			Acceleration = Vector3.new(0, -30, 0),
-			Lifetime = NumberRange.new(0.7, 0.9),
-			Rate = 40,
-			LightEmission = 0.2,
-		})
-	end,
-	RainbowArch = function(parent, frame)
-		local base = frame * CFrame.new(SPOTS.arch)
-		for band, color in RAINBOW do
-			local radius = 16 - band * 0.9
-			for i = 0, 16 do
-				local angle = i / 16 * math.pi
-				local piece = ball(
-					parent,
-					Vector3.one * 1.1,
-					color,
-					base * CFrame.new(math.cos(angle) * radius, math.sin(angle) * radius, 0)
-				)
-				piece.Material = Enum.Material.Neon
-				piece.Transparency = 0.1
-			end
-		end
-	end,
-	StormStatue = function(parent, frame, data)
-		local base = frame * CFrame.new(SPOTS.statue)
-		part(parent, {
-			Size = Vector3.new(6, 2, 6),
-			Color = rgb(235, 230, 245),
-			Material = Enum.Material.Marble,
-			CFrame = base * CFrame.new(0, 1, 0),
-		})
-		local record = bestStorm(data)
-		local def = record and StormData.get(record.id)
-		if not def then
-			return
-		end
-		local statue = StormModel.build(def, { scale = 2.2 })
-		CollectionService:RemoveTag(statue, "StormCreature") -- statues don't wiggle
-		CollectionService:RemoveTag(statue, "FlashyFx")
-		for _, item in statue:GetDescendants() do
-			if item:IsA("BasePart") then
-				if item.Transparency < 1 then
-					item.Color = rgb(255, 205, 80)
-					item.Material = Enum.Material.Metal
-				end
-			elseif item:IsA("ParticleEmitter") or item:IsA("Light") or item:IsA("Fire") then
-				item:Destroy()
-			end
-		end
-		statue:PivotTo(base * CFrame.new(0, 2 + 3.5 * StormData.rarityOf(def).scale, 0) * CFrame.Angles(0, math.pi, 0))
-		statue:SetAttribute("StatueOf", def.id)
-		statue.Parent = parent
-	end,
-	GardenBeds = function(parent, frame)
-		for _, spot in SPOTS.gardens do
-			local base = frame * CFrame.new(spot)
-			part(parent, {
-				Size = Vector3.new(8, 1.2, 4),
-				Color = rgb(110, 80, 56),
-				Material = Enum.Material.WoodPlanks,
-				CFrame = base * CFrame.new(0, 0.6, 0),
-			})
-			part(parent, {
-				Size = Vector3.new(7.4, 0.3, 3.4),
-				Color = rgb(80, 58, 42),
-				Material = Enum.Material.Ground,
-				CFrame = base * CFrame.new(0, 1.25, 0),
-			})
-			for i = 1, 12 do
-				local spotX = (i % 6 - 2.5) * 1.2
-				local spotZ = if i > 6 then 0.8 else -0.8
-				cylinder(parent, 1.2, 0.12, rgb(70, 110, 50), base * CFrame.new(spotX, 1.9, spotZ))
-				ball(
-					parent,
-					Vector3.one * 0.6,
-					RAINBOW[i % #RAINBOW + 1],
-					base * CFrame.new(spotX, 2.6, spotZ),
-					Enum.Material.Fabric
-				)
-			end
-		end
-	end,
-	PicnicArea = function(parent, frame)
-		local base = frame * CFrame.new(SPOTS.picnic)
-		part(parent, {
-			Size = Vector3.new(7, 0.1, 6),
-			Color = rgb(210, 60, 60),
-			Material = Enum.Material.Fabric,
-			CFrame = base * CFrame.new(0, 0.05, 0),
-		})
-		part(parent, {
-			Size = Vector3.new(5, 0.3, 2.4),
-			Color = rgb(140, 100, 66),
-			Material = Enum.Material.WoodPlanks,
-			CFrame = base * CFrame.new(0, 2.2, 0),
-		})
-		for _, x in { -2, 2 } do
-			part(parent, {
-				Size = Vector3.new(0.3, 2, 2),
-				Color = rgb(120, 86, 58),
-				Material = Enum.Material.Wood,
-				CFrame = base * CFrame.new(x, 1.1, 0),
-			})
-		end
-		for _, z in { -2, 2 } do
-			part(parent, {
-				Size = Vector3.new(5, 0.3, 0.8),
-				Color = rgb(140, 100, 66),
-				Material = Enum.Material.WoodPlanks,
-				CFrame = base * CFrame.new(0, 1.2, z),
-			})
-		end
-		ball(parent, Vector3.new(1, 0.7, 0.8), rgb(180, 130, 70), base * CFrame.new(1.2, 2.7, 0), Enum.Material.Fabric)
-		ball(parent, Vector3.one * 0.5, rgb(210, 40, 40), base * CFrame.new(-1, 2.6, 0.3), Enum.Material.SmoothPlastic)
-	end,
-	PalmTrees = function(parent, frame)
-		for index, spot in SPOTS.palms do
-			local base = frame * CFrame.new(spot)
-			local lean = if index % 2 == 0 then 0.12 else -0.12
-			for i = 0, 7 do
-				cylinder(
-					parent,
-					1.6,
-					1.3 - i * 0.06,
-					rgb(140, 110, 76),
-					base * CFrame.Angles(0, 0, lean * i * 0.3) * CFrame.new(0, 0.8 + i * 1.5, 0)
-				).Material =
-					Enum.Material.Wood
-			end
-			local top = base * CFrame.Angles(0, 0, lean * 2.1) * CFrame.new(0, 12.5, 0)
-			for leaf = 1, 7 do
-				local angle = leaf / 7 * math.pi * 2
-				part(parent, {
-					Size = Vector3.new(0.2, 1.2, 6),
-					Color = rgb(70, 130, 60),
-					Material = Enum.Material.LeafyGrass,
-					CFrame = top
-						* CFrame.Angles(0, angle, 0)
-						* CFrame.new(0, -0.8, 2.6)
-						* CFrame.Angles(math.rad(-30), 0, 0),
-				})
-			end
-			for c = 1, 3 do
-				ball(
-					parent,
-					Vector3.one * 0.8,
-					rgb(110, 80, 50),
-					top * CFrame.new(math.cos(c * 2) * 0.6, -0.8, math.sin(c * 2) * 0.6),
-					Enum.Material.Wood
-				)
-			end
-		end
-	end,
-	FairyLights = function()
-		-- Strung along the roof by HouseService.
-	end,
-	HotTub = function(parent, frame)
-		local base = frame * CFrame.new(SPOTS.hotTub)
-		cylinder(parent, 2.2, 8, rgb(120, 90, 66), base * CFrame.new(0, 1.1, 0)).Material = Enum.Material.WoodPlanks
-		local water = cylinder(parent, 0.3, 7, rgb(80, 200, 230), base * CFrame.new(0, 2.1, 0))
-		water.Material = Enum.Material.Neon
-		water.Transparency = 0.35
-		local light = Instance.new("PointLight")
-		light.Color = rgb(90, 210, 240)
-		light.Range = 12
-		light.Brightness = 1.5
-		light.Parent = water
-		emitter(water, {
-			Texture = "rbxasset://textures/particles/smoke_main.dds",
-			Color = ColorSequence.new(rgb(240, 245, 250)),
-			Size = NumberSequence.new(1.5, 3),
-			Transparency = NumberSequence.new(0.6, 1),
-			EmissionDirection = Enum.NormalId.Right,
-			Speed = NumberRange.new(1, 2),
-			Lifetime = NumberRange.new(1.5, 2.5),
-			Rate = 6,
-			LightEmission = 0,
-		})
-		emitter(water, {
-			Color = ColorSequence.new(rgb(230, 250, 255)),
-			Size = NumberSequence.new(0.2),
-			EmissionDirection = Enum.NormalId.Right,
-			Speed = NumberRange.new(0.5, 1),
-			Lifetime = NumberRange.new(0.5, 1),
-			Rate = 20,
-		})
-	end,
-	Windmill = function(parent, frame)
-		local base = frame * CFrame.new(SPOTS.windmill)
-		for i = 0, 5 do
-			cylinder(parent, 2.2, 6 - i * 0.5, rgb(236, 230, 218), base * CFrame.new(0, 1.1 + i * 2.2, 0)).Material =
-				Enum.Material.Concrete
-		end
-		local cap =
-			ball(parent, Vector3.new(4, 3, 4), rgb(150, 70, 50), base * CFrame.new(0, 14, 0), Enum.Material.Slate)
-		cap.Name = "WindmillCap"
-		local hub = base * CFrame.new(0, 13.5, -2.4)
-		-- The sails turn: a "Rotor" model the client's FlashyFx spins.
-		local rotor = Instance.new("Model")
-		rotor.Name = "Rotor"
-		rotor:SetAttribute("RotorSpeed", 1.2)
-		rotor.Parent = parent
-		local axle = part(rotor, {
-			Name = "Axle",
-			Size = Vector3.one * 0.8,
-			Color = rgb(80, 60, 44),
-			Material = Enum.Material.Wood,
-			CFrame = hub * CFrame.Angles(math.rad(90), 0, 0),
-		})
-		for blade = 0, 3 do
-			part(rotor, {
-				Size = Vector3.new(1.4, 0.2, 7),
-				Color = rgb(240, 236, 226),
-				Material = Enum.Material.Fabric,
-				CFrame = axle.CFrame * CFrame.Angles(0, blade * math.pi / 2, 0) * CFrame.new(0, 0, 3.8),
-			})
-		end
-		rotor.PrimaryPart = axle
-		CollectionService:AddTag(rotor, "FlashyFx")
-	end,
-	Waterfall = function(parent, frame)
-		local base = frame * CFrame.new(SPOTS.waterfall)
-		part(parent, {
-			Size = Vector3.new(6, 1.6, 8),
-			Color = rgb(110, 104, 98),
-			Material = Enum.Material.Rock,
-			CFrame = base * CFrame.new(0, 0.8, 0),
-		})
-		local stream = part(parent, {
-			Size = Vector3.new(4, 0.3, 9),
-			Color = rgb(90, 170, 220),
-			Material = Enum.Material.Glass,
-			Transparency = 0.3,
-			CFrame = base * CFrame.new(0, 1.7, -1),
-		})
-		emitter(stream, {
-			Texture = "rbxasset://textures/particles/smoke_main.dds",
-			Color = ColorSequence.new(rgb(200, 230, 255), rgb(255, 255, 255)),
-			Size = NumberSequence.new(1.2, 3),
-			Transparency = NumberSequence.new(0.3, 1),
-			EmissionDirection = Enum.NormalId.Front,
-			Speed = NumberRange.new(4, 6),
-			Acceleration = Vector3.new(0, -30, 0),
-			SpreadAngle = Vector2.new(10, 10),
-			Lifetime = NumberRange.new(1.5, 2.2),
-			Rate = 40,
-			LightEmission = 0.1,
-		})
-	end,
-	CrystalGarden = function(parent, frame)
-		local base = frame * CFrame.new(SPOTS.crystals)
-		for i = 1, 9 do
-			local angle = i * 2.4
-			local height = 2 + (i % 4) * 1.4
-			local crystal = part(parent, {
-				Size = Vector3.new(0.9, height, 0.9),
-				Color = Color3.fromHSV((i * 0.11) % 1, 0.55, 1),
-				Material = Enum.Material.Neon,
-				Transparency = 0.15,
-				CFrame = base
-					* CFrame.new(math.cos(angle) * (i % 3 + 1) * 1.3, height / 2, math.sin(angle) * (i % 3 + 1) * 1.3)
-					* CFrame.Angles(math.rad(10 - i * 3), angle, math.rad(i * 4 - 15)),
-			})
-			if i % 3 == 0 then
-				local light = Instance.new("PointLight")
-				light.Color = crystal.Color
-				light.Range = 10
-				light.Brightness = 1.2
-				light.Parent = crystal
-			end
-		end
-	end,
-	Fireworks = function(parent, frame)
-		local base = frame * CFrame.new(SPOTS.fireworks)
-		part(parent, {
-			Size = Vector3.new(3, 1, 3),
-			Color = rgb(90, 80, 120),
-			CFrame = base * CFrame.new(0, 0.5, 0),
-		})
-		for i = 1, 3 do
-			local tube = cylinder(parent, 2.2, 0.7, RAINBOW[i * 2], base * CFrame.new((i - 2) * 0.9, 2, 0))
-			tube.CFrame *= CFrame.Angles(0, 0, math.rad((i - 2) * 10))
-		end
-	end,
-}
-
-type FlagStyle = { color: Color3, emoji: string, rainbow: boolean?, material: Enum.Material? }
-
-local FLAGS: { [string]: FlagStyle } = {
-	StormFlag = { color = rgb(95, 105, 160), emoji = "⛈️" },
-	LightningFlag = { color = rgb(255, 210, 70), emoji = "⚡" },
-	RainbowFlag = { color = rgb(255, 255, 255), emoji = "🌈", rainbow = true },
-	PirateFlag = { color = rgb(45, 40, 60), emoji = "☠️" },
-	GoldenFlag = { color = rgb(255, 205, 70), emoji = "✨", material = Enum.Material.Foil },
-}
-
-local function buildFlag(parent: Instance, frame: CFrame, style: FlagStyle)
-	local base = frame * CFrame.new(SPOTS.flag)
-	cylinder(parent, 14, 0.4, rgb(235, 230, 245), base * CFrame.new(0, 7, 0))
-	ball(parent, Vector3.one * 0.7, rgb(255, 215, 90), base * CFrame.new(0, 14.2, 0))
-	local cloth = part(parent, {
-		Size = Vector3.new(4.5, 2.8, 0.15),
-		Color = style.color,
-		Material = style.material or Enum.Material.Fabric,
-		CFrame = base * CFrame.new(2.4, 12.3, 0),
-	})
-	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
-		local gui = Instance.new("SurfaceGui")
-		gui.Face = face
-		gui.CanvasSize = Vector2.new(200, 125)
-		gui.LightInfluence = 0.3
-		gui.Parent = cloth
-		if style.rainbow then
-			local back = Instance.new("Frame")
-			back.Size = UDim2.fromScale(1, 1)
-			back.BorderSizePixel = 0
-			back.BackgroundColor3 = Color3.new(1, 1, 1)
-			back.Parent = gui
-			local gradient = Instance.new("UIGradient")
-			gradient.Rotation = 90
-			gradient.Color = colorSequence(RAINBOW)
-			gradient.Parent = back
-		end
-		local label = Instance.new("TextLabel")
-		label.BackgroundTransparency = 1
-		label.Size = UDim2.fromScale(1, 1)
-		label.TextScaled = true
-		label.Text = style.emoji
-		label.Parent = gui
-	end
-end
-
--- Island pets (built in Modules/PetModels, animated by the client's
--- PetAnimator). The server only moves each pet around the island.
-local function spawnPet(parent: Instance, frame: CFrame, kindName: string)
-	local function spot(height: number): Vector3
-		local angle = rng:NextNumber(0, math.pi * 2)
-		local radius = rng:NextNumber(8, 40)
-		return frame:PointToWorldSpace(Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius))
-	end
-	local model, kind = PetModels.build(kindName, CFrame.new(spot(0)))
-	if not model or not kind then
-		return
-	end
-	local root = model.PrimaryPart :: BasePart
-	root.CFrame = CFrame.new(spot(kind.height))
-	CollectionService:AddTag(model, "IslandPet")
-	model.Parent = parent
-
-	task.spawn(function()
-		while model.Parent do
-			task.wait(rng:NextNumber(2.5, 6))
-			if not model.Parent then
-				break
-			end
-			local from = root.Position
-			local goal = spot(kind.height)
-			local flat = Vector3.new(goal.X - from.X, 0, goal.Z - from.Z)
-			if flat.Magnitude < 1 then
-				continue
-			end
-			local facing = CFrame.lookAt(from, from + flat)
-			local turn = TweenService:Create(root, TweenInfo.new(0.4), { CFrame = facing })
-			turn:Play()
-			turn.Completed:Wait()
-			if kind.hop then
-				-- Rabbits hop in short bounces.
-				local hops = math.ceil(flat.Magnitude / 2.5)
-				for i = 1, hops do
-					if not model.Parent then
-						break
-					end
-					local stepTo = from:Lerp(goal, i / hops)
-					local mid = from:Lerp(goal, (i - 0.5) / hops) + Vector3.new(0, 1.2, 0)
-					local up = TweenService:Create(root, TweenInfo.new(0.16, Enum.EasingStyle.Quad), {
-						CFrame = facing.Rotation + mid,
-					})
-					up:Play()
-					up.Completed:Wait()
-					local down = TweenService:Create(
-						root,
-						TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-						{ CFrame = facing.Rotation + stepTo }
-					)
-					down:Play()
-					down.Completed:Wait()
-					task.wait(0.12)
-				end
-			else
-				local tween = TweenService:Create(
-					root,
-					TweenInfo.new(flat.Magnitude / kind.speed, Enum.EasingStyle.Linear),
-					{ CFrame = facing.Rotation + goal }
-				)
-				tween:Play()
-				tween.Completed:Wait()
-			end
-		end
-	end)
-end
-
--- The cloud under your feet with Cloud Flight. Skins are cosmetics too.
+-- Cloud bed skins: the fluffy mattress of your team's bed in a match.
 type CloudSkin = {
 	colors: { Color3 },
 	material: Enum.Material?,
@@ -1511,7 +1056,7 @@ local RAIN_FX: ParticleStyle = {
 	accel = Vector3.new(0, -20, 0),
 }
 
-local CLOUDS: { [string]: CloudSkin } = {
+local BEDS: { [string]: CloudSkin } = {
 	Cumulus = { colors = { rgb(250, 251, 255), rgb(230, 234, 242) }, wisp = rgb(244, 246, 252) },
 	StormCloudSkin = { colors = { rgb(118, 122, 136), rgb(86, 90, 102) }, wisp = rgb(126, 130, 144), fx = RAIN_FX },
 	SunsetCloud = {
@@ -1636,33 +1181,101 @@ local CLOUDS: { [string]: CloudSkin } = {
 		wisp = rgb(160, 255, 220),
 		light = rgb(120, 255, 200),
 	},
+
+	-- Battle pass beds.
+	HarvestBed = {
+		colors = { rgb(255, 150, 50), rgb(230, 110, 30) },
+		wisp = rgb(255, 190, 120),
+		light = rgb(255, 150, 60),
+		fx = {
+			texture = SPARKLES,
+			colors = { rgb(255, 200, 90) },
+			size = 0.3,
+			rate = 10,
+			lifetime = 1.2,
+			speed = 1,
+			emission = 1,
+		},
+	},
+	SnowGlobeBed = {
+		colors = { rgb(235, 245, 255), rgb(200, 225, 255) },
+		material = Enum.Material.Glass,
+		transparency = 0.15,
+		wisp = rgb(236, 244, 255),
+		light = rgb(255, 230, 170),
+		flashes = true,
+		fx = {
+			texture = SPARKLES,
+			colors = { rgb(255, 255, 255) },
+			size = 0.3,
+			rate = 16,
+			lifetime = 1.4,
+			speed = 2,
+			accel = Vector3.new(0, -4, 0),
+			spin = 60,
+		},
+	},
+	BlossomBed = {
+		colors = { rgb(255, 200, 225), rgb(255, 160, 200), rgb(255, 235, 245) },
+		wisp = rgb(255, 215, 235),
+		fx = {
+			texture = SPARKLES,
+			colors = { rgb(255, 170, 200), rgb(255, 230, 240) },
+			size = 0.4,
+			rate = 12,
+			lifetime = 1.6,
+			speed = 1,
+			accel = Vector3.new(0, -2, 0),
+			spin = 160,
+		},
+	},
+	BeachBed = {
+		colors = { rgb(255, 225, 140), rgb(255, 245, 200) },
+		material = Enum.Material.Neon,
+		transparency = 0.3,
+		wisp = rgb(255, 240, 190),
+		light = rgb(255, 220, 120),
+		pulse = rgb(255, 200, 90),
+	},
 }
 
-function CosmeticService.buildFlightCloud(player: Player, root: BasePart): Model
-	local data = DataService.get(player)
-	local skin = CLOUDS[data and data.cosmetics.cloud or "Cumulus"] or CLOUDS.Cumulus
+-- Fills a cloud bed (built by MatchService) with its mattress in the skin
+-- picked by the first teammate who has one. `frame` is the bed's center on
+-- the floor. The puffs don't block the "Break the bed" prompt.
+function CosmeticService.dressBed(bed: Model, frame: CFrame, members: { Player })
+	local skinId = CosmeticsData.Defaults.bed
+	for _, member in members do
+		local data = DataService.get(member)
+		local pick = data and data.cosmetics.bed
+		if pick and BEDS[pick] then
+			skinId = pick
+			break
+		end
+	end
+	local skin = BEDS[skinId] or BEDS.Cumulus
 	local cloud = Instance.new("Model")
-	cloud.Name = "FlightCloud"
-	local base = root.CFrame * CFrame.new(0, -3.4, 0)
-	local puffs = {
-		{ Vector3.new(0, 0, 0), 3.4 },
-		{ Vector3.new(1.8, 0.1, 0.4), 2.6 },
-		{ Vector3.new(-1.8, 0, -0.3), 2.7 },
-		{ Vector3.new(0.4, 0.3, 1.6), 2.3 },
-		{ Vector3.new(-0.3, 0.2, -1.7), 2.4 },
-		{ Vector3.new(1, -0.4, -1), 2 },
-		{ Vector3.new(-1.1, -0.3, 1.1), 2 },
-	}
+	cloud.Name = "Mattress"
+	local puffs = {}
+	for row = 0, 2 do
+		for side = -1, 1, 2 do
+			table.insert(puffs, { Vector3.new(side * 1.3, 2, -2.8 + row * 2.6), 3.2 })
+		end
+	end
+	table.insert(puffs, { Vector3.new(0, 2.6, -1.4), 2.8 })
+	table.insert(puffs, { Vector3.new(0, 2.6, 1.4), 2.8 })
 	local center: Part? = nil
 	for index, puff in puffs do
 		local p = ball(
 			cloud,
 			Vector3.one * puff[2],
 			skin.colors[(index - 1) % #skin.colors + 1],
-			base + puff[1],
+			frame * CFrame.new(puff[1]),
 			skin.material
 		)
 		p.Name = "CloudPuff"
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
 		p.Transparency = skin.transparency or 0
 		center = center or p
 	end
@@ -1745,91 +1358,181 @@ function CosmeticService.buildFlightCloud(player: Player, root: BasePart): Model
 	if skin.bolts or skin.rainbow or skin.pulse then
 		CollectionService:AddTag(cloud, "FlashyFx")
 	end
-	weldAll(cloud, root)
-	cloud.Parent = root.Parent
-	return cloud
+	cloud.Parent = bed
 end
 
-local function applySign(player: Player, data: any)
-	local plot = PlotService.getPlot(player)
-	if not plot then
-		return
-	end
-	local gui = plot.sign.Parent
-	local board = gui and gui.Parent
-	if board and board:IsA("BasePart") then
-		board.Color = CosmeticsData.SignColors[data.cosmetics.signColor or 1] or CosmeticsData.SignColors[1]
-		signBoards[player] = board
-	end
-	plot.sign.Text = (data.cosmetics.signEmoji or "🏝️") .. " " .. player.DisplayName .. "'s Island"
+---------------------------------------------------------------------------
+-- Knockout effects (MatchService calls knockout when someone is knocked out)
+---------------------------------------------------------------------------
+
+local function spark(position: Vector3, color: Color3, size: number, lifetime: number): Part
+	local p = Instance.new("Part")
+	p.Shape = Enum.PartType.Ball
+	p.Size = Vector3.one * size
+	p.Material = Enum.Material.Neon
+	p.Color = color
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.CFrame = CFrame.new(position)
+	p.Parent = workspace
+	Debris:AddItem(p, lifetime)
+	return p
 end
 
-local function applyIsland(player: Player)
-	local data = DataService.get(player)
-	local plot = PlotService.getPlot(player)
-	if not data or not plot then
-		return
-	end
-	local old = plot.model:FindFirstChild("IslandCosmetics")
-	if old then
-		old:Destroy()
-	end
-	local folder = Instance.new("Folder")
-	folder.Name = "IslandCosmetics"
-	local cosmetics = data.cosmetics
-	for id in cosmetics.decor do
-		local build = DECOR[id]
-		if build then
-			local group = Instance.new("Model")
-			group.Name = id
-			build(group, plot.cframe, data)
-			anchorAll(group)
-			group.Parent = folder
+-- A burst of glowing balls flying out and fading.
+local function burst(position: Vector3, colors: { Color3 }, count: number, reach: number, gravity: boolean?)
+	for i = 1, count do
+		local piece = spark(position, colors[(i - 1) % #colors + 1], rng:NextNumber(0.4, 0.9), 1.3)
+		local direction = rng:NextUnitVector()
+		if not gravity then
+			direction = Vector3.new(direction.X, math.abs(direction.Y), direction.Z)
 		end
-	end
-	local flag = cosmetics.flag and FLAGS[cosmetics.flag]
-	if flag then
-		local group = Instance.new("Model")
-		group.Name = "Flag"
-		buildFlag(group, plot.cframe, flag)
-		anchorAll(group)
-		group.Parent = folder
-	end
-	folder.Parent = plot.model
-	for id in cosmetics.pets do
-		for _ = 1, 2 do
-			spawnPet(folder, plot.cframe, id)
+		local goal = position + direction * reach * rng:NextNumber(0.5, 1)
+		if gravity then
+			goal -= Vector3.new(0, reach * 0.6, 0)
 		end
+		TweenService:Create(piece, TweenInfo.new(1.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			CFrame = CFrame.new(goal),
+			Size = Vector3.one * 0.1,
+			Transparency = 1,
+		}):Play()
 	end
-	fireworkIslands[player] = if cosmetics.decor.Fireworks then plot.cframe else nil
-	HouseService.refresh(player)
-	applySign(player, data)
-	applyPedestals(player)
+end
+
+-- A zigzag bolt from the sky down to `position`.
+local function bolt(position: Vector3, color: Color3)
+	local from = position + Vector3.new(rng:NextNumber(-4, 4), 40, rng:NextNumber(-4, 4))
+	local last = from
+	for i = 1, 8 do
+		local alpha = i / 8
+		local point = from:Lerp(position, alpha)
+			+ (if i < 8 then Vector3.new(rng:NextNumber(-2, 2), 0, rng:NextNumber(-2, 2)) else Vector3.zero)
+		local segment = Instance.new("Part")
+		segment.Anchored = true
+		segment.CanCollide = false
+		segment.CanQuery = false
+		segment.CanTouch = false
+		segment.Material = Enum.Material.Neon
+		segment.Color = color
+		segment.Size = Vector3.new(0.4, 0.4, (point - last).Magnitude)
+		segment.CFrame = CFrame.lookAt(last, point) * CFrame.new(0, 0, -(point - last).Magnitude / 2)
+		segment.Parent = workspace
+		Debris:AddItem(segment, 0.35)
+		last = point
+	end
+	local flash = spark(position, color, 4, 0.4)
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = 30
+	light.Brightness = 6
+	light.Parent = flash
+end
+
+local KNOCKOUTS: { [string]: (Vector3) -> () } = {
+	Poof = function(position)
+		burst(position, { rgb(250, 251, 255), rgb(220, 226, 238) }, 10, 5)
+	end,
+	ConfettiKO = function(position)
+		Effects.confetti(position, 60)
+	end,
+	LightningKO = function(position)
+		bolt(position, rgb(200, 230, 255))
+		burst(position, { rgb(255, 250, 170), rgb(170, 210, 255) }, 12, 7)
+	end,
+	FrostKO = function(position)
+		burst(position, { rgb(190, 235, 255), rgb(255, 255, 255), rgb(140, 200, 255) }, 22, 8, true)
+	end,
+	TornadoKO = function(position)
+		for i = 1, 24 do
+			local angle = i / 24 * math.pi * 6
+			local ring = spark(position, rgb(210, 220, 235), 0.6, 1.2)
+			TweenService:Create(ring, TweenInfo.new(1.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				CFrame = CFrame.new(
+					position + Vector3.new(math.cos(angle) * (1 + i * 0.2), i * 0.6, math.sin(angle) * (1 + i * 0.2))
+				),
+				Transparency = 1,
+			}):Play()
+		end
+	end,
+	FireworkKO = function(position)
+		for i = 1, 3 do
+			task.delay((i - 1) * 0.25, function()
+				burst(
+					position + Vector3.new(rng:NextNumber(-6, 6), 14 + i * 3, rng:NextNumber(-6, 6)),
+					RAINBOW,
+					18,
+					8,
+					true
+				)
+			end)
+		end
+	end,
+	InfernoKO = function(position)
+		local core = spark(position, rgb(255, 140, 40), 3, 1)
+		local fire = Instance.new("Fire")
+		fire.Size = 10
+		fire.Heat = 15
+		fire.Parent = core
+		burst(position, { rgb(255, 200, 80), rgb(255, 90, 30), rgb(80, 60, 50) }, 20, 9)
+	end,
+	GoldenRainKO = function(position)
+		burst(position + Vector3.new(0, 10, 0), { rgb(255, 215, 80), rgb(255, 240, 160) }, 30, 10, true)
+		Effects.confetti(position, 30)
+	end,
+	VoidKO = function(position)
+		local rift = spark(position, rgb(60, 20, 100), 1, 1.2)
+		TweenService:Create(rift, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = Vector3.one * 8,
+			Color = rgb(20, 5, 40),
+		}):Play()
+		burst(position, { rgb(160, 80, 255), rgb(90, 40, 140) }, 16, 6)
+	end,
+	-- Battle pass knockouts.
+	PumpkinKO = function(position)
+		burst(position, { rgb(255, 140, 30), rgb(90, 160, 60), rgb(255, 200, 80) }, 20, 8)
+	end,
+	SnowmanKO = function(position)
+		burst(position, { rgb(255, 255, 255), rgb(200, 230, 255) }, 26, 9, true)
+	end,
+	BlossomKO = function(position)
+		burst(position, { rgb(255, 170, 200), rgb(255, 230, 240), rgb(255, 120, 180) }, 24, 8, true)
+	end,
+	SunflareKO = function(position)
+		local sun = spark(position, rgb(255, 230, 120), 2, 0.9)
+		local light = Instance.new("PointLight")
+		light.Color = rgb(255, 220, 120)
+		light.Range = 40
+		light.Brightness = 8
+		light.Parent = sun
+		TweenService:Create(sun, TweenInfo.new(0.8), { Size = Vector3.one * 12, Transparency = 1 }):Play()
+	end,
+}
+
+-- The killer's knockout effect at the spot where someone was knocked out.
+function CosmeticService.knockout(killer: Player, position: Vector3)
+	local data = DataService.get(killer)
+	local id = data and data.cosmetics.ko or CosmeticsData.Defaults.ko
+	local play = KNOCKOUTS[id] or KNOCKOUTS.Poof
+	play(position)
 end
 
 ---------------------------------------------------------------------------
 -- Buying and equipping
 ---------------------------------------------------------------------------
 
--- The Style Bonus: every cosmetic you wear or place adds its tier's bonus.
-local SINGLE = { "hat", "trail", "back", "aura", "cloud", "jar", "fx", "house", "pedestal", "flag" }
+-- The Style Bonus: every cosmetic you use adds its tier's bonus.
+local SLOTS = { "hat", "trail", "back", "aura", "bed", "sword", "fx", "ko" }
 
 local function styleBonus(cosmetics: any): number
 	local total = 0
-	local function add(id: string?)
-		local item = CosmeticsData.get(id)
-		if item and (cosmetics.owned[item.id] or (item.cost <= 0 and not item.robux)) then
+	for _, key in SLOTS do
+		local item = CosmeticsData.get(cosmetics[key])
+		if item and (cosmetics.owned[item.id] or (item.cost <= 0 and not item.robux and not item.season)) then
 			total += CosmeticsData.tierOf(item).bonus
 		end
-	end
-	for _, key in SINGLE do
-		add(cosmetics[key])
-	end
-	for id in cosmetics.decor do
-		add(id)
-	end
-	for id in cosmetics.pets do
-		add(id)
 	end
 	return math.min(total, Config.Style.MaxBonus)
 end
@@ -1839,83 +1542,35 @@ local function publish(player: Player, data: any)
 	data.styleBonus = styleBonus(cosmetics)
 	player:SetAttribute("StyleBonus", data.styleBonus)
 	IncomeService.sync(player)
-	local owned, decor, pets = {}, {}, {}
+	local owned = {}
 	for id in cosmetics.owned do
 		table.insert(owned, id)
 	end
-	for id in cosmetics.decor do
-		table.insert(decor, id)
+	local state: { [string]: any } = { owned = owned }
+	for _, key in SLOTS do
+		state[key] = cosmetics[key]
 	end
-	for id in cosmetics.pets do
-		table.insert(pets, id)
-	end
-	player:SetAttribute(
-		"Cosmetics",
-		HttpService:JSONEncode({
-			owned = owned,
-			hat = cosmetics.hat,
-			trail = cosmetics.trail,
-			back = cosmetics.back,
-			aura = cosmetics.aura,
-			pedestal = cosmetics.pedestal,
-			flag = cosmetics.flag,
-			decor = decor,
-			pets = pets,
-			signColor = cosmetics.signColor,
-			signEmoji = cosmetics.signEmoji,
-		})
-	)
+	player:SetAttribute("Cosmetics", HttpService:JSONEncode(state))
 end
 
 local function refreshFor(player: Player, data: any, category: string)
 	publish(player, data)
-	local info = CosmeticsData.category(category)
-	if category == "jar" then
-		CaptureService.skinTool(player, nil)
-		PlotService.refreshAll(player) -- the jars on your pedestals
-	elseif info and info.island then
-		applyIsland(player)
-	else
+	if category == "hat" or category == "trail" or category == "back" or category == "aura" then
 		applyCharacter(player)
 	end
+	CosmeticService.Changed:Fire(player, category)
 end
 
--- Puts on (or places) an owned cosmetic. Returns a message.
-local function equip(data: any, item: CosmeticsData.Item): (boolean, string)
-	local cosmetics = data.cosmetics
-	if item.category == "decor" then
-		if cosmetics.decor[item.id] then
-			cosmetics.decor[item.id] = nil
-			return true, item.emoji .. " " .. item.name .. " put away."
-		end
-		cosmetics.decor[item.id] = true
-		return true, item.emoji .. " " .. item.name .. " placed on your island!"
-	elseif item.category == "pet" then
-		if cosmetics.pets[item.id] then
-			cosmetics.pets[item.id] = nil
-			return true, item.emoji .. " " .. item.name .. " went home."
-		end
-		local count = 0
-		for _ in cosmetics.pets do
-			count += 1
-		end
-		local max = (CosmeticsData.category("pet") :: CosmeticsData.Category).max or 3
-		if count >= max then
-			return false, "Your island has room for " .. max .. " kinds of pets. Send one home first."
-		end
-		cosmetics.pets[item.id] = true
-		return true, item.emoji .. " " .. item.name .. " moved onto your island!"
-	end
-	cosmetics[item.category] = item.id
-	return true, item.emoji .. " " .. item.name .. " on!"
+local function owns(cosmetics: any, item: CosmeticsData.Item): boolean
+	return cosmetics.owned[item.id] == true or (item.cost <= 0 and not item.robux and not item.season)
 end
 
--- Unlocks a cosmetic (Sparks purchase or Robux product) and puts it on.
+-- Unlocks a cosmetic (Sparks, Robux or a battle pass reward) and puts it on.
 local function unlock(player: Player, data: any, item: CosmeticsData.Item): string
 	data.cosmetics.owned[item.id] = true
-	local _, message = equip(data, item)
+	data.cosmetics[item.category] = item.id
 	refreshFor(player, data, item.category)
-	return message
+	return item.emoji .. " " .. item.name .. " on!"
 end
 
 local function onAction(player: Player, action: any, a: any): (boolean, string)
@@ -1926,33 +1581,11 @@ local function onAction(player: Player, action: any, a: any): (boolean, string)
 	lastRequest[player] = os.clock()
 	local cosmetics = data.cosmetics
 
-	if action == "signColor" then
-		if type(a) ~= "number" or not CosmeticsData.SignColors[a] then
-			return false, "Unknown color."
-		end
-		cosmetics.signColor = a
-		publish(player, data)
-		applySign(player, data)
-		return true, "🎨 Sign color changed!"
-	elseif action == "signEmoji" then
-		if type(a) ~= "string" or not table.find(CosmeticsData.SignEmoji, a) then
-			return false, "Unknown emoji."
-		end
-		cosmetics.signEmoji = a
-		publish(player, data)
-		applySign(player, data)
-		return true, a .. " Sign updated!"
-	elseif action == "unequip" then
+	if action == "unequip" then
 		if type(a) ~= "string" or not CosmeticsData.category(a) then
 			return false, "Can't do that."
 		end
-		if a == "pedestal" then
-			cosmetics.pedestal = "Marble"
-		elseif a == "house" then
-			cosmetics.house = nil
-		elseif a ~= "decor" and a ~= "pet" then
-			cosmetics[a] = nil -- back to the free default
-		end
+		cosmetics[a] = nil -- back to the free default
 		refreshFor(player, data, a)
 		return true, "Taken off."
 	end
@@ -1968,6 +1601,9 @@ local function onAction(player: Player, action: any, a: any): (boolean, string)
 		if item.robux then
 			return false, "That one is bought with Robux."
 		end
+		if item.season then
+			return false, "That's a battle pass reward!"
+		end
 		if data.sparks < item.cost then
 			return false, "You need ⚡" .. Format.number(item.cost - data.sparks) .. " more Sparks."
 		end
@@ -1975,16 +1611,29 @@ local function onAction(player: Player, action: any, a: any): (boolean, string)
 		IncomeService.sync(player)
 		return true, "🎉 Bought! " .. unlock(player, data, item)
 	elseif action == "equip" then
-		if not cosmetics.owned[item.id] and (item.cost > 0 or item.robux) then
+		if not owns(cosmetics, item) then
 			return false, "You don't own that yet."
 		end
-		local ok, message = equip(data, item)
-		if ok then
-			refreshFor(player, data, item.category)
-		end
-		return ok, message
+		cosmetics[item.category] = item.id
+		refreshFor(player, data, item.category)
+		return true, item.emoji .. " " .. item.name .. " on!"
 	end
 	return false, "Can't do that."
+end
+
+-- Gives a cosmetic (battle pass, holiday shop, spin wheel). Returns an error
+-- message if it couldn't.
+function CosmeticService.grant(player: Player, id: string): string?
+	local data = DataService.get(player)
+	local item = CosmeticsData.get(id)
+	if not data or not item then
+		return "That cosmetic is missing."
+	end
+	if data.cosmetics.owned[item.id] then
+		return "You already own " .. item.name .. "!"
+	end
+	unlock(player, data, item)
+	return nil
 end
 
 -- Called by MonetizationService when a Robux cosmetic is bought.
@@ -1998,45 +1647,6 @@ function CosmeticService.grantProduct(player: Player, productKey: string): boole
 	return true
 end
 
--- Launches a firework over every island that has Fireworks, at night.
-local function fireworksLoop()
-	while true do
-		task.wait(rng:NextNumber(4, 8))
-		if nightness() < 0.6 then
-			continue
-		end
-		for player, frame in fireworkIslands do
-			if not player.Parent then
-				fireworkIslands[player] = nil
-				continue
-			end
-			local from = frame:PointToWorldSpace(SPOTS.fireworks + Vector3.new(0, 3, 0))
-			local to = from + Vector3.new(rng:NextNumber(-10, 10), rng:NextNumber(30, 45), rng:NextNumber(-10, 10))
-			local rocket = Instance.new("Part")
-			rocket.Shape = Enum.PartType.Ball
-			rocket.Size = Vector3.one * 0.8
-			rocket.Material = Enum.Material.Neon
-			rocket.Color = RAINBOW[rng:NextInteger(1, #RAINBOW)]
-			rocket.Anchored = true
-			rocket.CanCollide = false
-			rocket.CanTouch = false
-			rocket.CanQuery = false
-			rocket.CFrame = CFrame.new(from)
-			rocket.Parent = workspace
-			local flight = TweenService:Create(
-				rocket,
-				TweenInfo.new(1.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-				{ CFrame = CFrame.new(to) }
-			)
-			flight.Completed:Connect(function()
-				rocket:Destroy()
-				Effects.confetti(to, 90)
-			end)
-			flight:Play()
-		end
-	end
-end
-
 function CosmeticService.start()
 	Remotes.func("Cosmetic").OnServerInvoke = onAction
 
@@ -2044,7 +1654,6 @@ function CosmeticService.start()
 		publish(player, data)
 		applyCharacter(player)
 	end)
-	PlotService.PlotAssigned:Connect(applyIsland)
 
 	local function onPlayer(player: Player)
 		player.CharacterAppearanceLoaded:Connect(function()
@@ -2057,43 +1666,6 @@ function CosmeticService.start()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		lastRequest[player] = nil
-		fireworkIslands[player] = nil
-		local plot = PlotService.getPlot(player)
-		local folder = plot and plot.model:FindFirstChild("IslandCosmetics")
-		if folder then
-			folder:Destroy()
-		end
-		local board = signBoards[player]
-		signBoards[player] = nil
-		if board then
-			board.Color = CosmeticsData.SignColors[1]
-		end
-	end)
-
-	task.spawn(fireworksLoop)
-
-	-- Keep pedestal styles on new pedestals, and the statue on your best storm.
-	task.spawn(function()
-		local tick = 0
-		while true do
-			task.wait(2)
-			tick += 1
-			for _, player in Players:GetPlayers() do
-				applyPedestals(player)
-				local data = DataService.get(player)
-				local plot = PlotService.getPlot(player)
-				if tick % 15 == 0 and data and plot and data.cosmetics.decor.StormStatue then
-					local record = bestStorm(data)
-					local folder = plot.model:FindFirstChild("IslandCosmetics")
-					local group = folder and folder:FindFirstChild("StormStatue")
-					local statue = group and group:FindFirstChildWhichIsA("Model")
-					local shown = statue and statue:GetAttribute("StatueOf")
-					if record and shown ~= record.id then
-						applyIsland(player)
-					end
-				end
-			end
-		end
 	end)
 end
 

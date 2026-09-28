@@ -1,6 +1,7 @@
--- The season pass window: theme and time left, your Season Stars, and a
--- scrolling row of 30 tiers with a free reward on top and a premium reward
--- below. Tap a glowing reward to claim it.
+-- The 🎟️ battle pass window: this season's theme and time left, your stars,
+-- and a scrolling row of 30 tiers with a free reward on top and a premium
+-- reward below (Sparks, kits, exclusive kits and exclusive cosmetics). Tap a
+-- glowing reward to claim it.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -10,6 +11,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Format = require(Shared.Format)
 local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
+local CosmeticsData = require(Shared.CosmeticsData)
 local SeasonData = require(Shared.SeasonData)
 local StormData = require(Shared.StormData)
 
@@ -33,25 +35,24 @@ local progress: Progress? = nil
 
 local function rewardText(reward: SeasonData.Reward, theme: SeasonData.Theme): string
 	if reward.kind == "sparks" then
-		return "⚡ " .. (reward.minutes or 0) .. " min\nof Sparks"
-	elseif reward.kind == "snacks" then
-		return "🍪 Storm\nSnacks"
-	elseif reward.kind == "shield" then
-		return "🛡️ Raid\nShield x" .. (reward.amount or 1)
-	elseif reward.kind == "storm" then
+		return "⚡ " .. Format.number(reward.amount or 0) .. "\nSparks"
+	elseif reward.kind == "kit" then
 		local rarity = StormData.Rarities[reward.rarity or 3]
-		return (if reward.mutated then "✨ Mutated\n" else "🫙 Random\n") .. rarity.name
+		return (if reward.mutated then "✨ Shiny\n" else "🎁 Random\n") .. rarity.name .. " kit"
 	elseif reward.kind == "exclusive" then
 		local def = StormData.get(theme.storms[reward.slot or 1])
-		return "🌟 " .. (if def then def.name else "Exclusive")
+		return "🌟 " .. (if def then def.name else "Exclusive kit")
+	elseif reward.kind == "cosmetic" then
+		local item = CosmeticsData.get(reward.id or theme.cosmetics[reward.slot or 1])
+		return if item then item.emoji .. " " .. item.name else "🎨 Cosmetic"
 	end
 	return "?"
 end
 
 local function rewardColor(reward: SeasonData.Reward, theme: SeasonData.Theme): Color3
-	if reward.kind == "exclusive" then
+	if reward.kind == "exclusive" or reward.kind == "cosmetic" then
 		return UI.ink(theme.color)
-	elseif reward.kind == "storm" then
+	elseif reward.kind == "kit" then
 		return UI.ink(StormData.Rarities[reward.rarity or 3].color)
 	end
 	return UI.Colors.Text
@@ -171,7 +172,7 @@ end
 local function refreshHeader()
 	local now = workspace:GetServerTimeNow()
 	local number, theme, endsAt = SeasonData.current(now)
-	titleLabel.Text = theme.emoji .. " " .. theme.name .. "  ·  Season " .. (number + 1)
+	titleLabel.Text = theme.emoji .. " Battle Pass: " .. theme.name .. "  ·  Season " .. (number + 1)
 	titleLabel.TextColor3 = UI.ink(theme.color)
 	local left = math.max(0, endsAt - now)
 	timeLabel.Text = "Ends in " .. math.floor(left / 86400) .. "d " .. math.floor(left % 86400 / 3600) .. "h"
@@ -295,7 +296,7 @@ function Season.start()
 	UI.label({
 		Position = UDim2.fromOffset(0, 92),
 		Size = UDim2.new(1, 0, 0, 18),
-		Text = "Top row: free rewards  ·  Bottom row: 🎟️ Premium rewards  ·  Earn ⭐ by catching, stealing, mixing, raids and playing",
+		Text = "Top row: free rewards  ·  Bottom row: 🎟️ Premium rewards  ·  Earn ⭐ by playing Bed Wars: knockouts, beds and wins",
 		TextSize = 13,
 		TextWrapped = true,
 		TextColor3 = UI.Colors.Muted,

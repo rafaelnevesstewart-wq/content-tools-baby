@@ -1,8 +1,7 @@
--- The holiday event tab in the 🏪 Market (only while an event is on): your
--- event currency, time left, and the event shop.
+-- The holiday event tab in the 🏪 Kit Market (only while an event is on):
+-- your event currency, time left, and the event shop (exclusive kits).
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 local StormData = require(Shared.StormData)
@@ -28,10 +27,7 @@ local function build(page: ScrollingFrame)
 		Size = UDim2.fromScale(1, 1),
 		Text = info.emoji .. " " .. info.name .. "\nYou have " .. info.currencyEmoji .. " " .. Format.number(
 			info.points
-		) .. "\nEnds in " .. math.max(0, math.floor(left / 86400)) .. " days\n" .. (if Config.GameMode
-				== "BedWars"
-			then "Win fights to earn more!"
-			else "Catch storms to earn more!"),
+		) .. "\nEnds in " .. math.max(0, math.floor(left / 86400)) .. " days\n" .. "Play Bed Wars matches to earn more!",
 		TextScaled = true,
 		Parent = header,
 	})
@@ -58,7 +54,7 @@ local function build(page: ScrollingFrame)
 			UI.label({
 				Position = UDim2.fromOffset(0, 64),
 				Size = UDim2.new(1, 0, 0, 20),
-				Text = "+" .. Format.number(def.income) .. " ⚡/s",
+				Text = "Shift: " .. StormData.AbilityInfo[StormData.abilityOf(def)].name,
 				TextSize = 14,
 				TextColor3 = UI.Colors.Muted,
 				Parent = frame,

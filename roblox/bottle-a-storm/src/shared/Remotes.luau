@@ -6,22 +6,9 @@ local RunService = game:GetService("RunService")
 
 local EVENTS = {
 	"Notify", -- server -> client: (text, kind)
-	"ThrowJar", -- client -> server: (targetPosition)
-	"ToggleRide", -- client -> server: ()
-	"TradeAction", -- client -> server: (action, ...)
-	"TradeRequest", -- server -> client: (fromUserId, fromName)
-	"TradeUpdate", -- server -> client: (state or nil when the trade closes)
 	"DevPurchase", -- client -> server, Studio only: (itemKey)
 	"Juice", -- server -> client: (kind, ...) floating numbers, sounds, shake, pop-ups
-	"PedestalAction", -- client -> server: (slot, "ride" | "guard" | "buddy" | "sell")
-	"Fly", -- client -> server: (wantsToFly: boolean)
-	"JarHatched", -- server -> client: (result) a Mystery Jar opened, for the hatch animation
-	"BlastCloud", -- client -> server: (targetPosition) Cloud Blaster shot
-	"ThrowBalloon", -- client -> server: (targetPosition) water balloon throw
-	"BattleAction", -- client -> server: ("request", userId) | ("respond", fromUserId, accept)
-	"BattleInvite", -- server -> client: (fromUserId, fromName)
-	"BattlePlay", -- server -> client: (battle) the whole fight, for the battle window
-	-- Bed Wars
+	"CrateOpened", -- server -> client: (result) a Kit Crate opened, for the opening animation
 	"Swing", -- client -> server: (aimPoint) sword swing
 	"ShootBow", -- client -> server: (aimPoint)
 	"UseItem", -- client -> server: (itemKey, aimPoint) Storm Apple / Wind Pearl
@@ -29,13 +16,9 @@ local EVENTS = {
 }
 
 local FUNCTIONS = {
-	"BuyItem", -- client -> server: (itemKey) -> (ok, message)
-	"GetMixer", -- client -> server: () -> mixer info
-	"MixStorms", -- client -> server: (uidA, uidB) -> (ok, message)
-	"ClimateShift", -- client -> server: () -> (ok, message)
 	"GetSeason", -- client -> server: () -> your season progress
 	"SeasonClaim", -- client -> server: (tier, "free" | "premium") -> (ok, message)
-	"GetRewards", -- client -> server: () -> daily, quests and Storm Index info
+	"GetRewards", -- client -> server: () -> daily, quests and Kit Collection info
 	"ClaimDaily", -- client -> server: () -> (ok, message)
 	"ClaimQuest", -- client -> server: (index) -> (ok, message)
 	"GetTitles", -- client -> server: () -> titles and progress
@@ -49,8 +32,7 @@ local FUNCTIONS = {
 	"CheckGroup", -- client -> server: () -> (ok, message)
 	"GetMarket", -- client -> server: () -> market stock
 	"BuyMarket", -- client -> server: (slot) -> (ok, message)
-	"OpenJar", -- client -> server: (jarKey) -> (ok, message)
-	-- Bed Wars
+	"OpenCrate", -- client -> server: (crateKey) -> (ok, message) opens a Kit Crate
 	"BuyMatchItem", -- client -> server: (itemKey) -> (ok, message)
 	"BuyUpgrade", -- client -> server: (upgradeKey) -> (ok, message)
 	"GetKits", -- client -> server: () -> your storms and the chosen kit

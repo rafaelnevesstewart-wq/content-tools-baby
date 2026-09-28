@@ -1,8 +1,8 @@
 -- Admin Abuse: the game's owner (and anyone in Config.Admin.UserIds, or anyone
--- in Studio) gets a 👑 Admin panel to start server-wide events: Admin Abuse
--- (double Sparks, 10x luck and storm rains for 30 minutes), luck, a storm
--- rain, a Mega-Storm, a Golden Hunt, a Storm Race, any weather, or Sparks for
--- everyone. Admin Abuse also starts by itself once a week (Config.Admin).
+-- in Studio) gets a 👑 Admin panel: start or end a Bed Wars match, start
+-- Admin Abuse (double match Sparks for 30 minutes), any match weather, or
+-- give everyone Sparks. Admin Abuse also starts by itself once a week
+-- (Config.Admin).
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -16,17 +16,13 @@ local WeatherEvents = require(Shared.WeatherEvents)
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 
-local EventService = require(script.Parent.EventService)
 local IncomeService = require(script.Parent.IncomeService)
 local MatchService = require(script.Parent.MatchService)
-local RaidService = require(script.Parent.RaidService)
-local StormSpawner = require(script.Parent.StormSpawner)
 local WeatherService = require(script.Parent.WeatherService)
 
 local AdminService = {}
 
 local lastWeekly = -1
-local BED_WARS = Config.GameMode == "BedWars"
 
 local function now(): number
 	return workspace:GetServerTimeNow()
@@ -38,14 +34,9 @@ local function isAdmin(player: Player): boolean
 		or table.find(Config.Admin.UserIds, player.UserId) ~= nil
 end
 
-local function startLuck(minutes: number)
-	workspace:SetAttribute("LuckUntil", now() + minutes * 60)
-end
-
 local function startAbuse(byName: string?)
 	local minutes = Config.Admin.AbuseMinutes
 	workspace:SetAttribute("AbuseUntil", now() + minutes * 60)
-	startLuck(minutes)
 	for _, player in Players:GetPlayers() do
 		IncomeService.sync(player)
 	end
@@ -56,9 +47,7 @@ local function startAbuse(byName: string?)
 			.. minutes
 			.. " minutes: x"
 			.. Config.Admin.AbuseIncomeMultiplier
-			.. " Sparks, x"
-			.. Config.Admin.LuckMultiplier
-			.. " luck and storm rains!",
+			.. " Sparks from every match!",
 		"rare"
 	)
 end
@@ -73,48 +62,11 @@ local commands: { [string]: (Player, any) -> (boolean, string) } = {
 		startAbuse(player.DisplayName)
 		return true, "Admin Abuse started!"
 	end,
-	luck = function(player)
-		startLuck(Config.Admin.LuckMinutes)
-		Notify.all(
-			"🍀 "
-				.. player.DisplayName
-				.. " turned on x"
-				.. Config.Admin.LuckMultiplier
-				.. " STORM LUCK for "
-				.. Config.Admin.LuckMinutes
-				.. " minutes!",
-			"rare"
-		)
-		return true, "Luck is on."
-	end,
-	rain = function(player)
-		StormSpawner.stormRain(Config.Admin.StormRainCount)
-		Notify.all("🌧️ " .. player.DisplayName .. " made it rain storms on the Wild Skies!", "rare")
-		return true, "Storm rain!"
-	end,
-	boss = function()
-		if RaidService.startSoon() then
-			return true, "The Mega-Storm is coming!"
-		end
-		return false, "A Mega-Storm is already on."
-	end,
-	golden = function()
-		if EventService.startGolden() then
-			return true, "Golden Hunt started!"
-		end
-		return false, "Another event is running right now."
-	end,
-	race = function()
-		if EventService.startRace() then
-			return true, "Storm Race starting!"
-		end
-		return false, "Another event is running right now."
-	end,
 	weather = function(player, key)
 		if type(key) ~= "string" or not WeatherEvents.get(key) then
 			return false, "Unknown weather."
 		end
-		WeatherService.summon(key, player.DisplayName)
+		WeatherService.summon(key, player.DisplayName, nil)
 		return true, "Weather started."
 	end,
 	startmatch = function(player)
@@ -164,16 +116,10 @@ function AdminService.start()
 		mark(player)
 	end
 
-	-- Storm rains during Admin Abuse, and the weekly automatic Admin Abuse.
+	-- The weekly automatic Admin Abuse.
 	task.spawn(function()
-		local lastRain = 0
 		while true do
 			task.wait(5)
-			if abuseOn() and BED_WARS == false and os.clock() - lastRain >= Config.Admin.StormRainEvery then
-				lastRain = os.clock()
-				StormSpawner.stormRain(Config.Admin.StormRainCount)
-				Notify.all("🌧️ ADMIN ABUSE storm rain on the Wild Skies!", "info")
-			end
 			local date = os.date("!*t", os.time())
 			local week = os.time() // (7 * 86400)
 			if

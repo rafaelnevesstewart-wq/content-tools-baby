@@ -1,6 +1,6 @@
--- Holiday events (see HolidayData): on their dates, the event's storms roam
--- the Wild Skies, every catch earns the event currency, the Wild Skies gets
--- themed decorations, and the event shop sells the event storms.
+-- Holiday events (see HolidayData): on their dates, every Bed Wars match
+-- earns the event currency, the lobby gets themed decorations, and the event
+-- shop sells the event's exclusive kits.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -16,12 +16,10 @@ local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 local WorldBuilder = require(Modules.WorldBuilder)
 
-local CaptureService = require(script.Parent.CaptureService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local MatchService = require(script.Parent.MatchService)
 local RewardService = require(script.Parent.RewardService)
-local StormSpawner = require(script.Parent.StormSpawner)
 
 local HolidayService = {}
 
@@ -236,14 +234,6 @@ local function refresh()
 	end
 	current, currentKey = holiday, key
 	if holiday then
-		local defs = {}
-		for _, id in holiday.storms do
-			local def = StormData.get(id)
-			if def then
-				table.insert(defs, def)
-			end
-		end
-		StormSpawner.setHolidayStorms(defs)
 		buildDecor(holiday)
 		workspace:SetAttribute("Holiday", holiday.key)
 		workspace:SetAttribute("HolidayEndsAt", HolidayData.endsAt(os.time(), holiday))
@@ -251,7 +241,7 @@ local function refresh()
 			holiday.emoji
 				.. " "
 				.. string.upper(holiday.name)
-				.. " has started! Catch storms for "
+				.. " has started! Play Bed Wars for "
 				.. holiday.currencyEmoji
 				.. " "
 				.. holiday.currency
@@ -259,7 +249,6 @@ local function refresh()
 			"rare"
 		)
 	else
-		StormSpawner.setHolidayStorms(nil)
 		removeDecor()
 		workspace:SetAttribute("Holiday", nil)
 		workspace:SetAttribute("HolidayEndsAt", nil)
@@ -313,7 +302,7 @@ local function buy(player: Player, index: any): (boolean, string)
 	local problem
 	local def = item.stormId and StormData.get(item.stormId)
 	if def then
-		problem = RewardService.giveStorm(player, def, nil, nil)
+		problem = RewardService.giveKit(player, def, nil)
 	elseif item.reward then
 		problem = RewardService.grant(player, item.reward :: any, nil)
 	end
@@ -349,21 +338,18 @@ function HolidayService.start()
 			Juice.float(player, "+" .. gain .. " " .. holiday.currencyEmoji, root.Position + Vector3.new(0, 4, 0))
 		end
 	end
-	CaptureService.Caught:Connect(function(player, record)
-		local def = StormData.get(record.id)
-		if def then
-			earn(player, HolidayData.CatchPoints[def.rarity] or 1)
-		end
-	end)
-	-- Bed Wars: knockouts, beds and wins earn event currency.
+	local points = HolidayData.Points
 	MatchService.Killed:Connect(function(killer, _victim, final)
-		earn(killer, if final then 4 else 2)
+		earn(killer, if final then points.FinalKill else points.Kill)
 	end)
 	MatchService.BedBroken:Connect(function(breaker)
-		earn(breaker, 5)
+		earn(breaker, points.Bed)
 	end)
 	MatchService.Won:Connect(function(player)
-		earn(player, 8)
+		earn(player, points.Win)
+	end)
+	MatchService.Played:Connect(function(player)
+		earn(player, points.Played)
 	end)
 
 	refresh()

@@ -30,7 +30,7 @@ local function build()
 	if #kits == 0 then
 		UI.label({
 			Size = UDim2.new(1, 0, 0, 60),
-			Text = "No storms yet! Open a Mystery Jar in the 🏪 Market to get one.",
+			Text = "No kits yet! Open a Kit Crate in the 🏪 Market to get one.",
 			TextWrapped = true,
 			TextColor3 = UI.Colors.Muted,
 			Parent = list,
@@ -130,7 +130,7 @@ function Kits.start()
 	UI.label({
 		Position = UDim2.fromOffset(0, 38),
 		Size = UDim2.new(1, 0, 0, 36),
-		Text = "Your kit floats beside you in matches and gives you its power on Shift. Rarer storms look cooler!",
+		Text = "Your kit floats beside you in matches and gives you its power on Shift. Rarer kits recharge their power faster!",
 		TextSize = 14,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,

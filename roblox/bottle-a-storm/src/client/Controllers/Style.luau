@@ -1,6 +1,7 @@
--- The 🎨 Style window: cosmetics for your character (hats, trails, backs,
--- auras) and your island (pedestals, decorations, sign and flag, pets).
--- Buy with Sparks (or Robux for a few), then tap to wear or place.
+-- The 🎨 Style window: Bed Wars cosmetics for you (hats, trails, backs,
+-- auras) and for your matches (your team's cloud bed, sword skin, arrow
+-- effect and knockout effect). Buy with Sparks (or Robux for a few; some only
+-- come from the battle pass), then tap to use.
 
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -27,12 +28,10 @@ type State = {
 	trail: string?,
 	back: string?,
 	aura: string?,
-	pedestal: string?,
-	flag: string?,
-	decor: { string },
-	pets: { string },
-	signColor: number?,
-	signEmoji: string?,
+	bed: string?,
+	sword: string?,
+	fx: string?,
+	ko: string?,
 }
 
 local window: Frame
@@ -54,7 +53,7 @@ local function state(): State
 			return decoded
 		end
 	end
-	return { owned = {}, decor = {}, pets = {} }
+	return { owned = {} }
 end
 
 local function send(action: string, value: any)
@@ -116,8 +115,6 @@ local function section(order: number, title: string): Frame
 end
 
 local function card(grid: Frame, order: number, item: CosmeticsData.Item)
-	local category = CosmeticsData.category(item.category)
-	local multi = category ~= nil and category.multi == true
 	local tier = CosmeticsData.tierOf(item)
 	local frame = UI.new("Frame", {
 		LayoutOrder = order,
@@ -175,27 +172,26 @@ local function card(grid: Frame, order: number, item: CosmeticsData.Item)
 	local mode = "buy"
 	local function refresh()
 		local current = state()
-		local owned = table.find(current.owned or {}, item.id) ~= nil or (item.cost == 0 and not item.robux)
-		local using
-		if multi then
-			local list = if item.category == "decor" then current.decor else current.pets
-			using = table.find(list or {}, item.id) ~= nil
-		else
-			local default = CosmeticsData.Defaults[item.category]
-			using = (current :: any)[item.category] == item.id
-				or (item.id == default and (current :: any)[item.category] == nil)
-		end
+		local owned = table.find(current.owned or {}, item.id) ~= nil
+			or (item.cost == 0 and not item.robux and not item.season)
+		local default = CosmeticsData.Defaults[item.category]
+		local using = (current :: any)[item.category] == item.id
+			or (item.id == default and (current :: any)[item.category] == nil)
 		stroke.Thickness = if using then 3.5 else 1.5
 		stroke.Color = if using then UI.Colors.Good else tier.color
 		if using then
 			local isDefault = CosmeticsData.Defaults[item.category] == item.id
-			mode = if isDefault then "none" else (if multi then "equip" else "unequip")
-			button.Text = if multi then "✓ Placed" else "✓ Using"
+			mode = if isDefault then "none" else "unequip"
+			button.Text = "✓ Using"
 			button.BackgroundColor3 = UI.Colors.Good
 		elseif owned then
 			mode = "equip"
-			button.Text = if multi then "Place" elseif category and category.island then "Use" else "Wear"
+			button.Text = "Use"
 			button.BackgroundColor3 = UI.Colors.Stroke
+		elseif item.season then
+			mode = "none"
+			button.Text = "🎟️ Battle pass"
+			button.BackgroundColor3 = UI.Colors.Disabled
 		elseif item.robux then
 			mode = "robux"
 			local product = Products.get(CosmeticsData.productKey(item.id))
@@ -223,60 +219,13 @@ local function card(grid: Frame, order: number, item: CosmeticsData.Item)
 	refresh()
 end
 
-local function buildSignPicker(order: number)
-	UI.label({
-		LayoutOrder = order,
-		Size = UDim2.new(1, -8, 0, 26),
-		Text = "🪧 Island sign (free)",
-		TextSize = 19,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = content,
-	})
-	local colors = UI.new("Frame", {
-		LayoutOrder = order + 1,
-		Size = UDim2.new(1, -8, 0, 44),
-		BackgroundTransparency = 1,
-		Parent = content,
-	}, { UI.list(8, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left) })
-	for index, color in CosmeticsData.SignColors do
-		local swatch = UI.button({
-			LayoutOrder = index,
-			Size = UDim2.fromOffset(40, 40),
-			Text = "",
-			BackgroundColor3 = color,
-			Parent = colors,
-		})
-		swatch.Activated:Connect(function()
-			send("signColor", index)
-		end)
-		table.insert(refreshers, function()
-			swatch.Text = if (state().signColor or 1) == index then "✓" else ""
-		end)
-	end
-	local emoji = UI.new("Frame", {
-		LayoutOrder = order + 2,
-		Size = UDim2.new(1, -8, 0, 44),
-		BackgroundTransparency = 1,
-		Parent = content,
-	}, { UI.list(6, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left) })
-	for index, symbol in CosmeticsData.SignEmoji do
-		local button = UI.button({
-			LayoutOrder = index,
-			Size = UDim2.fromOffset(40, 40),
-			Text = symbol,
-			TextSize = 22,
-			Parent = emoji,
-		})
-		button.Activated:Connect(function()
-			send("signEmoji", symbol)
-		end)
-		table.insert(refreshers, function()
-			button.BackgroundColor3 = if (state().signEmoji or "🏝️") == symbol
-				then UI.Colors.Good
-				else UI.Colors.PanelLight
-		end)
-	end
-end
+-- What each match cosmetic does, under its title.
+local HINTS: { [string]: string } = {
+	bed = "  ·  your team's bed uses the first teammate's pick",
+	sword = "  ·  every sword you hold, wood to diamond",
+	fx = "  ·  your bow's arrows",
+	ko = "  ·  bursts out when you knock someone out",
+}
 
 local function showTab(key: string)
 	currentTab = key
@@ -288,18 +237,7 @@ local function showTab(key: string)
 	if not category then
 		return
 	end
-	local order = 1
-	if key == "flag" then
-		buildSignPicker(order)
-		order += 10
-	end
-	local title = category.emoji .. " " .. category.name
-	if category.max then
-		title ..= " (up to " .. category.max .. " at once)"
-	elseif category.multi then
-		title ..= " (place as many as you like)"
-	end
-	local grid = section(order, title)
+	local grid = section(1, category.emoji .. " " .. category.name .. (HINTS[key] or ""))
 	local index = 0
 	for _, item in CosmeticsData.Items do
 		if item.category == key then
@@ -355,7 +293,7 @@ function Style.start()
 		local bonus = player:GetAttribute("StyleBonus") or 0
 		bonusLabel.Text = "✨ Style Bonus: +"
 			.. math.floor(bonus * 100 + 0.5)
-			.. "% Sparks (max +"
+			.. "% match Sparks (max +"
 			.. math.floor(Config.Style.MaxBonus * 100)
 			.. "%)"
 	end
@@ -396,28 +334,12 @@ function Style.start()
 		CanvasSize = UDim2.new(),
 		Parent = window,
 	}, { UI.list(6) })
-	local shownIsland = false
-	-- Bed Wars has no home island or storm jars, so those looks are hidden.
-	local bedWars = Config.GameMode == "BedWars"
 	for index, category in CosmeticsData.Categories do
-		if bedWars and (category.island or category.key == "jar") then
-			continue
-		end
-		if category.island and not shownIsland then
-			shownIsland = true
+		if index == 1 or category.key == "bed" then
 			UI.label({
 				LayoutOrder = index * 2 - 1,
 				Size = UDim2.new(1, -6, 0, 18),
-				Text = "🏝️ Island",
-				TextSize = 14,
-				TextColor3 = UI.Colors.Muted,
-				Parent = tabs,
-			})
-		elseif index == 1 then
-			UI.label({
-				LayoutOrder = 0,
-				Size = UDim2.new(1, -6, 0, 18),
-				Text = "🧍 You",
+				Text = if index == 1 then "🧍 You" else "⚔️ In matches",
 				TextSize = 14,
 				TextColor3 = UI.Colors.Muted,
 				Parent = tabs,

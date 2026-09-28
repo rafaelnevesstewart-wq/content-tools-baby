@@ -1,12 +1,14 @@
--- "Stormy Seasons" pass. Season Stars (XP) come from playing: time online,
--- catching, stealing, mixing and raids. Every tier unlocks a free reward and a
--- premium reward; players claim them in the Season window. A new season
--- (new theme and exclusive storms) starts every 4 weeks and resets progress.
+-- The battle pass. Season Stars (XP) come from matches (MatchService) and a
+-- little from time online; the Star Booster pass gives +50%. Every tier
+-- unlocks a free reward and a premium reward; players claim them in the
+-- 🎟️ Pass window. A new season (new theme, exclusive kits and cosmetics)
+-- starts every 4 weeks and resets progress.
 
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
 local SeasonData = require(Shared.SeasonData)
 
@@ -61,17 +63,21 @@ function SeasonService.sync(player: Player)
 	player:SetAttribute("SeasonClaimable", claimable(season))
 end
 
-function SeasonService.addXp(player: Player, amount: number)
+-- Adds Season Stars. `exact` skips the Star Booster (tier skips you bought).
+function SeasonService.addXp(player: Player, amount: number, exact: boolean?)
 	local data = DataService.get(player)
 	if not data or amount <= 0 then
 		return
+	end
+	if not exact and player:GetAttribute(Products.passAttribute("StarBooster")) == true then
+		amount = math.floor(amount * Config.Season.StarBoosterMultiplier)
 	end
 	local season = ensure(data)
 	local before = SeasonData.tierFor(season.xp)
 	season.xp = math.min(season.xp + amount, SeasonData.Tiers * SeasonData.XpPerTier)
 	local after = SeasonData.tierFor(season.xp)
 	if after > before then
-		Notify.player(player, "⭐ Season tier " .. after .. "! Claim your reward in 🎟️ Season.", "rare")
+		Notify.player(player, "⭐ Battle pass tier " .. after .. "! Claim your reward in 🎟️ Pass.", "rare")
 	end
 	SeasonService.sync(player)
 end
@@ -84,7 +90,7 @@ function SeasonService.grantPremium(player: Player): boolean
 	local season = ensure(data)
 	if season.premium then
 		-- Bought twice: turn the second one into tier skips so it isn't wasted.
-		SeasonService.addXp(player, Config.Season.DuplicatePremiumTiers * Config.Season.SkipTierXp)
+		SeasonService.addXp(player, Config.Season.DuplicatePremiumTiers * Config.Season.SkipTierXp, true)
 		Notify.player(
 			player,
 			"You already had Premium, so you got " .. Config.Season.DuplicatePremiumTiers .. " tier skips!",
@@ -94,7 +100,7 @@ function SeasonService.grantPremium(player: Player): boolean
 	end
 	season.premium = true
 	SeasonService.sync(player)
-	Notify.player(player, "🎟️ Season Premium unlocked! Claim your premium rewards in 🎟️ Season.", "rare")
+	Notify.player(player, "🎟️ Battle Pass Premium unlocked! Claim your premium rewards in 🎟️ Pass.", "rare")
 	return true
 end
 
@@ -120,7 +126,7 @@ local function claim(player: Player, tier: any, track: any): (boolean, string)
 		return false, "Reach tier " .. tier .. " first!"
 	end
 	if track == "premium" and not season.premium then
-		return false, "That's a Season Premium reward."
+		return false, "That's a Battle Pass Premium reward."
 	end
 	if claimed[tostring(tier)] then
 		return false, "Already claimed!"
@@ -174,7 +180,10 @@ function SeasonService.start()
 			if number ~= seasonNumber then
 				seasonNumber = number
 				Notify.all(
-					theme.emoji .. " A new season began: " .. theme.name .. "! New exclusive storms in 🎟️ Season.",
+					theme.emoji
+						.. " A new battle pass season began: "
+						.. theme.name
+						.. "! New exclusive kits and cosmetics in 🎟️ Pass.",
 					"rare"
 				)
 			end

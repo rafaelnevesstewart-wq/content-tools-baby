@@ -10,6 +10,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
@@ -17,6 +18,9 @@ local Effects = require(Modules.Effects)
 local MatchService = require(script.Parent.MatchService)
 
 local BlockService = {}
+
+-- (player) each time a player places a block (daily quests).
+BlockService.Placed = Signal.new()
 
 local SIZE = Config.Match.BlockSize
 local folder: Folder
@@ -129,6 +133,7 @@ local function onPlace(player: Player, blockKey: any, point: any)
 	placed[key(cell)] = part
 	counts[player][blockKey] = have - 1
 	publish(player)
+	BlockService.Placed:Fire(player)
 end
 
 -- A sword swing at `aim`: damages the placed block nearest to it, if any.

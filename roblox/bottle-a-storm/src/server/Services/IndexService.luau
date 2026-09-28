@@ -1,8 +1,8 @@
--- The Storm Index (collection book). The first time you get a kind of storm,
--- by catching, stealing, trading, mixing or as a reward, it's added to your
--- Index and pays you a little bonus. Completing every storm of a rarity (a
--- "row") gives +5% Sparks forever. Season-pass exclusives are shown but don't
--- count toward rows, since they can't be earned after their season.
+-- The Kit Collection. The first time you get a kind of kit (from a Kit Crate,
+-- the Kit Shop, the battle pass or a reward) it's added to your collection
+-- and pays a little bonus. Completing every kit of a rarity (a "row") gives
+-- +5% match Sparks forever. Battle pass and holiday kits are shown but don't
+-- count toward rows, since they can't be earned after their event.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
@@ -17,7 +17,7 @@ local IncomeService = require(script.Parent.IncomeService)
 
 local IndexService = {}
 
--- Storm ids that make up each rarity row (no season exclusives).
+-- Kit ids that make up each rarity row (no exclusives).
 local rows: { [number]: { string } } = {}
 for _, def in StormData.Storms do
 	if not StormData.isExclusive(def) then
@@ -55,9 +55,13 @@ function IndexService.discover(player: Player, id: string): boolean
 		return false
 	end
 	data.discovered[id] = true
-	local bonus = math.max(Config.Index.DiscoverMin, math.floor(def.income * Config.Index.DiscoverSeconds))
+	local bonus = Config.Index.DiscoverSparks[def.rarity] or 100
 	data.sparks += bonus
-	Notify.player(player, "📖 New in your Storm Index: " .. def.name .. "! +⚡" .. Format.number(bonus), "success")
+	Notify.player(
+		player,
+		"📖 New in your Kit Collection: " .. def.name .. "! +⚡" .. Format.number(bonus),
+		"success"
+	)
 
 	local before = data.indexRows or 0
 	local done = completedRows(data)
@@ -68,9 +72,9 @@ function IndexService.discover(player: Player, id: string): boolean
 			player,
 			"🏆 You completed the "
 				.. rarity.name
-				.. " row of your Storm Index! +"
+				.. " row of your Kit Collection! +"
 				.. math.floor(Config.Index.RowBonus * 100)
-				.. "% Sparks forever.",
+				.. "% match Sparks forever.",
 			"rare"
 		)
 	end

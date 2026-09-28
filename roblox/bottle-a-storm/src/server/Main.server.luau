@@ -2,55 +2,7 @@
 
 local Services = script.Parent.Services
 
-local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared").Config)
-
-local TYCOON = {
-	"DataService",
-	"PlotService", -- builds the world, so it runs before anything that needs it
-	"StormSpawner",
-	"WeatherService",
-	"MovementService",
-	"IncomeService",
-	"CaptureService",
-	"RideService",
-	"MoodService",
-	"IndexService",
-	"SeasonService",
-	"RewardService",
-	"MixService",
-	"TradeService",
-	"StealService",
-	"GuardService",
-	"BuddyService",
-	"ObbyService",
-	"FlightService",
-	"GrumpService",
-	"BalloonService",
-	"WeatherMutationService",
-	"ParadeService",
-	"MarketService",
-	"CommunityService",
-	"LeaderboardService",
-	"SpinService",
-	"AdminService",
-	"HolidayService",
-	"RaidService",
-	"DailyService",
-	"EventService",
-	"BattleService",
-	"TitleService",
-	"AuraService",
-	"ClimateService",
-	"ThemeService",
-	"HouseService",
-	"CosmeticService",
-	"ShopService",
-	"MonetizationService",
-}
-
--- Bed Wars rounds. The storm-catching tycoon services are switched off (not
--- deleted): set Config.GameMode = "Tycoon" to bring them back.
-local BED_WARS = {
+local order = {
 	"DataService",
 	"MatchService", -- builds the world, so it runs before anything that needs it
 	"WeatherService",
@@ -64,7 +16,6 @@ local BED_WARS = {
 	"ItemShopService",
 	"KitService",
 	"ObbyService",
-	"FlightService",
 	"MarketService",
 	"CommunityService",
 	"LeaderboardService",
@@ -72,14 +23,10 @@ local BED_WARS = {
 	"AdminService",
 	"HolidayService",
 	"DailyService",
-	"BattleService",
 	"TitleService",
 	"CosmeticService",
-	"ShopService",
 	"MonetizationService",
 }
-
-local order = if Config.GameMode == "BedWars" then BED_WARS else TYCOON
 
 local services = {}
 for _, name in order do
@@ -103,4 +50,4 @@ for _, name in order do
 end
 services.DataService.start()
 
-print("[Bottle a Storm] Server ready (" .. Config.GameMode .. ")")
+print("[Bottle a Storm: Bed Wars] Server ready")

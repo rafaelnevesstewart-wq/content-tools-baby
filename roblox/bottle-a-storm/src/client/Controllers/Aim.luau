@@ -1,6 +1,6 @@
 -- Where the player is aiming (mouse or last touch), with a little aim assist
--- toward targets near the aim line. Used by the Storm Jar, the Cloud Blaster
--- and water balloons.
+-- toward targets near the aim line. Used by the sword, the bow, Wind Pearls
+-- and block placing.
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")

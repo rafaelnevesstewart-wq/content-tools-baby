@@ -65,7 +65,7 @@ local function checkGroup(player: Player): boolean
 	return inGroup
 end
 
--- The like-goal sign near the Wild Skies spawn.
+-- The like-goal sign near the lobby spawn.
 local function buildLikeSign()
 	local board = Instance.new("Part")
 	board.Name = "LikeGoalSign"

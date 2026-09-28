@@ -55,8 +55,8 @@ local function spin(player: Player): (boolean, any)
 	-- Give it now (so nothing is lost), but announce it when the wheel stops.
 	local problem = RewardService.grant(player, prize.reward, nil, true)
 	if problem then
-		-- e.g. a full island: pay Sparks instead.
-		RewardService.grant(player, { kind = "sparks", minutes = 30, min = 3000 }, nil, true)
+		-- Couldn't give it (it shouldn't happen): pay Sparks instead.
+		RewardService.grant(player, { kind = "sparks", amount = 1000 }, nil, true)
 	end
 	IncomeService.sync(player)
 	DailyService.sync(player)
@@ -65,7 +65,7 @@ local function spin(player: Player): (boolean, any)
 		spinning[player] = nil
 		if player.Parent then
 			local text = if problem
-				then "🎡 You won " .. prize.label .. ", but your island is full, so you got 30 minutes of Sparks!"
+				then "🎡 You won " .. prize.label .. ", but something went wrong, so you got ⚡1,000 instead!"
 				else "🎡 You won " .. prize.label .. "!"
 			Notify.player(player, text, if prize.weight <= 5 then "rare" else "success")
 		end

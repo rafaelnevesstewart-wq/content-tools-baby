@@ -18,8 +18,10 @@ local Juice = require(Modules.Juice)
 local Notify = require(Modules.Notify)
 
 local BlockService = require(script.Parent.BlockService)
+local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
 local MatchService = require(script.Parent.MatchService)
+local WeatherService = require(script.Parent.WeatherService)
 
 local CombatService = {}
 
@@ -76,7 +78,7 @@ local function handlePart(props: { [string]: any }): Part
 	return p
 end
 
-local function makeSword(tier: number): Tool
+local function makeSword(tier: number, skin: string?): Tool
 	local sword = MatchData.Swords[tier]
 	local tool = Instance.new("Tool")
 	tool.Name = "Sword"
@@ -84,8 +86,15 @@ local function makeSword(tier: number): Tool
 	tool.CanBeDropped = false
 	tool.Grip = CFrame.new(0, 0, -1.5, 0, 0, 1, 1, 0, 0, 0, 1, 0)
 	local blade = handlePart({ Size = Vector3.new(0.3, 0.8, 4), Color = sword.color, Material = sword.material })
+	SkinData.applySword(blade, skin) -- the Sword Skin cosmetic
 	blade.Parent = tool
-	local guard = handlePart({ Name = "Guard", Size = Vector3.new(0.4, 1.8, 0.3), Color = Color3.fromRGB(90, 70, 50) })
+	-- The guard always shows the tier, whatever the skin.
+	local guard = handlePart({
+		Name = "Guard",
+		Size = Vector3.new(0.4, 1.8, 0.3),
+		Color = sword.color,
+		Material = sword.material,
+	})
 	guard.CFrame = blade.CFrame * CFrame.new(0, 0, 1.4)
 	local weld = Instance.new("WeldConstraint")
 	weld.Part0 = blade
@@ -133,7 +142,8 @@ local function refreshTools(player: Player)
 	local sword = player.Character and player.Character:FindFirstChild("Sword")
 	local wasHolding = sword ~= nil
 	removeTool(player, "Sword")
-	local newSword = makeSword(g.sword)
+	local data = DataService.get(player)
+	local newSword = makeSword(g.sword, data and data.cosmetics.sword)
 	giveTool(player, newSword)
 	if wasHolding then
 		local humanoid = humanoidOf(player)
@@ -245,7 +255,7 @@ local function damage(victim: Player, attacker: Player, amount: number, push: Ve
 	local taken = math.max(0.3, armor.taken - 0.06 * protection)
 	MatchService.recordHit(victim, attacker)
 	humanoid:TakeDamage(amount * taken)
-	Juice.knock(victim, push)
+	Juice.knock(victim, push * WeatherService.knockbackMultiplier())
 	Juice.sound(victim, "zap")
 	Juice.sound(attacker, "pop")
 end
@@ -464,6 +474,12 @@ function CombatService.start()
 		task.wait(0.1)
 		refreshTools(player)
 		dressArmor(player)
+	end)
+	-- A new sword skin shows right away.
+	CosmeticService.Changed:Connect(function(player, category)
+		if category == "sword" and gear[player] and MatchService.isPlaying(player) then
+			refreshTools(player)
+		end
 	end)
 	MatchService.MatchEnded:Connect(function()
 		for player in gear do

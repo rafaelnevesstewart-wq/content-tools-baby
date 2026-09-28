@@ -1,5 +1,5 @@
 -- Loads and saves each player's profile with a session lock, so the same
--- profile is never open on two servers at once (no duplicated storms).
+-- profile is never open on two servers at once (no duplicated kits or Sparks).
 --
 -- In Studio without "Enable Studio Access to API Services", it falls back to
 -- memory-only profiles and warns once.
@@ -41,61 +41,30 @@ local function defaultData()
 	return {
 		version = 1,
 		sparks = 0,
-		unclaimed = 0,
-		jarTier = 1,
-		pedestals = Config.Pedestals.Start,
-		floors = 1, -- island floors (see Config.Floors)
-		bootsLevel = 0,
-		trapLevel = 0,
-		raidShields = 0,
-		climate = 0, -- Climate Shift level: 0 Temperate, 1 Arctic, 2 Volcano, 3 Space
-		-- Season pass progress; reset when a new season starts. Claimed tiers use
+		-- Battle pass progress; reset when a new season starts. Claimed tiers use
 		-- string keys ("5" = true) so the DataStore never sees an array with holes.
 		season = { id = -1, xp = 0, premium = false, claimedFree = {}, claimedPremium = {} },
-		thiefStyles = {}, -- unlocked style key -> true; data.thiefStyle is the equipped one
 		starterGiven = false,
-		indexRows = 0, -- completed Storm Index rarity rows (each is +5% income)
+		indexRows = 0, -- completed Kit Collection rarity rows (each is +5% match Sparks)
 		daily = { lastDay = -1, streak = 0 }, -- login reward streak
 		quests = { day = -1, list = {} }, -- today's quests
-		playSeconds = 0, -- total time played (the Beginner Boost lasts 15 minutes)
-		battles = { day = -1, wins = 0, losses = 0 }, -- today's battles that paid out
-		theme = "Meadow", -- island theme
-		themes = { Meadow = true },
 		titles = {}, -- unlocked title id -> true; data.title is the one shown
 		codes = {}, -- redeemed code -> true
 		spin = { day = -1, extra = 0 }, -- daily wheel: last free spin day, bought spins
 		holiday = { key = "", points = 0 }, -- event currency for the running holiday
-		obby = { lastDay = -1 }, -- last day the secret sky island reward was claimed
-		-- Cosmetics: owned ids, plus what's in use. hat, trail, back, aura and
-		-- flag are saved when set.
+		obby = { lastDay = -1 }, -- last day the lobby parkour reward was claimed
+		-- Cosmetics: owned ids; what's in use (hat, trail, back, aura, bed,
+		-- sword, fx, ko) is saved when set.
 		cosmetics = {
-			owned = { Marble = true },
-			pedestal = "Marble",
-			decor = {}, -- id -> true
-			pets = {}, -- id -> true
-			signColor = 1,
-			signEmoji = "🏝️",
+			owned = {},
 		},
-		-- Also saved when set: guardUid, buddyUid, mountUid, lastSeen (for offline
-		-- earnings), title, kit (the storm uid you bring to Bed Wars matches).
-		storms = {}, -- { StormRecord }
-		discovered = {}, -- storm id -> true
-		recipes = {}, -- hybrid id -> true, the Storm Mixer recipes this player found
+		-- Also saved when set: title, kit (the storm uid you bring to matches).
+		storms = {}, -- your kits: { StormRecord }
+		discovered = {}, -- kit id -> true (Kit Collection)
 		receipts = {}, -- recent purchase ids, to never grant a purchase twice
 		stats = {
-			captured = 0,
-			stolen = 0,
 			sparksEarned = 0,
-			mixed = 0,
-			trades = 0,
-			shifts = 0,
-			raids = 0,
-			battlesWon = 0,
-			huntsWon = 0, -- Golden Hunts and Storm Races
-			grumpsPopped = 0, -- grumpy clouds you helped pop
-			splashes = 0, -- players you hit with water balloons
-			obbyClears = 0, -- times you reached the secret sky island
-			-- Bed Wars
+			obbyClears = 0, -- times you reached the top of the lobby parkour
 			kills = 0,
 			finalKills = 0,
 			bedsBroken = 0,
@@ -103,6 +72,50 @@ local function defaultData()
 			matches = 0,
 		},
 	}
+end
+
+-- Saved values from the old storm-catching game that Bed Wars doesn't use.
+local RETIRED = {
+	"unclaimed",
+	"jarTier",
+	"pedestals",
+	"floors",
+	"bootsLevel",
+	"trapLevel",
+	"raidShields",
+	"climate",
+	"thiefStyles",
+	"thiefStyle",
+	"playSeconds",
+	"battles",
+	"theme",
+	"themes",
+	"recipes",
+	"guardUid",
+	"buddyUid",
+	"mountUid",
+	"lastSeen",
+}
+local RETIRED_COSMETICS = { "pedestal", "decor", "pets", "signColor", "signEmoji", "flag", "house", "cloud", "jar" }
+local RETIRED_STORM_FIELDS = { "slot", "mood", "xp", "wm" }
+local RETIRED_STATS =
+	{ "captured", "stolen", "mixed", "trades", "shifts", "raids", "battlesWon", "huntsWon", "grumpsPopped", "splashes" }
+
+local function forgetRetired(data: any)
+	for _, key in RETIRED do
+		data[key] = nil
+	end
+	for _, key in RETIRED_COSMETICS do
+		data.cosmetics[key] = nil
+	end
+	for _, key in RETIRED_STATS do
+		data.stats[key] = nil
+	end
+	for _, record in data.storms do
+		for _, key in RETIRED_STORM_FIELDS do
+			record[key] = nil
+		end
+	end
 end
 
 local function deepCopy(value: any): any
@@ -222,11 +235,12 @@ local function onPlayerAdded(player: Player)
 		return
 	end
 	if not ok then
-		player:Kick("We couldn't load your storms. Please rejoin in a minute!")
+		player:Kick("We couldn't load your profile. Please rejoin in a minute!")
 		return
 	end
 
 	local data = reconcile(stored or defaultData(), defaultData())
+	forgetRetired(data)
 	profiles[player] = { key = key, data = data, released = false }
 	DataService.ProfileLoaded:Fire(player, data)
 end

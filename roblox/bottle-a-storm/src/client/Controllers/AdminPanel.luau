@@ -1,12 +1,10 @@
 -- The 👑 Admin panel (only shown to admins; the server checks every command).
--- Start Admin Abuse, luck, a storm rain, a Mega-Storm, a Golden Hunt, a
--- Storm Race, any weather, or give everyone Sparks. In Bed Wars: start or
--- end a match.
+-- Start or end a Bed Wars match, start Admin Abuse, start any match weather,
+-- or give everyone Sparks.
 
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local Config = require(Shared.Config)
 local Remotes = require(Shared.Remotes)
 local WeatherEvents = require(Shared.WeatherEvents)
 
@@ -65,20 +63,11 @@ function AdminPanel.start()
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
-	local actions = if Config.GameMode == "BedWars"
-		then {
-			{ "👑 ADMIN ABUSE", "abuse", UI.Colors.Spark },
-			{ "⚔️ Start match now", "startmatch", UI.Colors.Good },
-			{ "🏁 End match", "endmatch", UI.Colors.Bad },
-		}
-		else {
-			{ "👑 ADMIN ABUSE", "abuse", UI.Colors.Spark },
-			{ "🍀 10x Luck", "luck", UI.Colors.Good },
-			{ "🌧️ Storm Rain", "rain", UI.Colors.Stroke },
-			{ "🌪️ Mega-Storm now", "boss", UI.Colors.Bad },
-			{ "✨ Golden Hunt", "golden", UI.Colors.Warn },
-			{ "🏁 Storm Race", "race", UI.Colors.Rare },
-		}
+	local actions = {
+		{ "⚔️ Start match now", "startmatch", UI.Colors.Good },
+		{ "🏁 End match", "endmatch", UI.Colors.Bad },
+		{ "👑 ADMIN ABUSE", "abuse", UI.Colors.Spark },
+	}
 	for order, action in actions do
 		UI.button({
 			LayoutOrder = order,

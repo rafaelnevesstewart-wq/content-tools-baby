@@ -129,19 +129,4 @@ function UI.screen(name: string, displayOrder: number?): ScreenGui
 	})
 end
 
--- The island model owned by the local player, if any.
-function UI.myPlot(): Model?
-	local world = workspace:FindFirstChild("World")
-	local plots = world and world:FindFirstChild("Plots")
-	if not plots then
-		return nil
-	end
-	for _, plot in plots:GetChildren() do
-		if plot:GetAttribute("OwnerUserId") == Players.LocalPlayer.UserId then
-			return plot :: Model
-		end
-	end
-	return nil
-end
-
 return UI

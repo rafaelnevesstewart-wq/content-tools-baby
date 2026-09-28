@@ -1,11 +1,12 @@
--- Hands out rewards (Sparks, Storm Snacks, Raid Shields, storms) for the
--- season pass, daily login rewards and quests. Also gives brand-new players
--- their free starter storm.
+-- Hands out rewards (Sparks, kits, cosmetics) for the battle pass, daily
+-- login rewards, quests, the spin wheel and codes. Also gives brand-new
+-- players their first kit.
 
 local HttpService = game:GetService("HttpService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local CosmeticsData = require(Shared.CosmeticsData)
 local Format = require(Shared.Format)
 local SeasonData = require(Shared.SeasonData)
 local StormData = require(Shared.StormData)
@@ -13,11 +14,10 @@ local StormData = require(Shared.StormData)
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 
+local CosmeticService = require(script.Parent.CosmeticService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local IndexService = require(script.Parent.IndexService)
-local MoodService = require(script.Parent.MoodService)
-local PlotService = require(script.Parent.PlotService)
 
 local RewardService = {}
 
@@ -30,6 +30,7 @@ local function tell(player: Player, text: string, kind: string)
 	end
 end
 
+-- A random shiny variant, rarer ones less often.
 function RewardService.randomMutation(): string
 	local total = 0
 	for _, mutation in StormData.Mutations do
@@ -45,50 +46,38 @@ function RewardService.randomMutation(): string
 	return StormData.Mutations[1].id
 end
 
-local BED_WARS = Config.GameMode == "BedWars"
-
--- Is there room for one more storm? (In Bed Wars storms are kits, so there's
--- no pedestal limit.)
-function RewardService.hasRoom(player: Player): boolean
-	return BED_WARS or PlotService.firstFreeSlot(player) ~= nil
+-- A random kit of a rarity (from the ones Kit Crates can give).
+function RewardService.randomKit(rarity: number): StormData.StormDef
+	local options = StormData.ofRarity(rarity)
+	if #options == 0 then
+		options = StormData.ofRarity(1)
+	end
+	return options[rng:NextInteger(1, #options)]
 end
 
--- Puts a storm on a free pedestal (in Bed Wars: into your kit collection).
--- Returns an error message if there's no room.
-function RewardService.giveStorm(player: Player, def: StormData.StormDef, mutation: string?, mood: number?): string?
+-- Adds a kit to the player's collection. Returns an error message if it
+-- couldn't.
+function RewardService.giveKit(player: Player, def: StormData.StormDef, mutation: string?): string?
 	local data = DataService.get(player)
-	local slot = if BED_WARS then 0 else PlotService.firstFreeSlot(player)
 	if not data then
 		return "Your data isn't loaded yet."
-	end
-	if not slot then
-		return "Your island is full! Make room for the storm first."
 	end
 	local record: StormData.StormRecord = {
 		uid = HttpService:GenerateGUID(false),
 		id = def.id,
 		mut = mutation,
-		slot = slot,
 		at = os.time(),
-		mood = mood or Config.Mood.Start,
 	}
 	table.insert(data.storms, record)
-	PlotService.refreshSlot(player, slot)
 	IndexService.discover(player, def.id)
 	IncomeService.sync(player)
-	tell(
-		player,
-		"🎁 "
-			.. StormData.displayName(record)
-			.. (if BED_WARS then " joined your kits! Pick it in 🌪️ Kits." else " is on your island!"),
-		"rare"
-	)
+	tell(player, "🎁 " .. StormData.displayName(record) .. " joined your kits! Pick it in 🌪️ Kits.", "rare")
 	return nil
 end
 
 -- Gives one reward. Returns an error message if it couldn't be given, in
--- which case nothing is used up. `theme` is needed for season exclusives.
--- With `silent`, no pop-up messages (the caller announces it later).
+-- which case nothing is used up. `theme` is needed for battle pass
+-- exclusives. With `silent`, no pop-up messages (the caller announces it).
 function RewardService.grant(
 	player: Player,
 	reward: SeasonData.Reward,
@@ -106,39 +95,49 @@ function RewardService.grant(
 		return "Your data isn't loaded yet."
 	end
 	if reward.kind == "sparks" then
-		local amount = math.floor(math.max(reward.min or 0, IncomeService.rateOf(player) * 60 * (reward.minutes or 0)))
+		local amount = reward.amount or 0
 		data.sparks += amount
 		IncomeService.sync(player)
 		tell(player, "💰 +⚡" .. Format.number(amount) .. " Sparks!", "success")
-	elseif reward.kind == "snacks" then
-		if #data.storms == 0 then
-			return "You don't have any storms to feed yet. Catch one first!"
-		end
-		MoodService.feedAll(player)
-		tell(player, "🍪 Snack time! All your storms are Happy.", "success")
-	elseif reward.kind == "shield" then
-		data.raidShields += reward.amount or 1
-		IncomeService.sync(player)
-		tell(player, "🛡️ +" .. (reward.amount or 1) .. " Raid Shield!", "success")
-	elseif reward.kind == "storm" then
-		local options = StormData.wildOfRarity(reward.rarity or 3)
-		local def = options[rng:NextInteger(1, #options)]
-		return RewardService.giveStorm(player, def, if reward.mutated then RewardService.randomMutation() else nil)
+	elseif reward.kind == "kit" then
+		local def = RewardService.randomKit(reward.rarity or 3)
+		return RewardService.giveKit(player, def, if reward.mutated then RewardService.randomMutation() else nil)
 	elseif reward.kind == "exclusive" then
 		local def = theme and StormData.get(theme.storms[reward.slot or 1])
 		if not def then
-			return "That storm is missing."
+			return "That kit is missing."
 		end
-		return RewardService.giveStorm(player, def, nil)
+		return RewardService.giveKit(player, def, nil)
+	elseif reward.kind == "cosmetic" then
+		local id = reward.id or (theme and theme.cosmetics[reward.slot or 1])
+		local item = CosmeticsData.get(id)
+		if not id or not item then
+			return "That cosmetic is missing."
+		end
+		if data.cosmetics.owned[item.id] then
+			-- Already have it (maybe from an earlier year): Sparks instead.
+			local amount = Config.Rewards.DuplicateCosmeticSparks
+			data.sparks += amount
+			IncomeService.sync(player)
+			tell(
+				player,
+				"You already had " .. item.name .. ", so here's ⚡" .. Format.number(amount) .. "!",
+				"success"
+			)
+			return nil
+		end
+		local problem = CosmeticService.grant(player, item.id)
+		if problem then
+			return problem
+		end
+		tell(player, "🎨 New cosmetic: " .. item.emoji .. " " .. item.name .. "! It's on now.", "rare")
 	end
 	return nil
 end
 
 function RewardService.start()
-	-- New players get a free, happy starter storm so they earn right away
-	-- (in Bed Wars it's their first kit).
-	local signal = if BED_WARS then DataService.ProfileLoaded else PlotService.PlotAssigned
-	signal:Connect(function(player)
+	-- New players get a free first kit.
+	DataService.ProfileLoaded:Connect(function(player)
 		local data = DataService.get(player)
 		local def = StormData.get(Config.Starter.StormId)
 		if not data or data.starterGiven or not def then
@@ -146,14 +145,8 @@ function RewardService.start()
 		end
 		data.starterGiven = true
 		if #data.storms == 0 then
-			RewardService.giveStorm(player, def, nil, 100)
-			Notify.player(
-				player,
-				if BED_WARS
-					then "👋 Welcome to Bed Wars! Protect your cloud bed and break everyone else's!"
-					else "👋 Welcome! Follow the arrow to the Wild Skies to catch more storms!",
-				"info"
-			)
+			RewardService.giveKit(player, def, nil)
+			Notify.player(player, "👋 Welcome to Bed Wars! Protect your cloud bed and break everyone else's!", "info")
 		end
 	end)
 end

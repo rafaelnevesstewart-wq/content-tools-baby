@@ -1,15 +1,13 @@
--- The secret sky obby: a hidden path of cloud platforms that starts behind
--- the trees at the edge of the Wild Skies and climbs to a secret island.
--- Touch the glowing checkpoints on the way up, then claim a free Legendary
--- storm at the shrine, once a day. Flying there doesn't count: Cloud Flight
--- switches off near the path.
+-- Lobby parkour: a hidden path of cloud platforms that starts behind the
+-- trees at the edge of the lobby island and climbs to a secret island.
+-- Something to do between matches. Touch the glowing checkpoints on the way
+-- up, then claim a free Epic kit at the shrine, once a day.
 
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local RewardsData = require(Shared.RewardsData)
-local StormData = require(Shared.StormData)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
@@ -53,22 +51,6 @@ local function cloudPlatform(position: Vector3, size: number, checkpoint: boolea
 	return platform
 end
 
--- True near the obby path (Cloud Flight uses this to land players).
-function ObbyService.inZone(position: Vector3): boolean
-	if position.Y < 10 then
-		return false
-	end
-	local flat = Vector3.new(position.X, 0, position.Z)
-	local distance = flat.Magnitude
-	if distance < Config.Obby.Radius - 25 or distance > Config.Obby.Radius + 40 then
-		return false
-	end
-	local angle = math.deg(math.atan2(position.Z, position.X)) % 360
-	local first = Config.Obby.StartAngle % 360
-	local last = first + Config.Obby.Steps * Config.Obby.StepAngle + 15
-	return (angle >= first - 10 and angle <= last) or (angle + 360 >= first - 10 and angle + 360 <= last)
-end
-
 local function claim(player: Player)
 	local data = DataService.get(player)
 	if not data then
@@ -83,12 +65,10 @@ local function claim(player: Player)
 	end
 	local today = RewardsData.today(os.time())
 	if data.obby.lastDay == today then
-		Notify.player(player, "🏔️ You already claimed today's storm. Come back tomorrow!", "info")
+		Notify.player(player, "🏔️ You already claimed today's kit. Come back tomorrow!", "info")
 		return
 	end
-	local options = StormData.wildOfRarity(5)
-	local def = options[math.random(1, #options)]
-	local problem = RewardService.giveStorm(player, def, nil, nil)
+	local problem = RewardService.giveKit(player, RewardService.randomKit(4), nil)
 	if problem then
 		Notify.player(player, problem, "warn")
 		return
@@ -97,7 +77,7 @@ local function claim(player: Player)
 	data.stats.obbyClears += 1
 	Notify.allExcept(
 		player,
-		"🏔️ " .. player.DisplayName .. " reached the Secret Sky Island and found a Legendary storm!",
+		"🏔️ " .. player.DisplayName .. " climbed to the Secret Sky Island and found an Epic kit!",
 		"rare"
 	)
 end
@@ -166,7 +146,7 @@ function ObbyService.init()
 	light.Brightness = 2
 	light.Parent = glow
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Claim a Legendary storm"
+	prompt.ActionText = "Claim a free Epic kit"
 	prompt.ObjectText = "🏔️ Secret Sky Shrine"
 	prompt.HoldDuration = 1
 	prompt.KeyboardKeyCode = Enum.KeyCode.E

@@ -1,5 +1,5 @@
 -- Animates flashy effects on this screen for anything tagged "FlashyFx"
--- (storms, flight clouds, cosmetics). Read from attributes and names:
+-- (kit storms, cloud beds, cosmetics). Read from attributes and names:
 --   Bolts (Color3 attribute)  lightning bolts crackle around it
 --   Rainbow (true)            puffs / parts cycle through the rainbow
 --   Pulse: a PointLight named "PulseLight" throbs

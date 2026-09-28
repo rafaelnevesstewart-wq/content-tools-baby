@@ -19,19 +19,8 @@ function Juice.sound(player: Player, name: string)
 	juice:FireClient(player, "sound", name)
 end
 
--- The "welcome back" pop-up with what your storms earned while you were away.
-function Juice.welcome(player: Player, amount: number, awaySeconds: number)
-	juice:FireClient(player, "welcome", amount, awaySeconds)
-end
-
--- The big rare-catch moment: a screen flash, a camera zoom on the storm and
--- a banner with its name.
-function Juice.rareCatch(player: Player, name: string, rarityName: string, color: Color3, position: Vector3)
-	juice:FireClient(player, "rareCatch", name, rarityName, color, position)
-end
-
--- Pushes the player's character (their own screen moves it). Used by water
--- balloons and grumpy cloud raindrops.
+-- Pushes the player's character (their own screen moves it). Used by
+-- sword hits and arrows.
 function Juice.knock(player: Player, velocity: Vector3)
 	juice:FireClient(player, "knock", velocity)
 end
