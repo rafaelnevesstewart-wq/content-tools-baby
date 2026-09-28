@@ -89,6 +89,13 @@ Products.DevProducts = {
 -- Shop's Robux tab.
 Products.Cosmetics = {
 	{
+		key = "Cosmetic_MountUnicorn",
+		id = 0,
+		price = 149,
+		name = "Unicorn Mount",
+		description = "A sparkling white unicorn to ride around the lobby.",
+	},
+	{
 		key = "Cosmetic_PetDeer",
 		id = 0,
 		price = 99,

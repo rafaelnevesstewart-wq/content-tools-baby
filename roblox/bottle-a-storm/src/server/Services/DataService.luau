@@ -59,6 +59,8 @@ local function defaultData()
 		paint = {}, -- 🖌️ Paint Shop colors: blade, armor (PaintData.Colors index)
 		emotes = {}, -- 😀 bought emotes: key -> true (EmoteData)
 		petLevels = {}, -- 🐾 pet id -> { level, xp } (PetLevels)
+		minigames = { day = -1, prizes = 0, rangeBest = 0 }, -- 🎯 and ⏱️ (raceBest set when you finish)
+		base = { blocks = {} }, -- 🏗️ your saved base: "i,j,k,blockKey" (BaseData)
 		-- 🌟 Challenges (ChallengeService fills these in).
 		challenges = { day = -1, week = -1, bonusClaimed = false },
 		level = 1, -- player level (1-100), then prestige (ProgressionData)
@@ -86,6 +88,7 @@ local function defaultData()
 			weeklyCleared = 0, -- weeks with every 🌟 Weekly Challenge done
 			invites = 0, -- new players who joined through your invites
 			zombiesKilled = 0,
+			calendarsDone = 0, -- 📅 28-day calendars finished
 			weaponKills = {}, -- weapon name -> knockouts with it (📊 Stats)
 			kills = 0,
 			finalKills = 0,

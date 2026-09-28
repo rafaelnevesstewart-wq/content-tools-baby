@@ -42,6 +42,17 @@ local function now(): number
 	return workspace:GetServerTimeNow()
 end
 
+-- Where we are in the day: in a match the day starts at 7:00 when the match
+-- does (so every match has a day, a dusk and a night); in the lobby it
+-- follows the server clock.
+local function cycleTime(): number
+	local startedAt = workspace:GetAttribute("MatchStartedAt")
+	if workspace:GetAttribute("MatchPhase") == "playing" and type(startedAt) == "number" and startedAt > 0 then
+		return now() - startedAt
+	end
+	return now()
+end
+
 local function publish()
 	workspace:SetAttribute("WeatherEvent", if current then current.key else "")
 	workspace:SetAttribute("WeatherEndsAt", endsAt)
@@ -133,7 +144,7 @@ local function endEvent()
 	current = nil
 	endsAt = 0
 	workspace.Gravity = NORMAL_GRAVITY
-	applyLighting(dayState(now() + 4))
+	applyLighting(dayState(cycleTime() + 4))
 	publish()
 	if ended then
 		Notify.all(ended.emoji .. " " .. ended.name .. " is over.", "info")
@@ -197,15 +208,37 @@ function WeatherService.init()
 end
 
 function WeatherService.start()
-	-- The day and night cycle, whenever no event sets the sky.
+	-- The day and night cycle, whenever no event sets the sky (and the map
+	-- doesn't hold a time of day, like the Haunted Island's dusk).
+	local wasNight: boolean? = nil
 	task.spawn(function()
 		while true do
 			task.wait(0.5)
 			if not current and os.clock() >= tweeningUntil then
-				local state = dayState(now())
+				local state = dayState(cycleTime())
+				local fixed = workspace:GetAttribute("FixedClock")
+				if type(fixed) == "number" then
+					local night = nightness(fixed)
+					state.ClockTime = fixed
+					state.Ambient = baseline.Ambient:Lerp(NIGHT_AMBIENT, night)
+					state.OutdoorAmbient = baseline.OutdoorAmbient:Lerp(NIGHT_OUTDOOR, night)
+				end
 				Lighting.ClockTime = state.ClockTime
 				Lighting.Ambient = state.Ambient
 				Lighting.OutdoorAmbient = state.OutdoorAmbient
+			end
+			-- Tell everyone (and the bots and zombies) when night falls.
+			local isNight = nightness(Lighting.ClockTime) > 0.5
+			workspace:SetAttribute("IsNight", isNight)
+			if isNight ~= wasNight then
+				if wasNight ~= nil and workspace:GetAttribute("MatchPhase") == "playing" then
+					if isNight then
+						Notify.all("🌙 Night falls... bots can't see as far, and zombies get faster!", "info")
+					else
+						Notify.all("☀️ Morning! The sun is up.", "info")
+					end
+				end
+				wasNight = isNight
 			end
 		end
 	end)

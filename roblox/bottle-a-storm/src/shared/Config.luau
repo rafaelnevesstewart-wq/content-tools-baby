@@ -74,6 +74,9 @@ Config.Lobby = {
 	CastleHalf = 44, -- the castle walls are a square this far from the center
 	StreetDistance = 190, -- the shop street island, behind the castle (-Z)
 	StreetRadius = 56,
+	SideDistance = 210, -- Games Island (east, +X) and Base Island (west, -X)
+	GamesRadius = 62,
+	BaseRadius = 84,
 }
 
 -- Background music (MusicController). Add songs as Roblox audio ids: in
@@ -216,6 +219,33 @@ Config.Zombies = {
 	BedBreakSeconds = 5,
 	KillCopper = 3, -- for each zombie you knock out
 	WaveSparks = 60, -- times the wave number, for everyone still in
+	NightSpeed = 3, -- zombies made at night are faster
+}
+
+-- 👑 King of the Hill mode (HillService).
+Config.Hill = {
+	Radius = 14, -- the hill circle on the middle island
+	Target = 150, -- points to win (1 a second while your team holds it alone)
+}
+
+-- 🐎 Lobby mounts (MountService).
+Config.Mounts = {
+	Speed = 30, -- walking is 16
+	JumpPower = 60,
+	FlyUpSpeed = 24, -- clouds: holding jump
+	FallSpeed = 6, -- clouds drift down this slowly
+	MaxHeight = 120, -- clouds can't fly higher than this above the lobby
+}
+
+-- 🎯 Games Island mini-games (MiniGameService).
+Config.MiniGames = {
+	RangeSeconds = 40,
+	TargetsAtOnce = 3,
+	SparksPerPoint = 2, -- Target Range prize
+	RaceSparks = 800, -- Parkour Race prize: this minus 10 per second...
+	RaceMinSparks = 150, -- ...but never less than this
+	BestBonus = 500, -- beating your personal best
+	PrizesPerDay = 8,
 }
 
 -- Lucky Blocks mode (MatchData.Modes): ❓ blocks to break for surprises.

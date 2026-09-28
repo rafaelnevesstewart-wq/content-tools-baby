@@ -44,6 +44,13 @@ local order = {
 	"SpectateController",
 	"BossHUD",
 	"ZombieHUD",
+	"HillHUD",
+	"NewsPopup",
+	"DayNightHUD",
+	"TauntPicker",
+	"MountController",
+	"MiniGameHUD",
+	"BaseBuilder",
 	"EmoteWheel",
 	"ShopStreet",
 }

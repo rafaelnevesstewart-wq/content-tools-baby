@@ -86,6 +86,13 @@ SettingsData.List = {
 		default = true,
 	},
 	{
+		key = "taunts",
+		name = "💬 Other players' taunts",
+		hint = "Speech bubbles over other players' heads.",
+		kind = "toggle",
+		default = true,
+	},
+	{
 		key = "othersPets",
 		name = "🐾 Show other players' pets",
 		hint = "Your own pet always shows.",

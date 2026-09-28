@@ -23,7 +23,6 @@ local lastKey = "Meadow"
 local current: MapData.Map? = nil
 local props: Folder? = nil
 local hiddenDecor: { [Instance]: Instance } = {} -- decor folder -> its island
-local normalClock: number? = nil
 
 local function piece(parent: Instance, settings: { [string]: any }): Part
 	local p = Instance.new("Part")
@@ -473,8 +472,8 @@ function MapService.apply(islands: { WorldBuilder.PlotInfo })
 	paint(map, true)
 	tint(map.tint)
 	if map.clock then
-		normalClock = normalClock or Lighting.ClockTime
-		Lighting.ClockTime = map.clock
+		-- The day and night cycle (WeatherService) holds this time of day.
+		workspace:SetAttribute("FixedClock", map.clock)
 	end
 	if map.props then
 		local folder = Instance.new("Folder")
@@ -517,10 +516,7 @@ function MapService.reset()
 		current = nil
 	end
 	tint(nil)
-	if normalClock then
-		Lighting.ClockTime = normalClock
-		normalClock = nil
-	end
+	workspace:SetAttribute("FixedClock", nil)
 	workspace:SetAttribute("MapTheme", "Meadow")
 end
 

@@ -633,6 +633,7 @@ WorldBuilder.LobbySpots = {
 	boards = { lobbyPoint(-33, 0, -35), lobbyPoint(-18, 0, -37), lobbyPoint(18, 0, -37), lobbyPoint(33, 0, -35) },
 	statues = { lobbyPoint(0, 0, -13), lobbyPoint(-9, 0, -11), lobbyPoint(9, 0, -11) },
 	likeSign = CFrame.lookAt(lobbyPoint(-26, 5, 36), lobbyPoint(0, 5, 14)),
+	news = CFrame.lookAt(lobbyPoint(26, 0, 36), lobbyPoint(0, 0, 14)),
 	arena = lobbyPoint(28, 0, 10),
 	arenaRadius = 10,
 	dummies = { lobbyPoint(-33, 0, -8), lobbyPoint(-33, 0, 0), lobbyPoint(-33, 0, 8), lobbyPoint(-33, 0, 16) },
@@ -650,6 +651,9 @@ local function lobbyBlocked(p: Vector3): boolean
 	end
 	if math.abs(p.X) < 9 then
 		return true -- the paths out of the gates
+	end
+	if math.abs(p.Z) < 9 and math.abs(p.X) > 40 then
+		return true -- the paths to Games Island and Base Island
 	end
 	local degrees = math.deg(math.atan2(p.Z, p.X)) % 360
 	return degrees > Config.Obby.StartAngle - 12 and degrees < Config.Obby.StartAngle + 30 and p.Magnitude > 60
@@ -1202,6 +1206,72 @@ local function shopStreet(world: Instance, rng: Random)
 	end)
 end
 
+-- A wooden signpost with an arrow-shaped board.
+local function signpost(parent: Instance, at: Vector3, facing: Vector3, text: string)
+	local frame = CFrame.lookAt(at, Vector3.new(facing.X, at.Y, facing.Z))
+	part({
+		Name = "SignPost",
+		Size = Vector3.new(0.6, 7, 0.6),
+		CFrame = frame * CFrame.new(0, 3.5, 0),
+		Color = Color3.fromRGB(96, 70, 48),
+		Material = Enum.Material.Wood,
+		Parent = parent,
+	})
+	local board = part({
+		Name = "SignBoard",
+		Size = Vector3.new(8, 1.8, 0.3),
+		CFrame = frame * CFrame.new(0, 6, -0.4),
+		Color = Color3.fromRGB(150, 110, 70),
+		Material = Enum.Material.WoodPlanks,
+		Parent = parent,
+	})
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = face
+		gui.CanvasSize = Vector2.new(400, 90)
+		gui.Parent = board
+		label(gui, "Text", text, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), 60, Color3.fromRGB(255, 240, 210))
+	end
+end
+
+-- 🎯 Games Island (east) and 🏗️ Base Island (west): flat grassy islands over
+-- bridges from the lobby island's sides (MiniGameService and BaseService
+-- build what's on them).
+local function sideIslands(world: Instance, rng: Random)
+	local terrain = workspace.Terrain
+	local half = Config.Lobby.CastleHalf
+	for _, side in { 1, -1 } do
+		local radius = if side == 1 then Config.Lobby.GamesRadius else Config.Lobby.BaseRadius
+		local center = LOBBY + Vector3.new(side * Config.Lobby.SideDistance, 0, 0)
+		local island = floatingIsland(world, if side == 1 then "GamesIsland" else "BaseIsland", center, radius, rng)
+		-- A path from the castle wall to the bridge, and the bridge.
+		local pathLength = Config.Lobby.Radius - half - 10
+		terrain:FillBlock(
+			CFrame.new(lobbyPoint(side * (half + 6 + pathLength / 2), -2, 0)),
+			Vector3.new(pathLength, 4, 8),
+			Enum.Material.Pavement
+		)
+		bridge(
+			world,
+			LOBBY + Vector3.new(side * (Config.Lobby.Radius - 4), 0, 0),
+			center - Vector3.new(side * (radius - 4), 0, 0)
+		)
+		-- A few trees round the edge.
+		scatter(island, CFrame.new(center), rng, { trees = 8, flowers = 10, mushrooms = 3, bushes = 6 }, {
+			treeMin = radius - 14,
+			treeMax = radius - 5,
+			max = radius - 4,
+		}, function(p: Vector3): boolean
+			return math.abs(p.Z) < 10 -- keep the bridge end clear
+				or (side == -1 and math.abs(p.X) < 72 and math.abs(p.Z) < 38) -- the building plots
+		end)
+	end
+	-- Signposts outside the main gate pointing the way.
+	signpost(world, lobbyPoint(14, 0, 56), lobbyPoint(60, 0, 56), "🎯 Games Island →")
+	signpost(world, lobbyPoint(-14, 0, 56), lobbyPoint(-60, 0, 56), "🏗️ Base Island →")
+	signpost(world, lobbyPoint(7, 0, -58), lobbyPoint(7, 0, -100), "🛍️ Shop Street →")
+end
+
 local function lobbyIsland(world: Instance, rng: Random)
 	local island = floatingIsland(world, "Lobby", LOBBY, Config.Lobby.Radius, rng)
 	local terrain = workspace.Terrain
@@ -1321,6 +1391,7 @@ function WorldBuilder.build(): { PlotInfo }
 
 	lobbyIsland(world, rng)
 	shopStreet(world, rng)
+	sideIslands(world, rng)
 
 	local plotsFolder = Instance.new("Folder")
 	plotsFolder.Name = "Plots"

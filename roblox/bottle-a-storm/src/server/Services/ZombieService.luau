@@ -162,7 +162,10 @@ makeZombie = function(team: MatchService.MatchTeam, wave: number, brute: boolean
 	humanoid.DisplayName = model.Name
 	humanoid.MaxHealth = health
 	humanoid.Health = health
-	humanoid.WalkSpeed = settings.Speed + settings.SpeedPerWave * (wave - 1) - (if brute then 2 else 0)
+	humanoid.WalkSpeed = settings.Speed
+		+ settings.SpeedPerWave * (wave - 1)
+		- (if brute then 2 else 0)
+		+ (if workspace:GetAttribute("IsNight") then settings.NightSpeed else 0)
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
 	humanoid.NameDisplayDistance = 60
 	humanoid.BreakJointsOnDeath = false

@@ -42,6 +42,15 @@ local TitleData = {}
 
 TitleData.List = {
 	{
+		id = "LoyalLegend",
+		name = "Loyal Legend",
+		emoji = "📅",
+		color = rgb(255, 200, 120),
+		goal = "Finish the 28-day login calendar",
+		target = 1,
+		progress = stat("calendarsDone"),
+	},
+	{
 		id = "Recruiter",
 		name = "Recruiter",
 		emoji = "📱",

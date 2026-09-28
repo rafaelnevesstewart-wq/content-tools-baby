@@ -1663,7 +1663,7 @@ end
 ---------------------------------------------------------------------------
 
 -- The Style Bonus: every cosmetic you use adds its tier's bonus.
-local SLOTS = { "hat", "trail", "back", "aura", "pet", "bed", "sword", "fx", "ko", "dance" }
+local SLOTS = { "hat", "trail", "back", "aura", "pet", "mount", "bed", "sword", "fx", "ko", "dance" }
 
 local function styleBonus(cosmetics: any): number
 	local total = 0

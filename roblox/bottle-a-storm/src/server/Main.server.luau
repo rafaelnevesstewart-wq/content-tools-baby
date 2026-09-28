@@ -28,6 +28,7 @@ local order = {
 	"BotService",
 	"BossService",
 	"ZombieService",
+	"HillService",
 	"ChallengeService",
 	"SettingsService",
 	"ChestService",
@@ -47,6 +48,11 @@ local order = {
 	"EmoteService",
 	"PetLevelService",
 	"InviteService",
+	"NewsService",
+	"TauntService",
+	"MountService",
+	"MiniGameService",
+	"BaseService",
 	"MonetizationService",
 }
 

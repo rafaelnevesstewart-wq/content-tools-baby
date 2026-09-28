@@ -1,5 +1,5 @@
--- Daily login rewards (a 7-day streak) and 3 daily quests. Both reset at
--- midnight UTC. Also answers the Rewards window (daily, quests, Kit
+-- The 📅 28-day login calendar (claim a day each day you play) and 3 daily
+-- quests. Both reset at midnight UTC. Also answers the Rewards window (daily, quests, Kit
 -- Collection).
 
 local Players = game:GetService("Players")
@@ -52,12 +52,10 @@ local function dailyReady(data: any): boolean
 	return data.daily.lastDay < today()
 end
 
--- The streak day you'd get if you claimed now (1-7).
+-- The calendar day you'd get if you claimed now (1-28). Missing days
+-- doesn't reset it.
 local function nextStreak(data: any): number
-	if data.daily.lastDay == today() - 1 then
-		return data.daily.streak % #RewardsData.Daily + 1
-	end
-	return 1
+	return data.daily.streak % #RewardsData.Daily + 1
 end
 
 function DailyService.sync(player: Player)
@@ -114,6 +112,12 @@ local function claimDaily(player: Player): (boolean, string)
 		return false, problem
 	end
 	data.daily = { lastDay = today(), streak = streak }
+	if streak == #RewardsData.Daily then
+		-- Day 28: the big one.
+		IncomeService.addSparks(player, RewardsData.CalendarBonusSparks)
+		data.stats.calendarsDone = (data.stats.calendarsDone or 0) + 1
+		Notify.all("📅🎉 " .. player.DisplayName .. " finished the 28-day calendar!", "rare")
+	end
 	DailyService.sync(player)
 	return true, "📅 Day " .. streak .. " reward claimed!"
 end

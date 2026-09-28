@@ -13,16 +13,41 @@ export type Quest = {
 
 local RewardsData = {}
 
--- Day 1 to 7 of a login streak. After day 7 it starts again at day 1.
+-- The 📅 28-day login calendar: claim one day each day you play (missing a
+-- day doesn't reset it). Every 7th day is a big one, and day 28 is the
+-- biggest (plus ⚡25,000 and the Loyal Legend title). Then it starts over.
 RewardsData.Daily = {
 	{ kind = "sparks", amount = 200 },
-	{ kind = "sparks", amount = 400 },
+	{ kind = "sparks", amount = 300 },
 	{ kind = "kit", rarity = 2 },
-	{ kind = "sparks", amount = 800 },
-	{ kind = "sparks", amount = 1500 },
+	{ kind = "sparks", amount = 500 },
+	{ kind = "sparks", amount = 700 },
 	{ kind = "kit", rarity = 3 },
+	{ kind = "kit", rarity = 4 }, -- week 1
+	{ kind = "sparks", amount = 800 },
+	{ kind = "sparks", amount = 1000 },
+	{ kind = "kit", rarity = 3 },
+	{ kind = "sparks", amount = 1200 },
+	{ kind = "sparks", amount = 1500 },
+	{ kind = "kit", rarity = 3, mutated = true },
+	{ kind = "kit", rarity = 5 }, -- week 2
+	{ kind = "sparks", amount = 1500 },
+	{ kind = "sparks", amount = 1800 },
 	{ kind = "kit", rarity = 4 },
+	{ kind = "sparks", amount = 2000 },
+	{ kind = "sparks", amount = 2500 },
+	{ kind = "kit", rarity = 4, mutated = true },
+	{ kind = "kit", rarity = 5, mutated = true }, -- week 3
+	{ kind = "sparks", amount = 3000 },
+	{ kind = "sparks", amount = 3500 },
+	{ kind = "kit", rarity = 5 },
+	{ kind = "sparks", amount = 4000 },
+	{ kind = "sparks", amount = 5000 },
+	{ kind = "kit", rarity = 5, mutated = true },
+	{ kind = "kit", rarity = 6, mutated = true }, -- day 28!
 } :: { SeasonData.Reward }
+
+RewardsData.CalendarBonusSparks = 25000 -- extra on day 28
 
 RewardsData.Quests = {
 	{ id = "bwKill", text = "Knock out %s players", kind = "kill", targets = { 3, 5, 8 } },

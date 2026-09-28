@@ -17,6 +17,7 @@ export type Item = {
 	achievement: boolean?, -- only from an achievement (see ProgressionData)
 	emote: string?, -- dances: the Roblox emote your character plays
 	pet: string?, -- pets: the animal (PetModels.Kinds)
+	mount: string?, -- mounts: what you ride in the lobby (MountModels.Kinds)
 	description: string,
 }
 
@@ -34,6 +35,7 @@ CosmeticsData.Categories = {
 	{ key = "back", name = "Backs", emoji = "🪽" },
 	{ key = "aura", name = "Auras", emoji = "💫" },
 	{ key = "pet", name = "Pets", emoji = "🐾" },
+	{ key = "mount", name = "Mounts", emoji = "🐎" },
 	{ key = "bed", name = "Cloud Beds", emoji = "🛏️" },
 	{ key = "sword", name = "Sword Skins", emoji = "🗡️" },
 	{ key = "fx", name = "Arrow Effects", emoji = "🏹" },
@@ -42,6 +44,53 @@ CosmeticsData.Categories = {
 } :: { Category }
 
 CosmeticsData.Items = {
+	-- Mounts: ride them around the lobby (press H or 🐎).
+	{
+		id = "MountPony",
+		category = "mount",
+		name = "Pony",
+		emoji = "🐴",
+		cost = 3000,
+		mount = "Pony",
+		description = "A trusty brown pony. Gallops twice as fast as walking.",
+	},
+	{
+		id = "MountCloud",
+		category = "mount",
+		name = "Flying Cloud",
+		emoji = "☁️",
+		cost = 6000,
+		mount = "Cloud",
+		description = "Sit on a fluffy cloud and fly! Hold jump to go up.",
+	},
+	{
+		id = "MountNightMare",
+		category = "mount",
+		name = "Night Mare",
+		emoji = "🐎",
+		cost = 10000,
+		mount = "NightMare",
+		description = "A black horse with a purple mane and sparkles.",
+	},
+	{
+		id = "MountStormCloud",
+		category = "mount",
+		name = "Storm Cloud",
+		emoji = "⛈️",
+		cost = 15000,
+		mount = "StormCloud",
+		description = "A dark flying cloud that crackles with lightning.",
+	},
+	{
+		id = "MountUnicorn",
+		category = "mount",
+		name = "Unicorn",
+		emoji = "🦄",
+		cost = 0,
+		robux = true,
+		mount = "Unicorn",
+		description = "A sparkling white unicorn with a golden horn.",
+	},
 	-- Pets: they follow you everywhere, in the lobby and in matches.
 	{
 		id = "PetDuck",

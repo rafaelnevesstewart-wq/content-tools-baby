@@ -147,11 +147,31 @@ with swords (bows, fireballs and TNT work any time). A health bar shows at the t
 screen. Everyone who hurts it gets Sparks, and the team that did the most damage gets Storm
 Crystals and Lightning Cores. If nobody beats it in time, it flies away and comes back later.
 
+## 🏝️ More lobby islands
+
+- 🎯 **Games Island** (east, over a bridge; walk around the castle): the **Target Range** (40
+  seconds to hit moving targets with a bow, bullseyes score more) and the **Parkour Race**
+  (jump across floating platforms, touch both checkpoints, beat the clock). Both pay Sparks a
+  few times a day, plus a bonus for a new personal best; the board shows the best in the server.
+- 🏗️ **Base Island** (west): claim one of 8 plots and build with the 🔨 Builder (11 block types,
+  up to 400 blocks): pick a block in the bar, click where it goes, 🧽 to remove. Your base is
+  saved and comes back whenever you claim a plot. Anyone can visit.
+- 🐎 **Mounts:** ride a Pony, Night Mare, Unicorn, Flying Cloud or Storm Cloud around the lobby
+  (🎨 Style → Mounts; press **H** or 🐎). Horses gallop fast; clouds fly (hold jump to rise).
+- 📰 **News board** in the courtyard: what's on right now and the latest updates (the newest
+  also pops up once after an update).
+
 ## 🛍️ Shop Street
 
 Out the castle's back gate and over the bridge: a cobbled street with 8 market stalls, each
 with a seller. Talk to them to open the 🏪 Kit Market, 🌪️ Kit Stables, 🎨 Style Boutique,
 🐾 Pet Shop, 😀 Emote Stage, 🖌️ Paint Shop, 🎡 Prize Wheel or 💎 Gem Shop.
+
+## 💬 Taunts
+
+Press **T** (or 💬) to say something in a speech bubble with a sound ("GG! 🤝", "Come get me! 😤"...).
+Your character also speaks up by itself after a knockout, a broken bed or a win. Other
+players' bubbles can be hidden in ⚙️ Settings.
 
 ## 😀 Emotes
 
@@ -190,7 +210,8 @@ shiny Legendary kit, ⚡10,000 and the 🌟 Challenger title.
 
 ## More
 
-- 🎁 **Rewards:** 7-day login streak, 3 daily Bed Wars quests (knockouts, beds, wins, blocks,
+- 🎁 **Rewards:** the 📅 28-day login calendar (claim a day each day you play; every 7th day
+  is big, and day 28 gives a shiny Mythic kit, ⚡25,000 and the Loyal Legend title), 3 daily Bed Wars quests (knockouts, beds, wins, blocks,
   Crystals...), the Kit Collection, titles, codes and the daily prize wheel.
 - **Titles** for wins, knockouts, final kills and beds broken; show one above your name.
 - **Leaderboards** in the lobby for wins, knockouts and beds broken, with statues of the top 3.
@@ -200,6 +221,17 @@ shiny Legendary kit, ⚡10,000 and the 🌟 Challenger title.
   weather, or Sparks for everyone. Admin Abuse also runs by itself once a week.
 - 💎 **Robux shop:** VIP, Star Booster, Sparks, Golden Kit Crate, wheel spins, Battle Pass
   Premium, tier skips and Summon Rainbow Hour. Nothing sold makes you stronger in a match.
+
+## 👑 King of the Hill
+
+A match mode you can vote for (duos): a glowing hill in the middle of the middle island. Every
+second only one team stands on it, that team scores a point (two teams on it = contested). First
+to 150 wins, or win the normal way by breaking beds. Bots go for the hill too.
+
+## 🌙 Day and night
+
+Every match starts in the morning and goes through dusk into night (a 12-minute cycle). At
+night bots can't see as far and zombies get faster. A chip in the corner shows the time.
 
 ## 🧟 Zombie Survival
 
@@ -298,7 +330,7 @@ src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match
               (battle pass), RewardsData (daily rewards, quests), MarketData (Kit Shop,
               crates), SpinData, TitleData, HolidayData, WeatherEvents, Products, Sounds,
               SettingsData, ChallengeData, PaintData, EmoteData, PetLevels,
-              ClanPassData, Remotes, Format, Signal
+              ClanPassData, BaseData, NewsData, TauntData, Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, MatchService (rounds, teams, beds, generators), CombatService,
               GadgetService (TNT, fireballs, potions, pickaxes, axes), PartyService,
@@ -314,9 +346,11 @@ src/server/   Main.server.luau starts the services in order
               ChestService (Mystery Chest), StatsService, KitPowerService (heal, bridge
               and volley powers), BossService (Storm Dragon), ClanService, TradeService,
               VoteService (map and bot votes), ChallengeService, PaintService,
-              EmoteService, PetLevelService, InviteService, ZombieService
+              EmoteService, PetLevelService, InviteService, ZombieService, HillService,
+              NewsService, TauntService, MountService, MiniGameService, BaseService
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
-              ItemModels (weapons and items), PetModels, StormModel (kit storms), Effects,
+              ItemModels (weapons and items), PetModels, MountModels, StormModel (kit
+              storms), Effects,
               Juice, Notify, Codes
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, MatchHUD (and the mode vote), CameraController, ItemShop, Kits, Party, KitController (Shift powers), KitFollower,
@@ -326,7 +360,9 @@ src/client/   Main.client.luau starts the controllers
                kill feed), PetFollower, TouchControls (phone buttons), Stats,
                MusicController, TournamentHUD, Vote, SpectateController (follow players
                after you're out), BossHUD, Challenges, Clan, Trade, BlockPhysics (slime
-               and ladders), Paint, EmoteWheel, ShopStreet, ZombieHUD, Toasts, Sfx, UI
+               and ladders), Paint, EmoteWheel, ShopStreet, ZombieHUD, HillHUD,
+               NewsPopup, DayNightHUD, TauntPicker, MountController, MiniGameHUD,
+               BaseBuilder, Toasts, Sfx, UI
 ```
 
 ## Known limits

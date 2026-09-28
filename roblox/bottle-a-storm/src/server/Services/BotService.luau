@@ -179,7 +179,8 @@ local function nearestEnemy(bot: Bot): (BasePart?, Player?, Bot?)
 	local bestRoot: BasePart? = nil
 	local bestPlayer: Player? = nil
 	local bestBot: Bot? = nil
-	local bestDistance = level.sight
+	-- Bots can't see as far at night.
+	local bestDistance = level.sight * (if workspace:GetAttribute("IsNight") then 0.6 else 1)
 	for _, player in Players:GetPlayers() do
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -467,7 +468,29 @@ local function think(bot: Bot, dt: number)
 		return
 	end
 
-	-- 2. Go break the nearest enemy bed (or hunt whoever is left).
+	-- 2. King of the Hill: most bots head for the hill.
+	if workspace:GetAttribute("MatchMode") == "Hill" and bot.name:len() % 3 ~= 0 then
+		local hill = Vector3.new(0, 3, 0)
+		if flat(hill - position).Magnitude < 6 then
+			standStill(bot)
+			return
+		end
+		if not bot.routeGoal or (bot.routeGoal - hill).Magnitude > 1 or #bot.route == 0 then
+			bot.route = routeTo(position, hill)
+			bot.routeGoal = hill
+		end
+		local nextPoint = bot.route[1]
+		while nextPoint and flat(nextPoint - position).Magnitude < 4 do
+			table.remove(bot.route, 1)
+			nextPoint = bot.route[1]
+		end
+		if nextPoint then
+			walkTo(bot, nextPoint)
+		end
+		return
+	end
+
+	-- 3. Go break the nearest enemy bed (or hunt whoever is left).
 	local bedTeam = nearestBed(bot)
 	local goal = if bedTeam then (bedTeam.frame * CFrame.new(0, 0, 22)).Position else anyEnemy(bot)
 	if not goal then
@@ -517,6 +540,17 @@ local function clearAll()
 		folder:Destroy()
 		folder = nil
 	end
+end
+
+-- Where every living bot is, and its team (King of the Hill counts them).
+function BotService.positions(): { { team: MatchService.MatchTeam, position: Vector3 } }
+	local list = {}
+	for _, bot in bots do
+		if alive(bot) then
+			table.insert(list, { team = bot.team, position = bot.root.Position })
+		end
+	end
+	return list
 end
 
 function BotService.start()

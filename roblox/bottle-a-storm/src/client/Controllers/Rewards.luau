@@ -1,5 +1,5 @@
 -- The 🎁 Rewards window, with these tabs:
---   * Daily: 7-day login streak. Claim one reward a day.
+--   * Daily: the 28-day login calendar. Claim one day each day you play.
 --   * Quests: 3 Bed Wars goals that change every day.
 --   * Kits: your Kit Collection, every kit in the game. Ones you don't have
 --     show as "???". Collecting every kit of a rarity completes a row (+5%
@@ -80,26 +80,33 @@ local function buildDaily(page: Frame, data: Info)
 	UI.label({
 		LayoutOrder = 1,
 		Size = UDim2.new(1, 0, 0, 24),
-		Text = "Come back every day! Miss a day and your streak starts over.",
+		Text = "📅 Claim a day every day you play. Day 28: a shiny Mythic kit + ⚡25,000!",
 		TextSize = 16,
 		TextColor3 = UI.Colors.Muted,
 		Parent = page,
 	})
 	local row = UI.new("Frame", {
 		LayoutOrder = 2,
-		Size = UDim2.new(1, 0, 0, 120),
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		Parent = page,
-	}, { UI.list(6, Enum.FillDirection.Horizontal) })
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.new(1 / 7, -6, 0, 78),
+			CellPadding = UDim2.fromOffset(6, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
 	for day, reward in RewardsData.Daily do
 		local claimed = if data.dailyReady then day < data.nextStreak else day <= data.streak
 		local ready = data.dailyReady and day == data.nextStreak
 		local tile = UI.new("Frame", {
 			LayoutOrder = day,
-			Size = UDim2.new(1 / #RewardsData.Daily, -6, 1, 0),
 			BackgroundColor3 = if ready
 				then UI.Colors.Good
 				elseif claimed then Color3.fromRGB(34, 70, 54)
+				elseif day % 7 == 0 then Color3.fromRGB(90, 70, 30) -- the big days
 				else UI.Colors.PanelLight,
 			Parent = row,
 		}, {
@@ -109,8 +116,8 @@ local function buildDaily(page: Frame, data: Info)
 		UI.label({
 			Size = UDim2.new(1, 0, 0, 22),
 			Position = UDim2.fromOffset(0, 4),
-			Text = "Day " .. day,
-			TextSize = 16,
+			Text = (if day == #RewardsData.Daily then "👑 " elseif day % 7 == 0 then "⭐ " else "") .. "Day " .. day,
+			TextSize = 14,
 			TextColor3 = if ready then Color3.new(1, 1, 1) else UI.Colors.Text,
 			TextStrokeColor3 = UI.Colors.Outline,
 			TextStrokeTransparency = if ready then 0.2 else 1,

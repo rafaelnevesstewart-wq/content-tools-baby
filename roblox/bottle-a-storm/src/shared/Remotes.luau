@@ -23,6 +23,11 @@ local EVENTS = {
 	"TournamentAction", -- client -> server: ("join" | "leave")
 	"Vote", -- client -> server: ("map" | "bots", key) lobby votes for the next match
 	"SetPaint", -- client -> server: ("blade" | "armor", colorIndex or 0)
+	"NewsSeen", -- client -> server: () the "What's new" pop-up was closed
+	"Taunt", -- client -> server: (key) say a taunt (TauntData)
+	"Mount", -- client -> server: () hop on or off your mount
+	"RangeShot", -- client -> server: (aimPoint) a Target Range arrow
+	"BaseEdit", -- client -> server: ("place" | "remove" | "clear", i, j, k, blockKey)
 	"ClanInvite", -- server -> client: (clanId, clanName, tag, fromName)
 	"TradeAction", -- client -> server: (action, a, b) see TradeService
 	"TradeInvite", -- server -> client: (fromUserId, fromName)
