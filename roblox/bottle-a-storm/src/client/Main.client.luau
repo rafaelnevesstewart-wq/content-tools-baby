@@ -15,13 +15,18 @@ local order = {
 	"AdminPanel",
 	"Style",
 	"Kits",
+	"Trade",
 	"Party",
 	"Stats",
+	"Challenges",
+	"Clan",
 	"ItemShop",
 	"HUD",
+	"Vote",
 	"MatchHUD",
 	"WeaponController",
 	"BlockController",
+	"BlockPhysics",
 	"KitController",
 	"CameraController",
 	"ForecastController",
@@ -35,6 +40,8 @@ local order = {
 	"TouchControls",
 	"MusicController",
 	"TournamentHUD",
+	"SpectateController",
+	"BossHUD",
 }
 
 for _, name in order do

@@ -32,17 +32,47 @@ CombatService.Attacked = Signal.new()
 -- training dummies).
 CombatService.Swung = Signal.new()
 
--- Set by BotService: the bots in the match, so weapons can hit them.
+-- Other things weapons can hit besides players (BotService's bots,
+-- BossService's Storm Dragon). Each registers a provider:
+--   enemiesOf(player)  the root parts of its targets that player may hit
+--   botOf(part)        the target model a part belongs to (or nil)
+--   hurt(model, attacker, amount, push, weapon)  ignores models it doesn't own
+export type TargetProvider = {
+	enemiesOf: (Player) -> { BasePart },
+	botOf: (Instance) -> Model?,
+	hurt: (Model, Player, number, Vector3, string) -> (),
+}
+local providers: { TargetProvider } = {}
+
+function CombatService.addTargets(provider: TargetProvider)
+	table.insert(providers, provider)
+end
+
+-- Every provider at once (swords, arrows and explosions use this).
 CombatService.bots = {
-	-- Living bots that are enemies of `player`: their root parts.
-	enemiesOf = function(_player: Player): { BasePart }
-		return {}
+	enemiesOf = function(player: Player): { BasePart }
+		local list = {}
+		for _, provider in providers do
+			for _, root in provider.enemiesOf(player) do
+				table.insert(list, root)
+			end
+		end
+		return list
 	end,
-	-- The bot model a part belongs to (or nil).
-	botOf = function(_part: Instance): Model?
+	botOf = function(part: Instance): Model?
+		for _, provider in providers do
+			local model = provider.botOf(part)
+			if model then
+				return model
+			end
+		end
 		return nil
 	end,
-	hurt = function(_bot: Model, _attacker: Player, _amount: number, _push: Vector3, _weapon: string) end,
+	hurt = function(model: Model, attacker: Player, amount: number, push: Vector3, weapon: string)
+		for _, provider in providers do
+			provider.hurt(model, attacker, amount, push, weapon)
+		end
+	end,
 }
 
 -- Set by LobbyService: who a player is dueling in the lobby (nil if nobody).

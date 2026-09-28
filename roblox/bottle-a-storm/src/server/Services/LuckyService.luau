@@ -10,6 +10,7 @@ local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
@@ -22,6 +23,9 @@ local GadgetService = require(script.Parent.GadgetService)
 local MatchService = require(script.Parent.MatchService)
 
 local LuckyService = {}
+
+-- (player) someone opened a lucky block.
+LuckyService.Opened = Signal.new()
 
 local GOLD = Color3.fromRGB(255, 200, 50)
 local rng = Random.new()
@@ -379,6 +383,7 @@ local function spawnBatch()
 end
 
 local function open(block: BasePart, player: Player)
+	LuckyService.Opened:Fire(player)
 	local at = block.Position
 	block:Destroy()
 	Effects.confetti(at, 40)

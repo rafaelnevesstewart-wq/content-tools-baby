@@ -1,6 +1,7 @@
--- Map rotation (see MapData): when a match starts, the sky islands get a new
--- look (the terrain's ground and cliffs, props and a color wash) that's
--- different from the last match. When everyone goes back to the lobby, the Meadow comes back.
+-- Map rotation (see MapData): when a match starts, the sky islands get the
+-- map voted in the lobby (🗳️ Vote), or else a random one different from the
+-- last match: the terrain's ground and cliffs, props and a color wash. When
+-- everyone goes back to the lobby, the Meadow comes back.
 
 local Lighting = game:GetService("Lighting")
 local ServerStorage = game:GetService("ServerStorage")
@@ -12,6 +13,8 @@ local MapData = require(Shared.MapData)
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 local WorldBuilder = require(Modules.WorldBuilder)
+
+local VoteService = require(script.Parent.VoteService)
 
 local MapService = {}
 
@@ -455,7 +458,9 @@ function MapService.apply(islands: { WorldBuilder.PlotInfo })
 			table.insert(options, map)
 		end
 	end
-	local map = options[rng:NextInteger(1, #options)]
+	-- The map with the most votes in the lobby, or a random new one.
+	local voted = MapData.get(VoteService.winner("map"))
+	local map = voted or options[rng:NextInteger(1, #options)]
 	lastKey = map.key
 	current = map
 	workspace:SetAttribute("MapTheme", map.key)

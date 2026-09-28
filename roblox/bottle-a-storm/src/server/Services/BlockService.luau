@@ -66,6 +66,7 @@ local function publish(player: Player)
 			handle.CanCollide = false
 			handle.Massless = true
 			handle.Material = block.material
+			handle.Transparency = block.transparency or 0
 			handle.Color = block.color
 				or (if team then team.info.color:Lerp(Color3.new(1, 1, 1), 0.4) else Color3.new(1, 1, 1))
 			handle.Parent = newTool
@@ -157,6 +158,31 @@ create = function(player: Player, cell: Vector3, blockKey: string): BasePart
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	part:SetAttribute("BlockKey", blockKey)
 	part:SetAttribute("Hits", block.hits)
+	part.Transparency = block.transparency or 0
+	if block.bounce then
+		part:SetAttribute("Bounce", true) -- BlockPhysics bounces you
+		part.Reflectance = 0.15
+	end
+	if block.climb then
+		part:SetAttribute("Climb", true) -- BlockPhysics lets you climb it
+		-- Rungs on every side so it looks like a ladder.
+		for face = 0, 3 do
+			for rung = -1, 1 do
+				local bar = Instance.new("Part")
+				bar.Name = "Rung"
+				bar.Anchored = true
+				bar.CanCollide = false
+				bar.CanQuery = false
+				bar.Size = Vector3.new(SIZE * 0.9, 0.22, 0.22)
+				bar.CFrame = CFrame.new(cell)
+					* CFrame.Angles(0, face * math.pi / 2, 0)
+					* CFrame.new(0, rung * SIZE * 0.3, -SIZE / 2 - 0.1)
+				bar.Color = Color3.fromRGB(110, 76, 44)
+				bar.Material = Enum.Material.Wood
+				bar.Parent = part
+			end
+		end
+	end
 	part.Parent = folder
 	placed[key(cell)] = part
 	return part

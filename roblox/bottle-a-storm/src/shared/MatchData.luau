@@ -100,6 +100,31 @@ MatchData.Blocks = {
 	WoodPlanks = { name = "Wood Planks", hits = 5, material = Enum.Material.WoodPlanks, color = rgb(160, 120, 80) },
 	StoneBricks = { name = "Stone Bricks", hits = 10, material = Enum.Material.Brick, color = rgb(150, 150, 155) },
 	Obsidian = { name = "Obsidian", hits = 30, material = Enum.Material.Basalt, color = rgb(40, 30, 60) },
+	-- See-through walls: watch who's coming.
+	Glass = {
+		name = "Sky Glass",
+		hits = 4,
+		material = Enum.Material.Glass,
+		color = rgb(190, 230, 255),
+		transparency = 0.55,
+	},
+	-- Land on it (or jump on it) and you bounce high.
+	Slime = {
+		name = "Bounce Slime",
+		hits = 3,
+		material = Enum.Material.SmoothPlastic,
+		color = rgb(120, 230, 90),
+		transparency = 0.15,
+		bounce = true,
+	},
+	-- Walk into it to climb up.
+	Ladder = {
+		name = "Ladder",
+		hits = 3,
+		material = Enum.Material.WoodPlanks,
+		color = rgb(170, 120, 70),
+		climb = true,
+	},
 }
 
 MatchData.Shop = {
@@ -123,6 +148,36 @@ MatchData.Shop = {
 		currency = "Silver",
 		amount = 16,
 		description = "Sturdier. 5 hits to break.",
+	},
+	{
+		key = "Glass",
+		name = "Sky Glass x8",
+		emoji = "🪟",
+		tab = "Blocks",
+		cost = 12,
+		currency = "Copper",
+		amount = 8,
+		description = "See-through walls. 4 hits to break.",
+	},
+	{
+		key = "Slime",
+		name = "Bounce Slime x4",
+		emoji = "🟢",
+		tab = "Blocks",
+		cost = 2,
+		currency = "Silver",
+		amount = 4,
+		description = "Land on it and you bounce sky high!",
+	},
+	{
+		key = "Ladder",
+		name = "Ladder x8",
+		emoji = "🪜",
+		tab = "Blocks",
+		cost = 8,
+		currency = "Copper",
+		amount = 8,
+		description = "Walk into it to climb up walls and cliffs.",
 	},
 	{
 		key = "StoneBricks",
@@ -324,7 +379,7 @@ MatchData.Tools = {
 }
 
 -- Blocks the axe cuts at double power.
-MatchData.AxeBlocks = { WoodPlanks = true, CloudWool = true }
+MatchData.AxeBlocks = { WoodPlanks = true, CloudWool = true, Ladder = true }
 
 -- Team upgrades, bought with Storm Crystals, help the whole team.
 MatchData.Upgrades = {

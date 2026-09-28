@@ -12,6 +12,7 @@ local Config = require(Shared.Config)
 local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
 local RewardsData = require(Shared.RewardsData)
+local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Juice = require(Modules.Juice)
@@ -24,6 +25,9 @@ local IncomeService = require(script.Parent.IncomeService)
 local MatchService = require(script.Parent.MatchService)
 
 local LobbyService = {}
+
+-- (winner) someone won a duel (tournament duels too).
+LobbyService.DuelWon = Signal.new()
 
 type Duel = {
 	a: Player,
@@ -136,6 +140,7 @@ local function finish(duel: Duel, winner: Player?, why: string)
 		end
 	end
 	if winner then
+		LobbyService.DuelWon:Fire(winner)
 		local loser = opponentIn(duel, winner)
 		Notify.player(winner, "⚔️ You won the duel against " .. loser.DisplayName .. "! " .. why, "success")
 		Juice.sound(winner, "chime")

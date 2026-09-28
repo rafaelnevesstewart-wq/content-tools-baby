@@ -30,11 +30,14 @@ teams (up to 4 teams), so one player is enough to start: they hunt enemies, cros
 to break beds, hack through block walls and respawn while their bed stands. Every match is on
 a new **map**: 🌿 Meadow, 🌋 Volcano, ❄️ Frozen, 🍭 Candy, 🌌 Space, 🏜️ Desert (cacti and
 sandstone), 👻 Haunted (dusk, gravestones, jack-o'-lanterns and ghost wisps) or 🏙️ Sky City
-(tower blocks, street lamps, billboards), never the same twice in a row. Each team gets a sky island with:
+(tower blocks, street lamps, billboards). In the lobby, press **🗳️ Map & Bots** to vote for
+the next map and how tough the bots are (🟢 Easy, 🟡 Normal, 🔴 Hard); with no map votes it's
+a surprise, never the same twice in a row. Each team gets a sky island with:
 
 - a **cloud bed** at the back. While it stands, you respawn 5 seconds after a knockout.
   Enemies break it by holding **E** on it for 2.5 seconds, but only if they can see it, so wall
-  it in with blocks. Once it's gone, your next knockout puts you out (you watch from the sky box).
+  it in with blocks. Once it's gone, your next knockout puts you out: the 🎥 spectator camera
+  follows the players and bots still fighting (◀ ▶ to switch, 🏠 for the sky box).
 - a **generator** making 🟠 Copper (fast) and ⚪ Silver (slow). Stand on it to pick them up.
   The middle island has 💎 Storm Crystal and ⚡ Lightning Core generators that speed up at 6
   and 12 minutes.
@@ -136,6 +139,35 @@ to climb 30 tiers. Free and Premium tracks give Sparks, random kits, shiny kits,
 kits and 3 exclusive cosmetics per season (a trail, a cloud bed and a knockout effect).
 Premium, tier skips and the Star Booster pass (+50% stars) are sold for Robux.
 
+## 🐉 The Storm Dragon
+
+A few minutes into every match a Storm Dragon attacks the middle island. It circles overhead
+spitting fireballs at anyone standing there, then lands to stomp: that's your chance to hit it
+with swords (bows, fireballs and TNT work any time). A health bar shows at the top of the
+screen. Everyone who hurts it gets Sparks, and the team that did the most damage gets Storm
+Crystals and Lightning Cores. If nobody beats it in time, it flies away and comes back later.
+
+## 🛡️ Clans
+
+Make a clan with a name and a 2-4 letter tag (⚡5,000), invite people in your server, and
+your tag shows in your clan's color above your head. Every match a member wins counts for the
+clan, and the 🛡️ Clan window shows the **Top Clans** leaderboard. The leader can remove
+members; the last one to leave closes the clan. Clans are saved across servers.
+
+## 🤝 Trading
+
+In 👥 Party, press 🤝 Trade next to someone. Both of you add kits, cosmetics and Sparks, press
+**Ready**, then **Confirm**. Changing an offer un-readies both sides, everything is checked
+again right before the swap, and both profiles are saved straight after. Robux cosmetics
+can't be traded, and trades only happen outside matches.
+
+## 🌟 Challenges
+
+A tough **Daily Challenge** (⚡1,500 + an Epic kit) and 5 **Weekly Challenges** (⚡2,500 + 400
+battle pass stars each, new every Monday UTC): knockouts, final kills, beds, wins, blocks,
+Crystals, lobby duels, lucky blocks and Storm Dragons. Finish all 5 for the weekly bonus: a
+shiny Legendary kit, ⚡10,000 and the 🌟 Challenger title.
+
 ## More
 
 - 🎁 **Rewards:** 7-day login streak, 3 daily Bed Wars quests (knockouts, beds, wins, blocks,
@@ -148,6 +180,11 @@ Premium, tier skips and the Star Booster pass (+50% stars) are sold for Robux.
   weather, or Sparks for everyone. Admin Abuse also runs by itself once a week.
 - 💎 **Robux shop:** VIP, Star Booster, Sparks, Golden Kit Crate, wheel spins, Battle Pass
   Premium, tier skips and Summon Rainbow Hour. Nothing sold makes you stronger in a match.
+
+## Blocks
+
+Cloud Wool (your team's color), Wood Planks, 🪟 Sky Glass (see-through), 🟢 Bounce Slime (land
+on it and you're thrown sky high), 🪜 Ladder (walk into it to climb), Stone Bricks and Obsidian.
 
 ## Controls in a match
 
@@ -221,7 +258,7 @@ src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match
               rarities, powers), CosmeticsData, SkinData (swords, arrows), SeasonData
               (battle pass), RewardsData (daily rewards, quests), MarketData (Kit Shop,
               crates), SpinData, TitleData, HolidayData, WeatherEvents, Products, Sounds,
-              SettingsData, Remotes, Format, Signal
+              SettingsData, ChallengeData, Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, MatchService (rounds, teams, beds, generators), CombatService,
               GadgetService (TNT, fireballs, potions, pickaxes, axes), PartyService,
@@ -235,7 +272,8 @@ src/server/   Main.server.luau starts the services in order
               CommunityService (codes, group, likes), LeaderboardService, AdminService,
               MonetizationService, BotService (bots), TournamentService,
               ChestService (Mystery Chest), StatsService, KitPowerService (heal, bridge
-              and volley powers)
+              and volley powers), BossService (Storm Dragon), ClanService, TradeService,
+              VoteService (map and bot votes), ChallengeService
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
               ItemModels (weapons and items), PetModels, StormModel (kit storms), Effects,
               Juice, Notify, Codes
@@ -245,7 +283,9 @@ src/client/   Main.client.luau starts the controllers
                Season, Rewards, AdminPanel, ForecastController, StormAnimator, FlashyFx,
                AmbientController, JuiceController, Settings, DamageFeed (damage numbers,
                kill feed), PetFollower, TouchControls (phone buttons), Stats,
-               MusicController, TournamentHUD, Toasts, Sfx, UI
+               MusicController, TournamentHUD, Vote, SpectateController (follow players
+               after you're out), BossHUD, Challenges, Clan, Trade, BlockPhysics (slime
+               and ladders), Toasts, Sfx, UI
 ```
 
 ## Known limits

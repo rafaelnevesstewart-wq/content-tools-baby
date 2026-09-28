@@ -87,13 +87,32 @@ Config.Bots = {
 	Enabled = true,
 	MinTeams = 4, -- bot teams are added until a match has this many teams
 	SoloCountdown = 40, -- the wait before a match when you're alone with bots
-	Health = 100,
-	DamageScale = 0.55, -- bots hit softer than players with the same sword
-	HitCooldown = 0.9,
 	Reach = 6.5,
-	SightRange = 45, -- they go after enemies this close
-	BedBreakSeconds = 4,
-	WalkSpeed = 15,
+	-- Voted in the lobby (🗳️ Vote); Normal when nobody votes.
+	Difficulties = {
+		Easy = {
+			emoji = "🟢",
+			health = 70,
+			damage = 0.35, -- times the damage of a player's sword
+			cooldown = 1.3, -- seconds between swings
+			sight = 30, -- they go after enemies this close
+			speed = 13,
+			bedBreak = 6, -- seconds to break a bed
+		},
+		Normal = { emoji = "🟡", health = 100, damage = 0.55, cooldown = 0.9, sight = 45, speed = 15, bedBreak = 4 },
+		Hard = { emoji = "🔴", health = 150, damage = 0.85, cooldown = 0.65, sight = 65, speed = 17, bedBreak = 2.5 },
+	} :: {
+		[string]: {
+			emoji: string,
+			health: number,
+			damage: number,
+			cooldown: number,
+			sight: number,
+			speed: number,
+			bedBreak: number,
+		},
+	},
+	DifficultyOrder = { "Easy", "Normal", "Hard" },
 	Names = {
 		"Bolt",
 		"Nimbus",
@@ -112,6 +131,53 @@ Config.Bots = {
 		"Tempest",
 		"Cirrus",
 	},
+}
+
+-- 🐉 The Storm Dragon boss (BossService) attacks the middle island.
+Config.Boss = {
+	Enabled = true,
+	FirstAt = 240, -- seconds into a match
+	Every = 300, -- seconds between visits
+	StaySeconds = 150, -- it flies away if nobody beats it by then
+	BaseHealth = 900,
+	HealthPerPlayer = 250,
+	CircleRadius = 50,
+	FlyHeight = 38,
+	FlySeconds = 14, -- circling and spitting fireballs...
+	LandSeconds = 10, -- ...then landing to stomp (hit it with swords now!)
+	FireEvery = 2.2,
+	FireballDamage = 22,
+	StompEvery = 3,
+	StompRadius = 16,
+	StompDamage = 25,
+	HelperSparks = 400, -- everyone who hurt it
+	TeamLoot = { Crystals = 6, Cores = 3 }, -- each player on the team that hurt it most
+}
+
+-- 🛡️ Clans (ClanService).
+Config.Clans = {
+	CreateCost = 5000, -- Sparks
+	MaxMembers = 20,
+	NameMax = 20,
+	TagMin = 2,
+	TagMax = 4,
+	InviteSeconds = 30,
+	-- Tag colors (each clan gets one).
+	Colors = {
+		Color3.fromRGB(255, 120, 120),
+		Color3.fromRGB(255, 190, 90),
+		Color3.fromRGB(255, 235, 110),
+		Color3.fromRGB(130, 230, 140),
+		Color3.fromRGB(110, 210, 255),
+		Color3.fromRGB(170, 140, 255),
+		Color3.fromRGB(255, 140, 220),
+	},
+}
+
+-- 🤝 Trading (TradeService).
+Config.Trade = {
+	RequestSeconds = 30,
+	MaxItems = 8, -- kits and cosmetics per side
 }
 
 -- Lucky Blocks mode (MatchData.Modes): ❓ blocks to break for surprises.

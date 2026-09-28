@@ -21,6 +21,11 @@ local EVENTS = {
 	"SaveSetting", -- client -> server: (key, value) a ⚙️ Settings choice
 	"KitPower", -- client -> server: (ability, aimOrDirection) kit powers the server runs
 	"TournamentAction", -- client -> server: ("join" | "leave")
+	"Vote", -- client -> server: ("map" | "bots", key) lobby votes for the next match
+	"ClanInvite", -- server -> client: (clanId, clanName, tag, fromName)
+	"TradeAction", -- client -> server: (action, a, b) see TradeService
+	"TradeInvite", -- server -> client: (fromUserId, fromName)
+	"TradeUpdate", -- server -> client: (state) the trade window
 	"Victory", -- server -> client: (teamKey) your team won: dance!
 	"DamageShown", -- server -> client: (position, amount) you hit someone
 	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed
@@ -51,6 +56,11 @@ local FUNCTIONS = {
 	"ChooseKit", -- client -> server: (uid) -> (ok, message)
 	"GetAchievements", -- client -> server: () -> achievements and your progress
 	"GetStats", -- client -> server: () -> your 📊 Stats page
+	"GetChallenges", -- client -> server: () -> your 🌟 daily and weekly challenges
+	"ClanAction", -- client -> server: (action, a, b) -> (ok, message)
+	"GetClan", -- client -> server: () -> your clan and the top clans
+	"GetTradeInventory", -- client -> server: () -> your tradeable kits, cosmetics and Sparks
+	"ClaimChallenge", -- client -> server: ("daily" | index | "bonus") -> (ok, message)
 }
 
 local folder: Instance

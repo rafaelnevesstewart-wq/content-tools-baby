@@ -4,7 +4,8 @@
 -- sword. It goes after enemies it can see; otherwise it walks across the
 -- bridges to the nearest enemy bed and breaks it, swinging at any blocks in
 -- its way. It respawns while its bed stands, just like a player, and gets a
--- better sword as the match goes on.
+-- better sword as the match goes on. How tough they are (Easy, Normal, Hard)
+-- is voted in the lobby.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -19,6 +20,7 @@ local ItemModels = require(Modules.ItemModels)
 local Juice = require(Modules.Juice)
 
 local BlockService = require(script.Parent.BlockService)
+local VoteService = require(script.Parent.VoteService)
 local CombatService = require(script.Parent.CombatService)
 local MatchService = require(script.Parent.MatchService)
 
@@ -64,6 +66,8 @@ local matchStartedAt = 0
 local round = 0
 local rng = Random.new()
 local nameIndex = 0
+-- How tough bots are this match (voted in the lobby).
+local level = Config.Bots.Difficulties.Normal
 
 local function flat(v: Vector3): Vector3
 	return Vector3.new(v.X, 0, v.Z)
@@ -175,7 +179,7 @@ local function nearestEnemy(bot: Bot): (BasePart?, Player?, Bot?)
 	local bestRoot: BasePart? = nil
 	local bestPlayer: Player? = nil
 	local bestBot: Bot? = nil
-	local bestDistance = Config.Bots.SightRange
+	local bestDistance = level.sight
 	for _, player in Players:GetPlayers() do
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -208,7 +212,7 @@ local function swingSound(bot: Bot)
 end
 
 local function swingAt(bot: Bot, targetRoot: BasePart, player: Player?, other: Bot?)
-	if os.clock() - bot.lastSwing < Config.Bots.HitCooldown then
+	if os.clock() - bot.lastSwing < level.cooldown then
 		return
 	end
 	bot.lastSwing = os.clock()
@@ -219,7 +223,7 @@ local function swingAt(bot: Bot, targetRoot: BasePart, player: Player?, other: B
 	swingSound(bot)
 	local offset = flat(targetRoot.Position - bot.root.Position)
 	local direction = if offset.Magnitude > 0.1 then offset.Unit else bot.root.CFrame.LookVector
-	local amount = MatchData.Swords[swordTier()].damage * Config.Bots.DamageScale
+	local amount = MatchData.Swords[swordTier()].damage * level.damage
 	local push = direction * Config.Match.Knockback * 0.8 + Vector3.new(0, 12, 0)
 	if player then
 		CombatService.hurtByBot(player, amount, push, bot.name, bot.team.info.key)
@@ -298,9 +302,9 @@ spawnBot = function(team: MatchService.MatchTeam, name: string, myRound: number)
 		return
 	end
 	humanoid.DisplayName = name
-	humanoid.MaxHealth = Config.Bots.Health
-	humanoid.Health = Config.Bots.Health
-	humanoid.WalkSpeed = Config.Bots.WalkSpeed
+	humanoid.MaxHealth = level.health
+	humanoid.Health = level.health
+	humanoid.WalkSpeed = level.speed
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
 	humanoid.NameDisplayDistance = 80
 	humanoid.BreakJointsOnDeath = false
@@ -473,7 +477,7 @@ local function think(bot: Bot, dt: number)
 	if bedTeam and flat(goal - position).Magnitude < 6 then
 		standStill(bot)
 		bot.breaking += dt
-		if bot.breaking >= Config.Bots.BedBreakSeconds then
+		if bot.breaking >= level.bedBreak then
 			bot.breaking = 0
 			MatchService.breakBedByBot(bedTeam, bot.name, bot.team.info.key)
 		elseif os.clock() - bot.lastSwing > 0.6 then
@@ -522,7 +526,7 @@ function BotService.start()
 		end
 		return math.max(0, Config.Bots.MinTeams - teams)
 	end
-	CombatService.bots = {
+	CombatService.addTargets({
 		enemiesOf = function(player: Player): { BasePart }
 			local team = MatchService.teamOf(player)
 			local list = {}
@@ -547,12 +551,15 @@ function BotService.start()
 				hurtBot(bot, attacker, amount, push)
 			end
 		end,
-	}
+	})
 
 	MatchService.MatchStarted:Connect(function()
 		clearAll()
 		local myRound = round
 		matchStartedAt = os.clock()
+		local difficulty = VoteService.winner("bots") or "Normal"
+		level = Config.Bots.Difficulties[difficulty] or Config.Bots.Difficulties.Normal
+		workspace:SetAttribute("BotDifficulty", difficulty)
 		local newFolder = Instance.new("Folder")
 		newFolder.Name = "Bots"
 		newFolder.Parent = workspace

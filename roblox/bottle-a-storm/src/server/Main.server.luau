@@ -5,6 +5,8 @@ local Services = script.Parent.Services
 local order = {
 	"DataService",
 	"PartyService",
+	"ClanService",
+	"VoteService",
 	"MapService",
 	"MatchService", -- builds the world, so it runs before anything that needs it
 	"WeatherService",
@@ -24,6 +26,8 @@ local order = {
 	"TournamentService",
 	"LuckyService",
 	"BotService",
+	"BossService",
+	"ChallengeService",
 	"SettingsService",
 	"ChestService",
 	"StatsService",
@@ -37,6 +41,7 @@ local order = {
 	"TitleService",
 	"ProgressionService",
 	"CosmeticService",
+	"TradeService",
 	"MonetizationService",
 }
 

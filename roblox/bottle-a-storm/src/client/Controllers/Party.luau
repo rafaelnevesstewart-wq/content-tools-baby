@@ -11,6 +11,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Remotes = require(Shared.Remotes)
 
+local Trade = require(script.Parent.Trade)
 local UI = require(script.Parent.UI)
 
 local player = Players.LocalPlayer
@@ -140,6 +141,14 @@ local function build()
 			order += 1
 			row(order, other.DisplayName, "⚔️ Duel", DUEL_COLOR, function()
 				Remotes.event("DuelAction"):FireServer("challenge", other.UserId)
+			end)
+		end
+		heading("🤝 Trade kits, cosmetics and Sparks")
+		for _, other in duelable do
+			order += 1
+			row(order, other.DisplayName, "🤝 Trade", UI.Colors.Rare, function()
+				Trade.request(other.UserId)
+				window.Visible = false
 			end)
 		end
 	end

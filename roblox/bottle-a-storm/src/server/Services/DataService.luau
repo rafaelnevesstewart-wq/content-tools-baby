@@ -56,6 +56,8 @@ local function defaultData()
 		duels = { day = -1, paid = 0 }, -- lobby duel wins that paid Sparks today
 		settings = {}, -- ⚙️ Settings you changed from the defaults (SettingsData)
 		chest = { lastDay = -1, opened = 0 }, -- the lobby Mystery Chest
+		-- 🌟 Challenges (ChallengeService fills these in).
+		challenges = { day = -1, week = -1, bonusClaimed = false },
 		level = 1, -- player level (1-100), then prestige (ProgressionData)
 		levelXp = 0,
 		prestige = 0,
@@ -78,6 +80,7 @@ local function defaultData()
 			duelsWon = 0,
 			deaths = 0,
 			tournamentWins = 0,
+			weeklyCleared = 0, -- weeks with every 🌟 Weekly Challenge done
 			weaponKills = {}, -- weapon name -> knockouts with it (📊 Stats)
 			kills = 0,
 			finalKills = 0,

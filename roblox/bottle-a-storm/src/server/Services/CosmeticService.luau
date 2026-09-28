@@ -1834,6 +1834,27 @@ function CosmeticService.grantProduct(player: Player, productKey: string): boole
 	return true
 end
 
+-- After a trade: take off anything no longer owned and refresh everything.
+function CosmeticService.refreshAll(player: Player)
+	local data = DataService.get(player)
+	if not data then
+		return
+	end
+	local cosmetics = data.cosmetics
+	for _, key in SLOTS do
+		local item = CosmeticsData.get(cosmetics[key])
+		if item and not owns(cosmetics, item) then
+			cosmetics[key] = nil
+		end
+	end
+	publish(player, data)
+	applyCharacter(player)
+	refreshPet(player)
+	for _, key in SLOTS do
+		CosmeticService.Changed:Fire(player, key)
+	end
+end
+
 function CosmeticService.start()
 	Remotes.func("Cosmetic").OnServerInvoke = onAction
 

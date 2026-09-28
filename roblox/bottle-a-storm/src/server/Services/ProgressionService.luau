@@ -93,6 +93,12 @@ local function showTag(player: Player)
 	if data.winStreak >= 2 then
 		text ..= "  🔥" .. data.winStreak
 	end
+	local clanTag = player:GetAttribute("ClanTag")
+	local clanColor = player:GetAttribute("ClanColor")
+	if type(clanTag) == "string" then
+		local color = if typeof(clanColor) == "Color3" then clanColor else Color3.new(1, 1, 1)
+		text = string.format('<font color="#%s">[%s]</font>  ', color:ToHex(), clanTag) .. text
+	end
 	((tag :: BillboardGui):FindFirstChild("Text") :: TextLabel).Text = text
 end
 
@@ -303,6 +309,9 @@ function ProgressionService.start()
 	local function onPlayer(player: Player)
 		player.CharacterAdded:Connect(function(character)
 			character:WaitForChild("Head", 10)
+			showTag(player)
+		end)
+		player:GetAttributeChangedSignal("ClanTag"):Connect(function()
 			showTag(player)
 		end)
 	end

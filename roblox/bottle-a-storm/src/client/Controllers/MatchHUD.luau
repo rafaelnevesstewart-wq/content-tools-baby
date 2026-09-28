@@ -1,6 +1,6 @@
 -- Bed Wars on your screen: the match banner (waiting / countdown / timer /
 -- winner, the map and team size), the Solos / Duos / Squads vote in the
--- lobby, every team with its bed ✅ or ❌ and players left, and the resources
+-- lobby (and a button for the 🗳️ map and bot votes), every team with its bed ✅ or ❌ and players left, and the resources
 -- you carry (plus potion timers). It also hides the "Break the bed" prompt on
 -- your own team's bed.
 
@@ -15,6 +15,7 @@ local MatchData = require(Shared.MatchData)
 local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.UI)
+local Vote = require(script.Parent.Vote)
 
 local player = Players.LocalPlayer
 
@@ -236,7 +237,7 @@ function MatchHUD.start()
 	for order, mode in MatchData.Modes do
 		local button = UI.button({
 			LayoutOrder = order,
-			Size = UDim2.fromOffset(136, 34),
+			Size = UDim2.fromOffset(118, 34),
 			TextSize = 15,
 			TextScaled = true,
 			TextWrapped = true,
@@ -247,6 +248,15 @@ function MatchHUD.start()
 		end)
 		voteButtons[mode.key] = button
 	end
+	UI.button({
+		LayoutOrder = 99,
+		Size = UDim2.fromOffset(150, 34),
+		Text = "🗳️ Map & Bots",
+		TextSize = 15,
+		BackgroundColor3 = UI.Colors.Rare,
+		Parent = voteRow,
+	}).Activated
+		:Connect(Vote.toggle)
 	workspace:GetAttributeChangedSignal("ModeVotes"):Connect(refreshVotes)
 	workspace:GetAttributeChangedSignal("MatchPhase"):Connect(refreshVotes)
 	player:GetAttributeChangedSignal("ModeVote"):Connect(refreshVotes)
