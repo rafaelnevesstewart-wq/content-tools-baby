@@ -3,6 +3,19 @@
 A Roblox **Bed Wars** game in a stormy sky world. Everything is built from code, including the
 islands, the cloud beds and the storm kits, so it runs in Studio with no uploaded art.
 
+**Looks:** the islands are real Roblox terrain (grass with swaying blades, a dirt layer, rugged
+rock hanging underneath, mossy boulders), joined by rope-and-plank bridges, with branching
+trees. Beds are wooden (posts, headboard, blanket, pillow), generators are stone pedestals with
+glowing orbs, the Item Shop is a market stall with a shopkeeper, and armor has a chestplate
+with a team emblem, pauldrons, a belt, shin guards and a plumed helmet. Swords, the bow,
+arrows, pickaxes, axes, TNT, potions, apples and pearls are all detailed models
+(`Modules/ItemModels`).
+
+**Camera:** on PC the camera turns with the mouse (the mouse is locked to a crosshair in the
+middle of the screen and you face where you look, over the shoulder). Opening any window frees
+the mouse; press **Ctrl** (or hold **Alt**) to free it any time. Phones and controllers keep
+the normal camera.
+
 ## How a match works
 
 Everyone waits in the **lobby** on the big middle island. With 2+ players (1 in Studio) a
@@ -74,9 +87,14 @@ Abuse and Rainbow Hour (the HUD shows your current bonus). Spend them on cosmeti
 
 ## Cosmetics (🎨 Style)
 
-- **You:** hats, trails, backs (wings, Arrow Quiver...) and auras.
+- **You:** hats, trails, backs (wings, Arrow Quiver...) and auras. Every trail has a bright
+  core ribbon from your waist to your feet, a soft outer glow, sparkles and a light; every aura
+  adds a glowing halo on the ground.
 - **In matches:** 🛏️ **Cloud Beds** (your team's bed uses the first teammate's pick),
-  🗡️ **Sword Skins** (every sword you hold), 🏹 **Arrow Effects**, and 💥 **Knockout Effects**
+  🗡️ **Sword Skins** (every sword you hold: colors, glowing edges, a light, particles and a
+  streak through the air when you swing; 10 skins including Ruby, Thunder and Shadow),
+  🏹 **Arrow Effects** (fletching color, a glowing flight streak and fire, frost, smoke or
+  sparkles), and 💥 **Knockout Effects**
   (what bursts out when you knock someone out: lightning, fireworks, frost...), and
   💃 **Victory Dances**.
 
@@ -160,10 +178,11 @@ src/server/   Main.server.luau starts the services in order
               TitleService, HolidayService, CosmeticService, ObbyService (lobby parkour),
               CommunityService (codes, group, likes), LeaderboardService, AdminService,
               MonetizationService
-  Modules/    WorldBuilder (islands, bridges, forecast TV), StormModel (kit storms), Effects,
+  Modules/    WorldBuilder (terrain islands, bridges, trees, forecast TV), ItemModels (weapons
+              and items), StormModel (kit storms), Effects,
               Juice, Notify, Codes
 src/client/   Main.client.luau starts the controllers
-  Controllers/ HUD, MatchHUD (and the mode vote), ItemShop, Kits, Party, KitController (Shift powers), KitFollower,
+  Controllers/ HUD, MatchHUD (and the mode vote), CameraController, ItemShop, Kits, Party, KitController (Shift powers), KitFollower,
                WeaponController, BlockController, Aim, Shop, Market, HolidayShop, Style,
                Season, Rewards, AdminPanel, ForecastController, StormAnimator, FlashyFx,
                AmbientController, JuiceController, Toasts, Sfx, UI
