@@ -15,15 +15,19 @@ local Players = game:GetService("Players")
 local TextService = game:GetService("TextService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local ClanPassData = require(Shared.ClanPassData)
 local Config = require(Shared.Config)
 local Remotes = require(Shared.Remotes)
+local SeasonData = require(Shared.SeasonData)
 
 local Modules = script.Parent.Parent.Modules
 local Notify = require(Modules.Notify)
 
+local BossService = require(script.Parent.BossService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local MatchService = require(script.Parent.MatchService)
+local RewardService = require(script.Parent.RewardService)
 
 local ClanService = {}
 
@@ -35,6 +39,7 @@ export type Clan = {
 	owner: number, -- user id
 	members: { [string]: string }, -- tostring(userId) -> display name
 	wins: number,
+	pass: { season: number, xp: number }?, -- 🎖️ Clan Pass progress this season
 }
 
 local clanStore: DataStore? = nil
@@ -44,6 +49,7 @@ local memory: { [string]: Clan } = {} -- memory mode, and a cache otherwise
 local memoryTags: { [string]: string } = {}
 local invites: { [Player]: { [string]: number } } = {} -- invited -> clan id -> when
 local lastAction: { [Player]: number } = {}
+local pendingXp: { [string]: number } = {} -- clan id -> Clan XP not saved yet
 local topCache: { any } = {}
 local topCachedAt = 0
 
@@ -347,6 +353,74 @@ local function kick(player: Player, data: any, userId: any): (boolean, string)
 	return true, "Removed."
 end
 
+---------------------------------------------------------------------------
+-- 🎖️ The Clan Pass
+---------------------------------------------------------------------------
+
+local function season(): number
+	local number = SeasonData.current(os.time())
+	return number
+end
+
+-- The clan's Clan XP this season (0 if the saved pass is from an old one).
+local function passXp(clan: Clan): number
+	local pass = clan.pass
+	return if pass and pass.season == season() then pass.xp else 0
+end
+
+local function addClanXp(player: Player, amount: number)
+	local data = DataService.get(player)
+	if data and data.clan then
+		pendingXp[data.clan] = (pendingXp[data.clan] or 0) + amount
+	end
+end
+
+-- Saves the Clan XP earned in this server (every minute and after matches).
+local function flush()
+	local now = season()
+	for id, amount in pendingXp do
+		pendingXp[id] = nil
+		local clan = update(id, function(saved)
+			if not saved.pass or saved.pass.season ~= now then
+				saved.pass = { season = now, xp = 0 }
+			end
+			local pass = saved.pass :: { season: number, xp: number }
+			pass.xp += amount
+			return saved
+		end)
+		if clan then
+			memory[id] = clan
+		end
+	end
+end
+
+local function claimPass(player: Player, data: any, tier: any): (boolean, string)
+	if not data.clan then
+		return false, "Join a clan first."
+	end
+	local reward = type(tier) == "number" and ClanPassData.Tiers[tier]
+	if not reward then
+		return false, "Unknown tier."
+	end
+	local clan = memory[data.clan] or load(data.clan)
+	if not clan or passXp(clan) < ClanPassData.xpFor(tier) then
+		return false, "Your clan hasn't reached that tier yet."
+	end
+	local now = season()
+	if not data.clanPass or data.clanPass.season ~= now then
+		data.clanPass = { season = now, claimed = {} }
+	end
+	if data.clanPass.claimed[tostring(tier)] then
+		return false, "You already claimed it!"
+	end
+	local problem = RewardService.grant(player, reward)
+	if problem then
+		return false, problem
+	end
+	data.clanPass.claimed[tostring(tier)] = true
+	return true, "🎖️ Clan Pass tier " .. tier .. " claimed!"
+end
+
 local function onAction(player: Player, action: any, a: any, b: any): (boolean, string)
 	local data = DataService.get(player)
 	if not data or os.clock() - (lastAction[player] or 0) < 1 then
@@ -363,6 +437,8 @@ local function onAction(player: Player, action: any, a: any, b: any): (boolean, 
 		return accept(player, data, a)
 	elseif action == "kick" then
 		return kick(player, data, a)
+	elseif action == "claimPass" then
+		return claimPass(player, data, a)
 	end
 	return false, "Can't do that."
 end
@@ -429,7 +505,24 @@ local function getClan(player: Player): any
 				end
 				return x.name < y.name
 			end)
+			local now = season()
+			local claimed = if data.clanPass and data.clanPass.season == now then data.clanPass.claimed else {}
+			local tiers = {}
+			for tier, reward in ClanPassData.Tiers do
+				table.insert(tiers, {
+					tier = tier,
+					xp = ClanPassData.xpFor(tier),
+					reward = ClanPassData.describe(reward),
+					claimed = claimed[tostring(tier)] == true,
+				})
+			end
+			local _, theme = SeasonData.current(os.time())
 			mine = {
+				pass = {
+					xp = passXp(clan) + (pendingXp[clan.id] or 0),
+					tiers = tiers,
+					season = theme.name,
+				},
 				id = clan.id,
 				name = clan.name,
 				tag = clan.tag,
@@ -472,6 +565,35 @@ function ClanService.start()
 			showTag(player, nil)
 		end
 	end)
+	-- Clan XP for the Clan Pass.
+	local xp = ClanPassData.Xp
+	MatchService.Played:Connect(function(player)
+		addClanXp(player, xp.play)
+	end)
+	MatchService.Won:Connect(function(player)
+		addClanXp(player, xp.win)
+	end)
+	MatchService.Killed:Connect(function(killer, _victim, final)
+		addClanXp(killer, if final then xp.finalKill else xp.kill)
+	end)
+	MatchService.BedBroken:Connect(function(breaker)
+		addClanXp(breaker, xp.bed)
+	end)
+	BossService.Defeated:Connect(function(helpers)
+		for _, player in helpers do
+			addClanXp(player, xp.boss)
+		end
+	end)
+	MatchService.MatchEnded:Connect(function()
+		task.delay(2, flush)
+	end)
+	task.spawn(function()
+		while true do
+			task.wait(60)
+			flush()
+		end
+	end)
+	game:BindToClose(flush)
 	-- Every win counts for the whole clan.
 	MatchService.Won:Connect(function(player)
 		local data = DataService.get(player)

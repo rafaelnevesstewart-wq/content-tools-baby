@@ -521,7 +521,7 @@ end
 
 function BotService.start()
 	MatchService.botTeamsFor = function(_players: number, teams: number): number
-		if not Config.Bots.Enabled then
+		if not Config.Bots.Enabled or workspace:GetAttribute("MatchMode") == "Zombies" then
 			return 0
 		end
 		return math.max(0, Config.Bots.MinTeams - teams)

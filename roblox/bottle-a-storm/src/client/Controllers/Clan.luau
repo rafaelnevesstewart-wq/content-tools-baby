@@ -123,6 +123,28 @@ local function show(state: any)
 		heading(
 			"🏆 " .. Format.number(clan.wins) .. " wins  ·  👥 " .. #clan.members .. "/" .. clan.max .. " members"
 		)
+		-- 🎖️ The Clan Pass: the clan earns XP together, everyone claims.
+		local pass = clan.pass
+		if pass then
+			heading(
+				"🎖️ Clan Pass (" .. pass.season .. " season): " .. Format.number(pass.xp) .. " Clan XP",
+				UI.Colors.Spark
+			)
+			heading("Every member's matches add Clan XP. Claim each tier's prize for yourself!")
+			for _, tier in pass.tiers do
+				local reached = pass.xp >= tier.xp
+				local text = "Tier " .. tier.tier .. ": " .. tier.reward
+				if tier.claimed then
+					row(text .. "  ✅")
+				elseif reached then
+					row(text, "Claim!", UI.Colors.Good, function()
+						act("claimPass", tier.tier)
+					end)
+				else
+					row(text .. "  🔒 " .. Format.number(tier.xp) .. " XP")
+				end
+			end
+		end
 		heading("Members")
 		for _, member in clan.members do
 			local label = (if member.leader then "👑 " else "🛡️ ")

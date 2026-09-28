@@ -22,6 +22,7 @@ local EVENTS = {
 	"KitPower", -- client -> server: (ability, aimOrDirection) kit powers the server runs
 	"TournamentAction", -- client -> server: ("join" | "leave")
 	"Vote", -- client -> server: ("map" | "bots", key) lobby votes for the next match
+	"SetPaint", -- client -> server: ("blade" | "armor", colorIndex or 0)
 	"ClanInvite", -- server -> client: (clanId, clanName, tag, fromName)
 	"TradeAction", -- client -> server: (action, a, b) see TradeService
 	"TradeInvite", -- server -> client: (fromUserId, fromName)
@@ -29,7 +30,7 @@ local EVENTS = {
 	"Victory", -- server -> client: (teamKey) your team won: dance!
 	"DamageShown", -- server -> client: (position, amount) you hit someone
 	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed
-	"UseGadget", -- client -> server: ("TNT" | "Fireball" | potion key | "Mine", aimPoint)
+	"UseGadget", -- client -> server: ("TNT" | "Fireball" | "Rocket" | potion key | "Mine", aimPoint)
 }
 
 local FUNCTIONS = {
@@ -60,6 +61,7 @@ local FUNCTIONS = {
 	"ClanAction", -- client -> server: (action, a, b) -> (ok, message)
 	"GetClan", -- client -> server: () -> your clan and the top clans
 	"GetTradeInventory", -- client -> server: () -> your tradeable kits, cosmetics and Sparks
+	"BuyEmote", -- client -> server: (key) -> (ok, message)
 	"ClaimChallenge", -- client -> server: ("daily" | index | "bonus") -> (ok, message)
 }
 

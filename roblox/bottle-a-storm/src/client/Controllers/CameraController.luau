@@ -105,7 +105,7 @@ function CameraController.start()
 			h.CameraOffset = h.CameraOffset:Lerp(if Settings.get("shoulder") then SHOULDER else Vector3.zero, 0.2)
 			-- Face where the camera looks (flat, so you don't tip over).
 			local look = camera.CFrame.LookVector * Vector3.new(1, 0, 1)
-			if look.Magnitude > 0.01 then
+			if look.Magnitude > 0.01 and not player:GetAttribute("EmoteMove") then -- (not during a spin or flip)
 				r.CFrame = CFrame.lookAt(r.Position, r.Position + look.Unit)
 			end
 			wasLocked = true

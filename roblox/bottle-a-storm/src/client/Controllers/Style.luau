@@ -15,6 +15,7 @@ local Format = require(Shared.Format)
 local Products = require(Shared.Products)
 local Remotes = require(Shared.Remotes)
 
+local Paint = require(script.Parent.Paint)
 local Toasts = require(script.Parent.Toasts)
 local UI = require(script.Parent.UI)
 
@@ -262,6 +263,12 @@ function Style.toggle()
 	end
 end
 
+-- Opens the window on one category (the shop street's Pet Shop uses this).
+function Style.open(tab: string)
+	window.Visible = true
+	showTab(tab)
+end
+
 function Style.start()
 	local screen = UI.screen("Style", 6)
 	window = UI.new("Frame", {
@@ -327,6 +334,19 @@ function Style.start()
 	}).Activated
 		:Connect(function()
 			window.Visible = false
+		end)
+	UI.button({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -52, 0, 0),
+		Size = UDim2.fromOffset(110, 34),
+		Text = "🖌️ Paint",
+		TextSize = 16,
+		BackgroundColor3 = UI.Colors.Rare,
+		Parent = window,
+	}).Activated
+		:Connect(function()
+			window.Visible = false
+			Paint.toggle()
 		end)
 
 	local tabs = UI.new("ScrollingFrame", {

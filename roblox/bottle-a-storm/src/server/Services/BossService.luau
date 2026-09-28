@@ -571,6 +571,9 @@ function BossService.start()
 	MatchService.MatchStarted:Connect(function()
 		round += 1
 		local myRound = round
+		if workspace:GetAttribute("MatchMode") == "Zombies" then
+			return -- the zombies are enough trouble
+		end
 		task.spawn(function()
 			task.wait(Config.Boss.FirstAt)
 			while round == myRound and MatchService.phase() == "playing" do

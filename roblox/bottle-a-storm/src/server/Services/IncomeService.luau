@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
+local PetLevels = require(Shared.PetLevels)
 local Products = require(Shared.Products)
 
 local DataService = require(script.Parent.DataService)
@@ -16,7 +17,8 @@ local WeatherService = require(script.Parent.WeatherService)
 local IncomeService = {}
 
 -- How much bigger this player's match Sparks are right now: VIP, Style
--- Bonus, Kit Collection rows, group members, Admin Abuse and Rainbow Hour.
+-- Bonus, Kit Collection rows, group members, your pet's level, Admin Abuse
+-- and Rainbow Hour.
 function IncomeService.multiplier(player: Player): number
 	local data = DataService.get(player)
 	if not data then
@@ -30,7 +32,9 @@ function IncomeService.multiplier(player: Player): number
 	local abuse = if type(abuseUntil) == "number" and abuseUntil > workspace:GetServerTimeNow()
 		then Config.Admin.AbuseIncomeMultiplier
 		else 1
-	return vip * style * collection * group * abuse * WeatherService.sparksMultiplier()
+	local petLevel = PetLevels.levelOf(data, data.cosmetics.pet)
+	local pet = 1 + PetLevels.BonusPerLevel * (petLevel - 1)
+	return vip * style * collection * group * abuse * pet * WeatherService.sparksMultiplier()
 end
 
 -- Pushes the profile's numbers to attributes and leaderstats.

@@ -4,7 +4,9 @@
 -- potion to drink, and a Pickaxe or Axe to mine blocks. (Storm TNT is placed
 -- by BlockController.) This only aims and asks; the server checks it all.
 
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Remotes = require(Shared.Remotes)
@@ -28,6 +30,94 @@ local function enemyRoots(): { BasePart }
 		end
 	end
 	return list
+end
+
+-- The Grappling Hook: shoots a rope to a wall or ledge you aim at and pulls
+-- you there (your own screen moves your character).
+local GRAPPLE_RANGE = 90
+local GRAPPLE_SPEED = 85
+local lastGrapple = 0
+
+local function grapple()
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not character or not root or not humanoid or os.clock() - lastGrapple < 1.5 then
+		return
+	end
+	local aim = Aim.point({}, 0)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { character }
+	local offset = aim - root.Position
+	if offset.Magnitude < 4 then
+		return
+	end
+	local hit = workspace:Raycast(root.Position, offset.Unit * math.min(offset.Magnitude + 2, GRAPPLE_RANGE), params)
+	if not hit then
+		Sfx.play("oops")
+		return
+	end
+	lastGrapple = os.clock()
+	Sfx.play("throw", 0.6)
+	local target = hit.Position
+	-- The rope: a beam from your hand to a hook stuck where you aimed.
+	local hook = Instance.new("Part")
+	hook.Name = "GrappleHook"
+	hook.Anchored = true
+	hook.CanCollide = false
+	hook.CanQuery = false
+	hook.Size = Vector3.one * 0.5
+	hook.Color = Color3.fromRGB(190, 194, 202)
+	hook.Material = Enum.Material.Metal
+	hook.CFrame = CFrame.new(target)
+	hook.Parent = workspace
+	local hookPoint = Instance.new("Attachment")
+	hookPoint.Parent = hook
+	local hand = character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm") or root
+	local handPoint = Instance.new("Attachment")
+	handPoint.Parent = hand
+	local rope = Instance.new("Beam")
+	rope.Attachment0 = handPoint
+	rope.Attachment1 = hookPoint
+	rope.Width0 = 0.15
+	rope.Width1 = 0.15
+	rope.Color = ColorSequence.new(Color3.fromRGB(176, 150, 110))
+	rope.FaceCamera = true
+	rope.Segments = 1
+	rope.Parent = hook
+	-- The pull.
+	local attachment = Instance.new("Attachment")
+	attachment.Parent = root
+	local pull = Instance.new("LinearVelocity")
+	pull.Attachment0 = attachment
+	pull.RelativeTo = Enum.ActuatorRelativeTo.World
+	pull.MaxForce = 1e6
+	pull.Parent = root
+	local started = os.clock()
+	local connection: RBXScriptConnection? = nil
+	local function finish()
+		if connection then
+			connection:Disconnect()
+		end
+		pull:Destroy()
+		attachment:Destroy()
+		handPoint:Destroy()
+		Debris:AddItem(hook, 0.1)
+		-- A little hop at the end so you land on the ledge.
+		if root.Parent then
+			local v = root.AssemblyLinearVelocity
+			root.AssemblyLinearVelocity = Vector3.new(v.X * 0.3, 30, v.Z * 0.3)
+		end
+	end
+	connection = RunService.Heartbeat:Connect(function()
+		local toTarget = target - root.Position
+		if toTarget.Magnitude < 5 or os.clock() - started > 1.6 or humanoid.Health <= 0 or not root.Parent then
+			finish()
+			return
+		end
+		pull.VectorVelocity = toTarget.Unit * GRAPPLE_SPEED
+	end)
 end
 
 -- The default Animate script plays a slash when a Tool gets this value.
@@ -74,6 +164,11 @@ function WeaponController.start()
 		Sfx.play("throw", 1)
 		Remotes.event("UseItem"):FireServer("WindPearl", Aim.point({}, 0))
 	end)
+	Aim.hookTool("Rocket Launcher", function()
+		Sfx.play("boom", 1.4)
+		Remotes.event("UseGadget"):FireServer("Rocket", Aim.point(enemyRoots(), 3))
+	end)
+	Aim.hookTool("Grappling Hook", grapple)
 	Aim.hookTool("Fireball", function()
 		Sfx.play("throw", 0.7)
 		Remotes.event("UseGadget"):FireServer("Fireball", Aim.point(enemyRoots(), 4))

@@ -82,6 +82,10 @@ local function buyItem(player: Player, key: any): (boolean, string)
 	-- Check it can be given before paying.
 	local isBlock = MatchData.Blocks[item.key] ~= nil
 	local isGadget = GadgetService.handles(item.key)
+	local gadgetProblem = if isGadget then GadgetService.problem(player, item.key) else nil
+	if gadgetProblem then
+		return false, gadgetProblem
+	end
 	if not isBlock and not isGadget then
 		local problem = CombatService.check(player, item.key)
 		if problem then

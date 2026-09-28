@@ -1,5 +1,5 @@
--- Bed Wars gadgets: Storm TNT, Fireballs, potions (speed, jump,
--- invisibility), and pickaxes and axes that break placed blocks faster and
+-- Bed Wars gadgets: Storm TNT, Fireballs, Rocket Launchers, the Grappling
+-- Hook (the client does the pulling), potions (speed, jump, invisibility), and pickaxes and axes that break placed blocks faster and
 -- dig into the ground. Everyone always has at least a Wood Pickaxe.
 -- The client only aims and asks (WeaponController, BlockController);
 -- everything is checked here.
@@ -30,6 +30,8 @@ type Kit = {
 	axe: number,
 	tnt: number,
 	fireballs: number,
+	rockets: number,
+	grapple: boolean,
 	potions: { [string]: number },
 }
 
@@ -46,7 +48,17 @@ local POTIONS = {
 	JumpPotion = { tool = "Jump Potion", color = Color3.fromRGB(140, 240, 120) },
 	InvisPotion = { tool = "Invisibility Potion", color = Color3.fromRGB(200, 200, 230) },
 }
-local TOOL_NAMES = { "Pickaxe", "Axe", "Storm TNT", "Fireball", "Speed Potion", "Jump Potion", "Invisibility Potion" }
+local TOOL_NAMES = {
+	"Pickaxe",
+	"Axe",
+	"Storm TNT",
+	"Fireball",
+	"Rocket Launcher",
+	"Grappling Hook",
+	"Speed Potion",
+	"Jump Potion",
+	"Invisibility Potion",
+}
 
 local function rootOf(player: Player): BasePart?
 	local character = player.Character
@@ -56,7 +68,7 @@ end
 local function kitOf(player: Player): Kit
 	local kit = kits[player]
 	if not kit then
-		kit = { pickaxe = 0, axe = 0, tnt = 0, fireballs = 0, potions = {} }
+		kit = { pickaxe = 0, axe = 0, tnt = 0, fireballs = 0, rockets = 0, grapple = false, potions = {} }
 		kits[player] = kit
 	end
 	return kit
@@ -105,6 +117,9 @@ local function refreshTools(player: Player)
 	end
 	sync(player, "Storm TNT", kit.tnt, ItemModels.tnt)
 	sync(player, "Fireball", kit.fireballs, ItemModels.fireball)
+	sync(player, "Rocket Launcher", kit.rockets, ItemModels.rocketLauncher)
+	sync(player, "Grappling Hook", if kit.grapple then 1 else 0, ItemModels.grapple)
+	player:SetAttribute("Rockets", if kit.rockets > 0 then kit.rockets else nil)
 	for key, potion in POTIONS do
 		sync(player, potion.tool, kit.potions[key] or 0, function()
 			local tool = ItemModels.potion(potion.tool, potion.color)
@@ -290,6 +305,87 @@ local function throwFireball(player: Player, aim: Vector3)
 	end)
 end
 
+-- A rocket: flies straight and fast, then a big blast (breaks stronger
+-- blocks than a fireball).
+local function fireRocket(player: Player, aim: Vector3)
+	local kit = kitOf(player)
+	local root = rootOf(player)
+	if kit.rockets <= 0 or not root then
+		return
+	end
+	kit.rockets -= 1
+	refreshTools(player)
+	local origin = root.Position + Vector3.new(0, 2, 0)
+	local direction = aim - origin
+	if direction.Magnitude < 0.1 then
+		direction = root.CFrame.LookVector
+	end
+	direction = direction.Unit
+	local rocket = Instance.new("Part")
+	rocket.Name = "Rocket"
+	rocket.Size = Vector3.new(0.6, 0.6, 2.4)
+	rocket.Anchored = true
+	rocket.CanCollide = false
+	rocket.CanQuery = false
+	rocket.CanTouch = false
+	rocket.Color = Color3.fromRGB(200, 60, 50)
+	rocket.Material = Enum.Material.SmoothPlastic
+	rocket.CFrame = CFrame.lookAt(origin, origin + direction)
+	rocket.Parent = workspace
+	local tail = Instance.new("Attachment")
+	tail.Position = Vector3.new(0, 0, 1.2)
+	tail.Parent = rocket
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	smoke.Color = ColorSequence.new(Color3.fromRGB(220, 220, 220), Color3.fromRGB(120, 120, 120))
+	smoke.Size = NumberSequence.new(0.8, 2.5)
+	smoke.Transparency = NumberSequence.new(0.3, 1)
+	smoke.Lifetime = NumberRange.new(0.6, 1)
+	smoke.Rate = 60
+	smoke.Speed = NumberRange.new(1, 2)
+	smoke.Parent = tail
+	local flame = Instance.new("Fire")
+	flame.Size = 2
+	flame.Heat = 0
+	flame.Parent = rocket
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local ignore: { Instance } = { rocket }
+	if player.Character then
+		table.insert(ignore, player.Character)
+	end
+	params.FilterDescendantsInstances = ignore
+	Juice.sound(player, "throw")
+	task.spawn(function()
+		local position = origin
+		local travelled = 0
+		local step = Config.Match.RocketSpeed / 30
+		while travelled < Config.Match.RocketRange do
+			local hit = workspace:Raycast(position, direction * step, params)
+			if hit then
+				position = hit.Position
+				break
+			end
+			position += direction * step
+			travelled += step
+			rocket.CFrame = CFrame.lookAt(position, position + direction)
+			task.wait(1 / 30)
+		end
+		rocket:Destroy()
+		if MatchService.phase() == "playing" then
+			BlockService.explode(position, Config.Match.RocketRadius * 0.6, 4, { Obsidian = true })
+			boom(
+				player,
+				position,
+				Config.Match.RocketRadius,
+				Config.Match.RocketDamage,
+				Config.Match.RocketKnockback,
+				"Rocket"
+			)
+		end
+	end)
+end
+
 -- Invisible: body, face, armor, cosmetics and name all hidden for everyone
 -- else. The client shows you a see-through version of yourself.
 local function setInvisible(player: Player, on: boolean)
@@ -461,6 +557,8 @@ local function onUse(player: Player, key: any, aim: any)
 		placeTNT(player, aim)
 	elseif key == "Fireball" then
 		throwFireball(player, aim)
+	elseif key == "Rocket" then
+		fireRocket(player, aim)
 	elseif POTIONS[key] then
 		drink(player, key)
 	end
@@ -475,8 +573,21 @@ function GadgetService.blast(owner: Player, center: Vector3, radius: number, dam
 	boom(owner, center, radius, damage, knockback, "Lucky Block")
 end
 
+-- Why a gadget can't be bought right now (nil if it can).
+function GadgetService.problem(player: Player, key: string): string?
+	if key == "GrapplingHook" and kitOf(player).grapple then
+		return "You already have a grappling hook."
+	end
+	return nil
+end
+
 function GadgetService.handles(key: string): boolean
-	return key == "TNT" or key == "Fireball" or POTIONS[key] ~= nil or MatchData.Tools[key] ~= nil
+	return key == "TNT"
+		or key == "Fireball"
+		or key == "RocketLauncher"
+		or key == "GrapplingHook"
+		or POTIONS[key] ~= nil
+		or MatchData.Tools[key] ~= nil
 end
 
 -- The next tier of a tool (or nil when it's maxed).
@@ -500,6 +611,10 @@ function GadgetService.give(player: Player, key: string)
 		kit.tnt += 1
 	elseif key == "Fireball" then
 		kit.fireballs += 1
+	elseif key == "RocketLauncher" then
+		kit.rockets += 3
+	elseif key == "GrapplingHook" then
+		kit.grapple = true
 	elseif POTIONS[key] then
 		kit.potions[key] = (kit.potions[key] or 0) + 1
 	end
@@ -523,6 +638,7 @@ function GadgetService.start()
 		kit.axe = math.max(math.min(kit.axe, 1), kit.axe - 1)
 		kit.tnt = 0
 		kit.fireballs = 0
+		kit.rockets = 0 -- (the grappling hook is kept)
 		kit.potions = {}
 		effects[player] = nil
 		for key in POTIONS do

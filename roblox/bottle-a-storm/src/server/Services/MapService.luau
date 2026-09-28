@@ -460,6 +460,10 @@ function MapService.apply(islands: { WorldBuilder.PlotInfo })
 	end
 	-- The map with the most votes in the lobby, or a random new one.
 	local voted = MapData.get(VoteService.winner("map"))
+	-- Zombie Survival is spooky unless someone voted for a map.
+	if not voted and workspace:GetAttribute("MatchMode") == "Zombies" then
+		voted = MapData.get("Haunted")
+	end
 	local map = voted or options[rng:NextInteger(1, #options)]
 	lastKey = map.key
 	current = map

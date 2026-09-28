@@ -1105,7 +1105,10 @@ local function startMatch()
 	local mode = pickMode(players)
 	local size = if mode then mode.size elseif #players <= Config.Match.SoloUpTo then 1 else 2
 	local maxTeams = math.min(#MatchData.Teams, #islands)
-	local teamCount = math.clamp(math.ceil(#players / size), math.min(2, #players), maxTeams)
+	-- Co-op modes (🧟 Zombie Survival): everyone on one team.
+	local teamCount = if mode and mode.coop
+		then 1
+		else math.clamp(math.ceil(#players / size), math.min(2, #players), maxTeams)
 	local capacity = math.ceil(#players / teamCount)
 	workspace:SetAttribute("MatchMode", if mode then mode.key else (if size == 1 then "Solo" else "Duo"))
 	Teams:ClearAllChildren()
@@ -1193,6 +1196,13 @@ function MatchService.startNow(): boolean
 	end
 	startMatch()
 	return true
+end
+
+-- Ends the match with `team` as the winner (co-op modes decide this).
+function MatchService.declareWinner(team: MatchTeam)
+	if phase == "playing" then
+		endMatch(team)
+	end
 end
 
 function MatchService.endNow(): boolean

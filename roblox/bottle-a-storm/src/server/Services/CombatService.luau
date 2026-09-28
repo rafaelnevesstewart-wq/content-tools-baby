@@ -10,6 +10,7 @@ local TweenService = game:GetService("TweenService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local MatchData = require(Shared.MatchData)
+local PaintData = require(Shared.PaintData)
 local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
 
@@ -158,7 +159,8 @@ local function refreshTools(player: Player)
 	local wasHolding = sword ~= nil
 	removeTool(player, "Sword")
 	local data = DataService.get(player)
-	local newSword = ItemModels.sword(g.sword, data and data.cosmetics.sword)
+	local paint = data and data.paint and PaintData.color(data.paint.blade)
+	local newSword = ItemModels.sword(g.sword, data and data.cosmetics.sword, paint)
 	giveTool(player, newSword)
 	if wasHolding then
 		local humanoid = humanoidOf(player)
@@ -228,7 +230,8 @@ local function dressArmor(player: Player)
 	local teamColor = if team then team.info.color else Color3.new(1, 1, 1)
 	local armor = MatchData.Armor[gearOf(player).armor]
 	local look = ARMOR_LOOK[armor.key] or ARMOR_LOOK.Cloth
-	local color = look.color or teamColor
+	local data = DataService.get(player)
+	local color = (data and data.paint and PaintData.color(data.paint.armor)) or look.color or teamColor
 	local folder = Instance.new("Folder")
 	folder.Name = "MatchArmor"
 	local function plate(to: BasePart?, size: Vector3, offset: CFrame, overrides: { [string]: any }?): Part?
@@ -800,6 +803,16 @@ function CombatService.start()
 		lastSwing[player] = nil
 		lastShot[player] = nil
 	end)
+end
+
+-- Rebuilds a player's sword and armor (after picking new paint).
+function CombatService.refreshLook(player: Player)
+	if gear[player] and (MatchService.isPlaying(player) or not player:GetAttribute("InMatch")) then
+		refreshTools(player)
+		if MatchService.isPlaying(player) then
+			dressArmor(player)
+		end
+	end
 end
 
 -- Lobby gear: just a sword of this tier (1 = wood for practice, duels use

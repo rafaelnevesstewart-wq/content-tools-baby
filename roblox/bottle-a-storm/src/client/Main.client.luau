@@ -13,6 +13,7 @@ local order = {
 	"Market",
 	"HolidayShop",
 	"AdminPanel",
+	"Paint",
 	"Style",
 	"Kits",
 	"Trade",
@@ -42,6 +43,9 @@ local order = {
 	"TournamentHUD",
 	"SpectateController",
 	"BossHUD",
+	"ZombieHUD",
+	"EmoteWheel",
+	"ShopStreet",
 }
 
 for _, name in order do

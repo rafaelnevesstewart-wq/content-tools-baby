@@ -16,6 +16,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local CosmeticsData = require(Shared.CosmeticsData)
 local Format = require(Shared.Format)
+local PetLevels = require(Shared.PetLevels)
 local Remotes = require(Shared.Remotes)
 local Signal = require(Shared.Signal)
 
@@ -1723,6 +1724,56 @@ local function refreshPet(player: Player)
 	end
 	model.Name = player.Name .. "_Pet"
 	model:SetAttribute("OwnerId", player.UserId)
+	-- Its level: bigger, sparkly at 5, golden at 10, and a name tag.
+	local level = PetLevels.levelOf(data, item.id)
+	local scale = PetLevels.scale(level)
+	if scale ~= 1 then
+		pcall(function()
+			model:ScaleTo(scale)
+		end)
+		local height = model:GetAttribute("Height")
+		if type(height) == "number" then
+			model:SetAttribute("Height", height * scale)
+		end
+	end
+	local root = model.PrimaryPart
+	local body: BasePart? = nil
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") and child ~= root then
+			body = child
+			break
+		end
+	end
+	if body and level >= PetLevels.SparkleLevel then
+		local sparkles = Instance.new("Sparkles")
+		sparkles.SparkleColor = if level >= PetLevels.GoldLevel
+			then Color3.fromRGB(255, 215, 90)
+			else Color3.fromRGB(200, 230, 255)
+		sparkles.Parent = body
+	end
+	if body and level >= PetLevels.GoldLevel then
+		local glow = Instance.new("PointLight")
+		glow.Color = Color3.fromRGB(255, 210, 110)
+		glow.Range = 10
+		glow.Brightness = 1.5
+		glow.Parent = body
+	end
+	if root then
+		local tag = Instance.new("BillboardGui")
+		tag.Size = UDim2.fromOffset(140, 24)
+		tag.StudsOffset = Vector3.new(0, 2.2 * scale, 0)
+		tag.MaxDistance = 50
+		tag.Parent = root
+		local label = Instance.new("TextLabel")
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.Font = Enum.Font.GothamBold
+		label.TextScaled = true
+		label.TextColor3 = if level >= PetLevels.GoldLevel then Color3.fromRGB(255, 215, 90) else Color3.new(1, 1, 1)
+		label.TextStrokeTransparency = 0.3
+		label.Text = "Lv " .. level .. " " .. item.emoji .. " " .. item.name
+		label.Parent = tag
+	end
 	CollectionService:AddTag(model, "FollowerPet")
 	local folder = workspace:FindFirstChild("Pets")
 	if not folder then
@@ -1832,6 +1883,11 @@ function CosmeticService.grantProduct(player: Player, productKey: string): boole
 	end
 	unlock(player, data, item)
 	return true
+end
+
+-- Rebuilds a player's pet (it levelled up).
+function CosmeticService.rebuildPet(player: Player)
+	refreshPet(player)
 end
 
 -- After a trade: take off anything no longer owned and refresh everything.

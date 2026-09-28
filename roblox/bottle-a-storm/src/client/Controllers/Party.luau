@@ -6,6 +6,7 @@
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
+local SocialService = game:GetService("SocialService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
@@ -260,9 +261,29 @@ function Party.start()
 		:Connect(function()
 			window.Visible = false
 		end)
-	list = UI.new("ScrollingFrame", {
+	-- Invite friends from Roblox: you both get a prize when a new one joins.
+	UI.button({
 		Position = UDim2.fromOffset(0, 62),
-		Size = UDim2.new(1, 0, 1, -62),
+		Size = UDim2.new(1, 0, 0, 40),
+		Text = "📱 Invite friends: you both get a prize!",
+		TextSize = 16,
+		BackgroundColor3 = UI.Colors.Spark,
+		TextColor3 = Color3.fromRGB(40, 30, 10),
+		Parent = window,
+	}).Activated
+		:Connect(function()
+			local ok, canInvite = pcall(function()
+				return SocialService:CanSendGameInviteAsync(player)
+			end)
+			if ok and canInvite then
+				pcall(function()
+					SocialService:PromptGameInvite(player)
+				end)
+			end
+		end)
+	list = UI.new("ScrollingFrame", {
+		Position = UDim2.fromOffset(0, 110),
+		Size = UDim2.new(1, 0, 1, -110),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,

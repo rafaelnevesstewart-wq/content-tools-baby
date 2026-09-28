@@ -53,6 +53,11 @@ Config.Match = {
 	BlockReach = 20,
 	-- Digging: a pickaxe or axe also digs into the islands' ground. Holes
 	-- are filled back in after the match.
+	RocketSpeed = 110,
+	RocketRange = 260,
+	RocketRadius = 11,
+	RocketDamage = 40,
+	RocketKnockback = 75,
 	DigRadius = 2.6,
 	DigDepth = -8, -- can't dig deeper than this (the island's rocky bottom)
 	DigKeepAway = 9, -- studs from beds, generators, shops and spawns
@@ -67,6 +72,8 @@ Config.Lobby = {
 	Center = Vector3.new(0, 20, -620), -- the island's grass top
 	Radius = 90,
 	CastleHalf = 44, -- the castle walls are a square this far from the center
+	StreetDistance = 190, -- the shop street island, behind the castle (-Z)
+	StreetRadius = 56,
 }
 
 -- Background music (MusicController). Add songs as Roblox audio ids: in
@@ -178,6 +185,37 @@ Config.Clans = {
 Config.Trade = {
 	RequestSeconds = 30,
 	MaxItems = 8, -- kits and cosmetics per side
+}
+
+-- 📱 Friend invites (InviteService).
+Config.Invite = {
+	NewSparks = 1000, -- the new player
+	NewKitRarity = 3, -- and a Rare kit
+	InviterSparks = 1500, -- the friend who invited them
+	MaxRewards = 25, -- invites that pay Sparks (they still count after)
+}
+
+-- 🧟 Zombie Survival mode (ZombieService).
+Config.Zombies = {
+	Waves = 10,
+	FirstDelay = 20, -- seconds to build walls before wave 1
+	BreakSeconds = 15, -- between waves
+	BaseCount = 4, -- zombies in wave 1...
+	PerWave = 2, -- ...plus this many more each wave...
+	PerPlayer = 2, -- ...and this many per extra player
+	Health = 60,
+	HealthPerWave = 18,
+	BruteHealth = 4, -- Brutes (every 5th wave) have this many times the health
+	Damage = 8,
+	DamagePerWave = 1.5,
+	Speed = 11,
+	SpeedPerWave = 0.35,
+	Reach = 5.5,
+	HitCooldown = 1.1,
+	SightRange = 70,
+	BedBreakSeconds = 5,
+	KillCopper = 3, -- for each zombie you knock out
+	WaveSparks = 60, -- times the wave number, for everyone still in
 }
 
 -- Lucky Blocks mode (MatchData.Modes): ❓ blocks to break for surprises.

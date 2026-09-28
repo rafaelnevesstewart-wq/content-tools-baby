@@ -648,8 +648,8 @@ local function lobbyBlocked(p: Vector3): boolean
 	if math.abs(p.X) < half and math.abs(p.Z) < half then
 		return true
 	end
-	if math.abs(p.X) < 9 and p.Z > 0 then
-		return true -- the path out of the gate
+	if math.abs(p.X) < 9 then
+		return true -- the paths out of the gates
 	end
 	local degrees = math.deg(math.atan2(p.Z, p.X)) % 360
 	return degrees > Config.Obby.StartAngle - 12 and degrees < Config.Obby.StartAngle + 30 and p.Magnitude > 60
@@ -689,10 +689,12 @@ local function castle(parent: Instance)
 		return p
 	end
 
-	-- Walls: the gate is in the +Z wall (side 0), facing the path out.
+	-- Walls: the main gate is in the +Z wall (side 0), facing the path out;
+	-- the back gate (side 2, -Z) leads to the bridge to the shop street.
 	for side = 0, 3 do
 		local wall = base * CFrame.Angles(0, side * math.pi / 2, 0) * CFrame.new(0, 0, half)
-		local spans = if side == 0
+		local gated = side == 0 or side == 2
+		local spans = if gated
 			then { { -half - thick / 2, -gate }, { gate, half + thick / 2 } }
 			else { { -half - thick / 2, half + thick / 2 } }
 		for _, span in spans do
@@ -738,7 +740,7 @@ local function castle(parent: Instance)
 			light.Parent = torch
 		end
 		for index, x in { -22, 0, 22 } do
-			if not (side == 0 and x == 0) then
+			if not (gated and x == 0) then
 				local color = BANNERS[(side + index) % #BANNERS + 1]
 				local at = wall * CFrame.new(x, 10.5, -thick / 2 - 0.15)
 				block("BannerRod", Vector3.new(5, 0.3, 0.3), at * CFrame.new(0, 3.6, 0), IRON, Enum.Material.Metal)
@@ -759,7 +761,7 @@ local function castle(parent: Instance)
 				)
 			end
 		end
-		if side == 0 then
+		if gated then
 			-- The gate: an arch over the opening and a raised portcullis.
 			block("GateTop", Vector3.new(gate * 2, 5, thick), wall * CFrame.new(0, height - 2.5, 0), STONE)
 			block("GateArch", Vector3.new(gate * 2, 1.2, thick + 1), wall * CFrame.new(0, height - 5.6, 0), DARK_STONE)
@@ -945,6 +947,261 @@ local function castle(parent: Instance)
 	model.Parent = parent
 end
 
+-- 🛍️ The shop street: its own little island behind the castle (over a
+-- bridge from the back gate), with market stalls down both sides of a
+-- cobbled street. Each stall has a seller; talk to them (the E prompt) to
+-- open that shop (the client's ShopStreet controller opens the window).
+local STREET = LOBBY + Vector3.new(0, 0, -Config.Lobby.StreetDistance)
+
+WorldBuilder.Shops = {
+	{ key = "Market", name = "🏪 Kit Market", seller = "Merchant Mo", color = Color3.fromRGB(60, 150, 200) },
+	{ key = "Kits", name = "🌪️ Kit Stables", seller = "Stable Master Sam", color = Color3.fromRGB(110, 170, 255) },
+	{ key = "Style", name = "🎨 Style Boutique", seller = "Stylist Stella", color = Color3.fromRGB(230, 110, 180) },
+	{ key = "Pets", name = "🐾 Pet Shop", seller = "Pet Keeper Pip", color = Color3.fromRGB(120, 200, 110) },
+	{ key = "Emotes", name = "😀 Emote Stage", seller = "Dancer Dex", color = Color3.fromRGB(250, 180, 60) },
+	{ key = "Paint", name = "🖌️ Paint Shop", seller = "Painter Pia", color = Color3.fromRGB(170, 110, 230) },
+	{ key = "Rewards", name = "🎡 Prize Wheel", seller = "Lucky Lou", color = Color3.fromRGB(240, 90, 90) },
+	{ key = "Robux", name = "💎 Gem Shop", seller = "Gem Trader Gus", color = Color3.fromRGB(40, 170, 110) },
+}
+
+local function stall(parent: Instance, at: CFrame, shop: { key: string, name: string, seller: string, color: Color3 })
+	local model = Instance.new("Model")
+	model.Name = "Stall_" .. shop.key
+	local wood = Color3.fromRGB(116, 82, 54)
+	local function block(name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material): Part
+		return part({
+			Name = name,
+			Size = size,
+			CFrame = at * offset,
+			Color = color,
+			Material = material,
+			Parent = model,
+		})
+	end
+	-- `at` faces the street (-Z); the seller stands behind the counter.
+	local counter = block("Counter", Vector3.new(8, 3, 2.2), CFrame.new(0, 1.5, -1), wood, Enum.Material.WoodPlanks)
+	block(
+		"CounterTop",
+		Vector3.new(8.4, 0.3, 2.6),
+		CFrame.new(0, 3.15, -1),
+		Color3.fromRGB(86, 60, 40),
+		Enum.Material.Wood
+	)
+	block("BackWall", Vector3.new(8, 7, 0.4), CFrame.new(0, 3.5, 3.4), wood, Enum.Material.WoodPlanks)
+	for _, x in { -3.8, 3.8 } do
+		for _, z in { -1.8, 3.2 } do
+			block(
+				"Post",
+				Vector3.new(0.5, 7.6, 0.5),
+				CFrame.new(x, 3.8, z),
+				Color3.fromRGB(90, 64, 42),
+				Enum.Material.Wood
+			)
+		end
+	end
+	-- A striped awning in the shop's color.
+	for i = 0, 7 do
+		block(
+			"Awning",
+			Vector3.new(1.05, 0.2, 6.2),
+			CFrame.new(-3.65 + i * 1.05, 7.9, 0.7) * CFrame.Angles(math.rad(-14), 0, 0),
+			if i % 2 == 0 then shop.color else Color3.fromRGB(245, 240, 230),
+			Enum.Material.Fabric
+		)
+	end
+	-- Crates and a lantern.
+	block(
+		"Crate",
+		Vector3.new(1.6, 1.6, 1.6),
+		CFrame.new(-4.8, 0.8, -1.6) * CFrame.Angles(0, 0.3, 0),
+		wood,
+		Enum.Material.WoodPlanks
+	)
+	local lantern = block(
+		"Lantern",
+		Vector3.new(0.7, 1, 0.7),
+		CFrame.new(3.8, 6.6, -2.2),
+		Color3.fromRGB(255, 220, 140),
+		Enum.Material.Neon
+	)
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 200, 130)
+	light.Range = 14
+	light.Brightness = 1.2
+	light.Parent = lantern
+	-- The shop sign over the awning.
+	local sign = block(
+		"Sign",
+		Vector3.new(7, 1.6, 0.3),
+		CFrame.new(0, 9.3, -2.2),
+		Color3.fromRGB(60, 44, 30),
+		Enum.Material.Wood
+	)
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.CanvasSize = Vector2.new(350, 80)
+	gui.LightInfluence = 0.2
+	gui.Parent = sign
+	local text = Instance.new("TextLabel")
+	text.BackgroundTransparency = 1
+	text.Size = UDim2.fromScale(1, 1)
+	text.Font = Enum.Font.GothamBold
+	text.TextScaled = true
+	text.TextColor3 = Color3.fromRGB(255, 230, 170)
+	text.Text = shop.name
+	text.Parent = gui
+	-- Talk to the seller to shop.
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = "Shop"
+	prompt.ObjectText = shop.name .. " · " .. shop.seller
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = 11
+	prompt.RequiresLineOfSight = false
+	prompt:SetAttribute("OpenWindow", shop.key)
+	prompt.Parent = counter
+	model.Parent = parent
+	-- The seller (a Roblox avatar) behind the counter.
+	task.spawn(function()
+		local ok, seller = pcall(function()
+			local description = Instance.new("HumanoidDescription")
+			local skin = ({
+				Color3.fromRGB(255, 219, 172),
+				Color3.fromRGB(234, 184, 146),
+				Color3.fromRGB(198, 134, 66),
+				Color3.fromRGB(141, 85, 36),
+			})[math.random(1, 4)]
+			description.HeadColor = skin
+			description.LeftArmColor = skin
+			description.RightArmColor = skin
+			description.TorsoColor = shop.color
+			description.LeftLegColor = Color3.fromRGB(70, 60, 55)
+			description.RightLegColor = Color3.fromRGB(70, 60, 55)
+			return game:GetService("Players"):CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R15)
+		end)
+		if not ok or not seller then
+			return
+		end
+		seller.Name = shop.seller
+		for _, p in seller:GetDescendants() do
+			if p:IsA("BasePart") then
+				p.Anchored = p.Name == "HumanoidRootPart"
+				p.CanCollide = false
+			end
+		end
+		local humanoid = seller:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid.DisplayName = shop.seller
+			humanoid.NameDisplayDistance = 40
+			humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+		end
+		seller:PivotTo(at * CFrame.new(0, 3, 1.3))
+		seller.Parent = model
+		-- A gentle idle so they don't stand frozen.
+		if humanoid then
+			local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator")
+			animator.Parent = humanoid
+			local animation = Instance.new("Animation")
+			animation.AnimationId = "rbxassetid://507766666"
+			pcall(function()
+				local track = animator:LoadAnimation(animation)
+				track.Looped = true
+				track:Play()
+			end)
+		end
+	end)
+end
+
+local function shopStreet(world: Instance, rng: Random)
+	local radius = Config.Lobby.StreetRadius
+	local island = floatingIsland(world, "ShopStreet", STREET, radius, rng)
+	local terrain = workspace.Terrain
+	local length = radius * 2 - 16
+	terrain:FillBlock(CFrame.new(STREET - Vector3.new(0, 2, 0)), Vector3.new(14, 4, length), Enum.Material.Cobblestone)
+	-- The bridge from the castle's back path.
+	bridge(world, LOBBY + Vector3.new(0, 0, -(Config.Lobby.Radius - 4)), STREET + Vector3.new(0, 0, radius - 4))
+	-- An archway over the entrance.
+	local entrance = CFrame.new(STREET + Vector3.new(0, 0, length / 2 - 2))
+	for _, x in { -8, 8 } do
+		part({
+			Name = "ArchPillar",
+			Size = Vector3.new(2, 12, 2),
+			CFrame = entrance * CFrame.new(x, 6, 0),
+			Color = Color3.fromRGB(200, 196, 188),
+			Material = Enum.Material.Marble,
+			Parent = island,
+		})
+	end
+	local banner = part({
+		Name = "ArchSign",
+		Size = Vector3.new(18, 3, 0.6),
+		CFrame = entrance * CFrame.new(0, 12.5, 0),
+		Color = Color3.fromRGB(150, 60, 50),
+		Material = Enum.Material.Fabric,
+		Parent = island,
+	})
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = face
+		gui.CanvasSize = Vector2.new(600, 100)
+		gui.Parent = banner
+		label(
+			gui,
+			"Text",
+			"🛍️ Shop Street",
+			UDim2.fromScale(1, 1),
+			UDim2.fromScale(0, 0),
+			90,
+			Color3.fromRGB(255, 230, 170)
+		)
+	end
+	-- Stalls down both sides, facing the street.
+	local count = #WorldBuilder.Shops
+	local perSide = math.ceil(count / 2)
+	for index, shop in WorldBuilder.Shops do
+		local side = if index <= perSide then -1 else 1
+		local slot = if index <= perSide then index else index - perSide
+		local z = length / 2 - 14 - (slot - 1) * ((length - 24) / math.max(1, perSide - 1))
+		local position = STREET + Vector3.new(side * 13, 0, z)
+		stall(island, CFrame.lookAt(position, position - Vector3.new(side, 0, 0)), shop)
+	end
+	-- Street lamps.
+	for z = -length / 2 + 6, length / 2 - 6, 18 do
+		for _, x in { -8, 8 } do
+			local base = STREET + Vector3.new(x, 0, z)
+			part({
+				Name = "LampPost",
+				Size = Vector3.new(0.5, 9, 0.5),
+				CFrame = CFrame.new(base + Vector3.new(0, 4.5, 0)),
+				Color = Color3.fromRGB(40, 40, 46),
+				Material = Enum.Material.Metal,
+				Parent = island,
+			})
+			local lamp = part({
+				Name = "Lamp",
+				Size = Vector3.new(1, 1.2, 1),
+				CFrame = CFrame.new(base + Vector3.new(0, 9.4, 0)),
+				Color = Color3.fromRGB(255, 226, 160),
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+				Parent = island,
+			})
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromRGB(255, 210, 150)
+			light.Range = 18
+			light.Brightness = 1.3
+			light.Parent = lamp
+		end
+	end
+	-- A few trees around the back.
+	scatter(island, CFrame.new(STREET), rng, { trees = 6, flowers = 10, mushrooms = 3, bushes = 6 }, {
+		treeMin = 28,
+		treeMax = radius - 5,
+		max = radius - 4,
+	}, function(p: Vector3): boolean
+		return math.abs(p.X) < 22 or p.Z > radius - 14
+	end)
+end
+
 local function lobbyIsland(world: Instance, rng: Random)
 	local island = floatingIsland(world, "Lobby", LOBBY, Config.Lobby.Radius, rng)
 	local terrain = workspace.Terrain
@@ -958,6 +1215,12 @@ local function lobbyIsland(world: Instance, rng: Random)
 	local pathLength = Config.Lobby.Radius - half - 6
 	terrain:FillBlock(
 		CFrame.new(lobbyPoint(0, -2, half + pathLength / 2)),
+		Vector3.new(8, 4, pathLength),
+		Enum.Material.Pavement
+	)
+	-- And one out of the back gate, to the shop street bridge.
+	terrain:FillBlock(
+		CFrame.new(lobbyPoint(0, -2, -(half + pathLength / 2))),
 		Vector3.new(8, 4, pathLength),
 		Enum.Material.Pavement
 	)
@@ -1057,6 +1320,7 @@ function WorldBuilder.build(): { PlotInfo }
 	}, wildBlocked)
 
 	lobbyIsland(world, rng)
+	shopStreet(world, rng)
 
 	local plotsFolder = Instance.new("Folder")
 	plotsFolder.Name = "Plots"

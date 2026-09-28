@@ -103,6 +103,12 @@ local function setHidden(pet: Pet, hidden: boolean)
 	for _, part in pet.parts do
 		part.LocalTransparencyModifier = if hidden then 1 else 0
 	end
+	for _, item in pet.model:GetDescendants() do
+		-- The level tag, sparkles and glow.
+		if item:IsA("BillboardGui") or item:IsA("Sparkles") or item:IsA("PointLight") then
+			item.Enabled = not hidden
+		end
+	end
 end
 
 -- Where the ground is under a spot (or nil over the void).

@@ -56,6 +56,9 @@ local function defaultData()
 		duels = { day = -1, paid = 0 }, -- lobby duel wins that paid Sparks today
 		settings = {}, -- ⚙️ Settings you changed from the defaults (SettingsData)
 		chest = { lastDay = -1, opened = 0 }, -- the lobby Mystery Chest
+		paint = {}, -- 🖌️ Paint Shop colors: blade, armor (PaintData.Colors index)
+		emotes = {}, -- 😀 bought emotes: key -> true (EmoteData)
+		petLevels = {}, -- 🐾 pet id -> { level, xp } (PetLevels)
 		-- 🌟 Challenges (ChallengeService fills these in).
 		challenges = { day = -1, week = -1, bonusClaimed = false },
 		level = 1, -- player level (1-100), then prestige (ProgressionData)
@@ -81,6 +84,8 @@ local function defaultData()
 			deaths = 0,
 			tournamentWins = 0,
 			weeklyCleared = 0, -- weeks with every 🌟 Weekly Challenge done
+			invites = 0, -- new players who joined through your invites
+			zombiesKilled = 0,
 			weaponKills = {}, -- weapon name -> knockouts with it (📊 Stats)
 			kills = 0,
 			finalKills = 0,

@@ -158,7 +158,8 @@ local function styleBlade(tool: Tool, blade: BasePart, length: number, skinId: s
 	end
 end
 
-function ItemModels.sword(tier: number, skin: string?): Tool
+-- `paint` (from the 🖌️ Paint Shop) recolors the blade over the skin.
+function ItemModels.sword(tier: number, skin: string?, paint: Color3?): Tool
 	local sword = MatchData.Swords[tier]
 	local look = BLADE_LOOK[sword.key] or BLADE_LOOK.IronSword
 	local tool, handle = newTool(
@@ -233,6 +234,15 @@ function ItemModels.sword(tier: number, skin: string?): Tool
 		Material = look.material,
 	})
 	styleBlade(tool, blade, length, skin)
+	if paint then
+		for _, p in tool:GetDescendants() do
+			if p:IsA("BasePart") and (p.Name == "Blade" or p.Name == "BladeTip") then
+				p.Color = paint
+			elseif p:IsA("BasePart") and p.Name == "Fuller" then
+				p.Color = paint:Lerp(Color3.new(0, 0, 0), 0.3)
+			end
+		end
+	end
 	weldAll(tool, handle)
 	return tool
 end
@@ -546,6 +556,93 @@ function ItemModels.fireball(): Tool
 	fire.Size = 2
 	fire.Heat = 4
 	fire.Parent = handle
+	weldAll(tool, handle)
+	return tool
+end
+
+-- A shoulder rocket launcher: a green tube with a sight, a grip and a
+-- rocket's red tip peeking out of the front.
+function ItemModels.rocketLauncher(): Tool
+	local tool, handle = newTool("Rocket Launcher", "Click to fire a rocket", {
+		Size = Vector3.new(0.3, 0.5, 0.6),
+		Color = rgb(50, 50, 54),
+		Material = M.Metal,
+	})
+	local along = CFrame.Angles(0, math.rad(90), 0) -- cylinders lie along X; turn them to Z
+	piece(tool, {
+		Name = "Tube",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(4.4, 0.9, 0.9),
+		CFrame = CFrame.new(0, 0.55, 0.5) * along,
+		Color = rgb(78, 96, 60),
+		Material = M.Metal,
+	})
+	for _, z in { -1.6, 2.6 } do
+		piece(tool, {
+			Name = "Ring",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(0.3, 1.05, 1.05),
+			CFrame = CFrame.new(0, 0.55, z) * along,
+			Color = rgb(40, 40, 44),
+			Material = M.Metal,
+		})
+	end
+	piece(tool, {
+		Name = "RocketTip",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.one * 0.7,
+		CFrame = CFrame.new(0, 0.55, 2.75),
+		Color = rgb(210, 50, 40),
+		Material = M.SmoothPlastic,
+	})
+	piece(tool, {
+		Name = "Sight",
+		Size = Vector3.new(0.2, 0.35, 0.6),
+		CFrame = CFrame.new(0.3, 1.1, 0.6),
+		Color = rgb(40, 40, 44),
+		Material = M.Metal,
+	})
+	weldAll(tool, handle)
+	return tool
+end
+
+-- A grappling hook gun: a wooden stock, a steel barrel and a three-pronged
+-- hook at the front on a coil of rope.
+function ItemModels.grapple(): Tool
+	local tool, handle = newTool("Grappling Hook", "Click a wall or ledge to pull yourself there", {
+		Size = Vector3.new(0.3, 0.3, 1),
+		Color = DARK_WOOD,
+		Material = M.Wood,
+	})
+	local along = CFrame.Angles(0, math.rad(90), 0)
+	piece(tool, {
+		Name = "Barrel",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(1.8, 0.35, 0.35),
+		CFrame = CFrame.new(0, 0.2, 1.2) * along,
+		Color = STEEL,
+		Material = M.Metal,
+	})
+	piece(tool, {
+		Name = "Coil",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.4, 0.6, 0.6),
+		CFrame = CFrame.new(0, -0.2, 0.7) * along,
+		Color = rgb(176, 150, 110),
+		Material = M.Fabric,
+	})
+	for i = 0, 2 do
+		piece(tool, {
+			Name = "Prong",
+			Size = Vector3.new(0.12, 0.12, 0.7),
+			CFrame = CFrame.new(0, 0.2, 2.2)
+				* CFrame.Angles(0, 0, i * math.rad(120))
+				* CFrame.Angles(math.rad(35), 0, 0)
+				* CFrame.new(0, 0, 0.25),
+			Color = STEEL,
+			Material = M.Metal,
+		})
+	end
 	weldAll(tool, handle)
 	return tool
 end

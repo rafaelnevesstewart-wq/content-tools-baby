@@ -38,6 +38,7 @@ local function getStats(player: Player): any
 		deaths = stats.deaths or 0,
 		bedsBroken = stats.bedsBroken or 0,
 		duelsWon = stats.duelsWon or 0,
+		zombiesKilled = stats.zombiesKilled or 0,
 		obbyClears = stats.obbyClears or 0,
 		sparksEarned = stats.sparksEarned or 0,
 		winStreak = data.winStreak or 0,

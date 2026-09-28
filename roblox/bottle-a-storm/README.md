@@ -41,7 +41,7 @@ a surprise, never the same twice in a row. Each team gets a sky island with:
 - a **generator** making 🟠 Copper (fast) and ⚪ Silver (slow). Stand on it to pick them up.
   The middle island has 💎 Storm Crystal and ⚡ Lightning Core generators that speed up at 6
   and 12 minutes.
-- an **Item Shop**: blocks (Cloud Wool, Wood Planks, Stone Bricks, Obsidian), swords (Stone,
+- an **Item Shop** (🚀 Rocket Launchers and 🪝 Grappling Hooks too): blocks (Cloud Wool, Wood Planks, Stone Bricks, Obsidian), swords (Stone,
   Iron, Diamond), a bow and arrows, armor (Chain, Iron, Diamond; kept when you respawn),
   ⛏️ pickaxes and 🪓 axes (4 tiers each; they break blocks much faster and drop one tier when
   you die), 🧨 Storm TNT (place it; 3 seconds later it blows up blocks, not Obsidian, and
@@ -147,12 +147,32 @@ with swords (bows, fireballs and TNT work any time). A health bar shows at the t
 screen. Everyone who hurts it gets Sparks, and the team that did the most damage gets Storm
 Crystals and Lightning Cores. If nobody beats it in time, it flies away and comes back later.
 
+## 🛍️ Shop Street
+
+Out the castle's back gate and over the bridge: a cobbled street with 8 market stalls, each
+with a seller. Talk to them to open the 🏪 Kit Market, 🌪️ Kit Stables, 🎨 Style Boutique,
+🐾 Pet Shop, 😀 Emote Stage, 🖌️ Paint Shop, 🎡 Prize Wheel or 💎 Gem Shop.
+
+## 😀 Emotes
+
+Press **G** (or the 😀 button) for the emote wheel: Wave, Point, Cheer, Laugh and Sit are free;
+Happy Hops, Spin, Dance, Backflip, Groove and Party Dance are bought with Sparks.
+
+## 🖌️ Paint Shop
+
+Pick a color for your sword blades and your armor (free). Your team's color still shows on
+your armor's trim, tabard and plume.
+
 ## 🛡️ Clans
 
 Make a clan with a name and a 2-4 letter tag (⚡5,000), invite people in your server, and
 your tag shows in your clan's color above your head. Every match a member wins counts for the
 clan, and the 🛡️ Clan window shows the **Top Clans** leaderboard. The leader can remove
 members; the last one to leave closes the clan. Clans are saved across servers.
+
+🎖️ **Clan Pass:** each season the clan earns Clan XP together (every member's matches, wins,
+knockouts, beds and dragons count), and every member claims each of the 15 tiers' prizes for
+themselves (Sparks and kits, up to a shiny Mythic kit).
 
 ## 🤝 Trading
 
@@ -181,6 +201,13 @@ shiny Legendary kit, ⚡10,000 and the 🌟 Challenger title.
 - 💎 **Robux shop:** VIP, Star Booster, Sparks, Golden Kit Crate, wheel spins, Battle Pass
   Premium, tier skips and Summon Rainbow Hour. Nothing sold makes you stronger in a match.
 
+## 🧟 Zombie Survival
+
+A match mode you can vote for: everyone is on one team, defending their bed on a haunted
+island from 10 waves of zombies (a big Brute every 5th wave). You get 20 seconds to build walls
+first. Zombies chase whoever is close, otherwise they go for the bed. Knocking out a zombie
+gives Copper; every cleared wave gives Sparks. Survive them all to win.
+
 ## Blocks
 
 Cloud Wool (your team's color), Wood Planks, 🪟 Sky Glass (see-through), 🟢 Bounce Slime (land
@@ -200,6 +227,18 @@ feed** on the right.
 
 On phones, big **⚔️ Use** (aims at the crosshair in the middle) and **🎒 Next item** buttons
 sit next to the jump button.
+
+## 🐾 Pet levels
+
+The pet you bring gets XP when you play, win, knock someone out, break a bed or win a duel.
+Every level (up to 10) makes it bigger and adds +1% to your match Sparks; at level 5 it
+sparkles and at level 10 it glows gold. Its level shows on a tag above it.
+
+## 📱 Invite friends
+
+In 👥 Party, press **📱 Invite friends**. When someone new joins through your invite, they get
+⚡1,000 and a Rare kit, and you get ⚡1,500 (it waits for you if you're in another server).
+Invite 3 for the 📱 Recruiter title.
 
 ## 📊 Stats
 
@@ -258,7 +297,8 @@ src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match
               rarities, powers), CosmeticsData, SkinData (swords, arrows), SeasonData
               (battle pass), RewardsData (daily rewards, quests), MarketData (Kit Shop,
               crates), SpinData, TitleData, HolidayData, WeatherEvents, Products, Sounds,
-              SettingsData, ChallengeData, Remotes, Format, Signal
+              SettingsData, ChallengeData, PaintData, EmoteData, PetLevels,
+              ClanPassData, Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, MatchService (rounds, teams, beds, generators), CombatService,
               GadgetService (TNT, fireballs, potions, pickaxes, axes), PartyService,
@@ -273,7 +313,8 @@ src/server/   Main.server.luau starts the services in order
               MonetizationService, BotService (bots), TournamentService,
               ChestService (Mystery Chest), StatsService, KitPowerService (heal, bridge
               and volley powers), BossService (Storm Dragon), ClanService, TradeService,
-              VoteService (map and bot votes), ChallengeService
+              VoteService (map and bot votes), ChallengeService, PaintService,
+              EmoteService, PetLevelService, InviteService, ZombieService
   Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
               ItemModels (weapons and items), PetModels, StormModel (kit storms), Effects,
               Juice, Notify, Codes
@@ -285,7 +326,7 @@ src/client/   Main.client.luau starts the controllers
                kill feed), PetFollower, TouchControls (phone buttons), Stats,
                MusicController, TournamentHUD, Vote, SpectateController (follow players
                after you're out), BossHUD, Challenges, Clan, Trade, BlockPhysics (slime
-               and ladders), Toasts, Sfx, UI
+               and ladders), Paint, EmoteWheel, ShopStreet, ZombieHUD, Toasts, Sfx, UI
 ```
 
 ## Known limits

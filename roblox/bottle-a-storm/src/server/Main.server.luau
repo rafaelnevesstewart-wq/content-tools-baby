@@ -27,6 +27,7 @@ local order = {
 	"LuckyService",
 	"BotService",
 	"BossService",
+	"ZombieService",
 	"ChallengeService",
 	"SettingsService",
 	"ChestService",
@@ -42,6 +43,10 @@ local order = {
 	"ProgressionService",
 	"CosmeticService",
 	"TradeService",
+	"PaintService",
+	"EmoteService",
+	"PetLevelService",
+	"InviteService",
 	"MonetizationService",
 }
 

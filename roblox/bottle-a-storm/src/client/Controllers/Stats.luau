@@ -21,6 +21,7 @@ Stats.WeaponEmoji = {
 	TNT = "🧨",
 	Fireball = "🔥",
 	["Lucky Block"] = "🍀",
+	Rocket = "🚀",
 } :: { [string]: string }
 
 local window: Frame
@@ -112,6 +113,7 @@ local function show(stats: any)
 		{ "👑", "Rank", stats.rank },
 		{ "🎯", "Rank points", n(stats.rankPoints) },
 		{ "🤺", "Duels won", n(stats.duelsWon) },
+		{ "🧟", "Zombies", n(stats.zombiesKilled or 0) },
 		{ "🏔️", "Parkour clears", n(stats.obbyClears) },
 		{ "⚡", "Sparks earned", n(stats.sparksEarned) },
 	})

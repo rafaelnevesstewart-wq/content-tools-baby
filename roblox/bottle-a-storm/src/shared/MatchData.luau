@@ -47,9 +47,14 @@ MatchData.Modes = {
 	-- Duos, plus glowing ❓ blocks all over the map: hit one 3 times for a
 	-- surprise (LuckyService).
 	{ key = "Lucky", name = "Lucky Blocks", emoji = "🍀", size = 2, lucky = true },
+	-- Everyone on one team: defend your bed from waves of zombies
+	-- (ZombieService).
+	{ key = "Zombies", name = "Zombie Survival", emoji = "🧟", size = 8, coop = true },
 }
 
-function MatchData.mode(key: string?): { key: string, name: string, emoji: string, size: number, lucky: boolean? }?
+function MatchData.mode(
+	key: string?
+): { key: string, name: string, emoji: string, size: number, lucky: boolean?, coop: boolean? }?
 	for _, mode in MatchData.Modes do
 		if mode.key == key then
 			return mode
@@ -319,6 +324,24 @@ MatchData.Shop = {
 		cost = 4,
 		currency = "Silver",
 		description = "Throw it: it explodes where it hits, breaking wool and launching enemies.",
+	},
+	{
+		key = "RocketLauncher",
+		name = "Rocket Launcher (3 rockets)",
+		emoji = "🚀",
+		tab = "Items",
+		cost = 3,
+		currency = "Crystals",
+		description = "Rockets fly straight and blow up everything they hit. More rockets if you buy again.",
+	},
+	{
+		key = "GrapplingHook",
+		name = "Grappling Hook",
+		emoji = "🪝",
+		tab = "Items",
+		cost = 12,
+		currency = "Silver",
+		description = "Click a wall or ledge to zip over there. Kept until the match ends.",
 	},
 	{
 		key = "SpeedPotion",
