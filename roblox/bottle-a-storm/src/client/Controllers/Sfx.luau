@@ -9,6 +9,9 @@ local Sfx = {}
 
 local cache: { [string]: Sound } = {}
 
+-- 0 to 1, from the ⚙️ Settings "Sound effects" choice (set by Settings).
+Sfx.volume = 1
+
 -- Plays a sound by name ("click", "pop", ...). `pitch` nudges it up or down.
 function Sfx.play(name: string, pitch: number?)
 	local info = Sounds[name]
@@ -21,11 +24,16 @@ function Sfx.play(name: string, pitch: number?)
 		created.Name = "Sfx_" .. name
 		created.SoundId = info.id
 		created.Volume = info.volume
+		created:SetAttribute("BaseVolume", info.volume)
 		created.Parent = SoundService
 		cache[name] = created
 		sound = created
 	end
 	local s = sound :: Sound
+	if Sfx.volume <= 0 then
+		return
+	end
+	s.Volume = info.volume * Sfx.volume
 	s.PlaybackSpeed = info.pitch * (pitch or 1)
 	-- PlayLocalSound lets the same effect overlap itself (fast clicks, coins).
 	SoundService:PlayLocalSound(s)

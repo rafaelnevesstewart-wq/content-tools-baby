@@ -18,9 +18,13 @@ the normal camera.
 
 ## How a match works
 
-Everyone waits in the **lobby** on the big middle island. With 2+ players (1 in Studio) a
-15-second countdown starts. In the lobby, players **vote for Solos, Duos or Squads** (team
-size 1, 2 or 4); the most votes wins (no votes: solos with up to 4 players, duos with more).
+Everyone waits in the **castle lobby**, a stone castle on its own floating island (walls,
+towers, torches, a fountain, the forecast TV, leaderboards and winners' statues). With 2+
+players (1 in Studio) a 15-second countdown starts. In the lobby, players **vote for Solos,
+Duos, Squads or 🍀 Lucky Blocks** (team size 1, 2, 4, or duos with ❓ blocks all over the map
+that give a surprise after 3 sword hits: gear, TNT, resources... or an explosion, lightning or
+a launch into the sky); the most votes wins (no votes: solos with up to 4 players, duos with
+more).
 **Parties** (👥 Party) always end up on the same team. Up to 8 teams. Every match is on a new
 **map**: 🌿 Meadow, 🌋 Volcano, ❄️ Frozen, 🍭 Candy or 🌌 Space (ground, cliffs, props and a
 color wash), never the same twice in a row. Each team gets a sky island with:
@@ -85,9 +89,20 @@ Abuse and Rainbow Hour (the HUD shows your current bonus). Spend them on cosmeti
   streaks, levels, ranks and collecting. Rewards (Sparks, kits and 3 achievement-only
   cosmetics: Champion Trail, Veteran Bed, Legend Strike) are given automatically.
 
+## The lobby
+
+- ⚔️ **1v1 duels:** open 👥 Party and press ⚔️ Duel next to anyone. You both get an iron sword
+  in the arena; the first knockout wins Sparks (10 paid wins a day). Stepping out of the ring
+  gives up; 90 seconds with no knockout is a draw.
+- 🎯 **Training dummies:** hit them with your practice sword to see your damage.
+- The **parkour** climbs around the outside of the island to a free Epic kit once a day.
+- Falling off the lobby island just puts you back at the spawn.
+
 ## Cosmetics (🎨 Style)
 
-- **You:** hats, trails, backs (wings, Arrow Quiver...) and auras. Every trail has a bright
+- **You:** hats, trails, backs (wings, Arrow Quiver...), auras and 🐾 **pets** (a duckling,
+  bunny, cat, corgi, cloud sheep, fox, deer or a flying storm dragon that walks after you
+  everywhere, with moving legs, wagging tails and flapping wings). Every trail has a bright
   core ribbon from your waist to your feet, a soft outer glow, sparkles and a light; every aura
   adds a glowing halo on the ground.
 - **In matches:** 🛏️ **Cloud Beds** (your team's bed uses the first teammate's pick),
@@ -123,10 +138,21 @@ Premium, tier skips and the Star Booster pass (+50% stars) are sold for Robux.
 
 ## Controls in a match
 
-Click with a sword to swing (you can also hit placed blocks to break them), a pickaxe or axe
-to mine blocks, the bow to shoot, a Fireball to throw it, a potion to drink it; hold a block or
-Storm TNT to see where it goes and click to place it; **E** to open the Item Shop or break a
-bed; **Shift** for your kit's power.
+Click with a sword (or the 🪄 **Knockback Stick**: barely hurts, sends people flying) to swing
+(you can also hit placed blocks to break them), a pickaxe or axe to mine blocks, the bow to
+shoot, a Fireball to throw it, a potion to drink it; hold a block or Storm TNT to see where it
+goes and click to place it; **E** to open the Item Shop or break a bed; **Shift** for your
+kit's power. Hits show **damage numbers**, and knockouts and broken beds show in the **kill
+feed** on the right.
+
+On phones, big **⚔️ Use** (aims at the crosshair in the middle) and **🎒 Next item** buttons
+sit next to the jump button.
+
+## ⚙️ Settings
+
+Camera follows the mouse, over-the-shoulder view, big phone buttons, sound effects volume,
+sky extras, damage numbers, kill feed, fancy effects (turn off on slow devices) and other
+players' pets. Saved with your profile.
 
 ## Setup
 
@@ -167,7 +193,7 @@ src/shared/   Config, MatchData (teams, modes, item shop, tools, upgrades, match
               rarities, powers), CosmeticsData, SkinData (swords, arrows), SeasonData
               (battle pass), RewardsData (daily rewards, quests), MarketData (Kit Shop,
               crates), SpinData, TitleData, HolidayData, WeatherEvents, Products, Sounds,
-              Remotes, Format, Signal
+              SettingsData, Remotes, Format, Signal
 src/server/   Main.server.luau starts the services in order
   Services/   DataService, MatchService (rounds, teams, beds, generators), CombatService,
               GadgetService (TNT, fireballs, potions, pickaxes, axes), PartyService,
@@ -175,17 +201,20 @@ src/server/   Main.server.luau starts the services in order
               BlockService, ItemShopService, KitService, WeatherService, MovementService
               (falling off), IncomeService (Sparks), IndexService (Kit Collection),
               SeasonService, RewardService, MarketService, SpinService, DailyService,
-              TitleService, HolidayService, CosmeticService, ObbyService (lobby parkour),
+              TitleService, HolidayService, CosmeticService (and pets), ObbyService (lobby
+              parkour), LobbyService (duels, training dummies), LuckyService (Lucky
+              Blocks mode), SettingsService,
               CommunityService (codes, group, likes), LeaderboardService, AdminService,
               MonetizationService
-  Modules/    WorldBuilder (terrain islands, bridges, trees, forecast TV), ItemModels (weapons
-              and items), StormModel (kit storms), Effects,
+  Modules/    WorldBuilder (terrain islands, the castle lobby, bridges, trees, forecast TV),
+              ItemModels (weapons and items), PetModels, StormModel (kit storms), Effects,
               Juice, Notify, Codes
 src/client/   Main.client.luau starts the controllers
   Controllers/ HUD, MatchHUD (and the mode vote), CameraController, ItemShop, Kits, Party, KitController (Shift powers), KitFollower,
                WeaponController, BlockController, Aim, Shop, Market, HolidayShop, Style,
                Season, Rewards, AdminPanel, ForecastController, StormAnimator, FlashyFx,
-               AmbientController, JuiceController, Toasts, Sfx, UI
+               AmbientController, JuiceController, Settings, DamageFeed (damage numbers,
+               kill feed), PetFollower, TouchControls (phone buttons), Toasts, Sfx, UI
 ```
 
 ## Known limits

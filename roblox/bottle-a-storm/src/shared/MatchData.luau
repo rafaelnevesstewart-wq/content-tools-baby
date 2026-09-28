@@ -44,9 +44,12 @@ MatchData.Modes = {
 	{ key = "Solo", name = "Solos", emoji = "🧍", size = 1 },
 	{ key = "Duo", name = "Duos", emoji = "👥", size = 2 },
 	{ key = "Squad", name = "Squads", emoji = "👨‍👩‍👧‍👦", size = 4 },
+	-- Duos, plus glowing ❓ blocks all over the map: hit one 3 times for a
+	-- surprise (LuckyService).
+	{ key = "Lucky", name = "Lucky Blocks", emoji = "🍀", size = 2, lucky = true },
 }
 
-function MatchData.mode(key: string?): { key: string, name: string, emoji: string, size: number }?
+function MatchData.mode(key: string?): { key: string, name: string, emoji: string, size: number, lucky: boolean? }?
 	for _, mode in MatchData.Modes do
 		if mode.key == key then
 			return mode

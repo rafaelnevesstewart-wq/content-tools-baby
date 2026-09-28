@@ -2,7 +2,7 @@
 --   top:  your Sparks (and your match Sparks bonus), then a row of small chips:
 --         match weather and events (Admin Abuse, holidays)
 --   left: an icon bar (Rewards, Battle Pass, Kits, Kit Market, Style, Party,
---         Robux, Admin)
+--         Robux, Settings, Admin)
 -- The match itself (timer, teams, beds, resources) is in MatchHUD.
 
 local Players = game:GetService("Players")
@@ -18,6 +18,7 @@ local Market = require(script.Parent.Market)
 local Party = require(script.Parent.Party)
 local Rewards = require(script.Parent.Rewards)
 local Season = require(script.Parent.Season)
+local Settings = require(script.Parent.Settings)
 local Shop = require(script.Parent.Shop)
 local Style = require(script.Parent.Style)
 local UI = require(script.Parent.UI)
@@ -253,6 +254,7 @@ function HUD.start()
 	iconButton(bar, 4, "🎨", "Style", Color3.fromRGB(255, 170, 220)).Activated:Connect(Style.toggle)
 	iconButton(bar, 5, "👥", "Party", Color3.fromRGB(140, 220, 200)).Activated:Connect(Party.toggle)
 	iconButton(bar, 6, "💎", "Robux", UI.Colors.Robux).Activated:Connect(Shop.toggle)
+	iconButton(bar, 7, "⚙️", "Settings", Color3.fromRGB(190, 196, 210)).Activated:Connect(Settings.toggle)
 	local adminButton = iconButton(bar, 20, "👑", "Admin", UI.Colors.Spark)
 	adminButton.Activated:Connect(AdminPanel.toggle)
 	local function refreshAdmin()

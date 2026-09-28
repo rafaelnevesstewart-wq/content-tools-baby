@@ -11,9 +11,20 @@ local Aim = {}
 
 local lastTouch: Vector3? = nil
 local lastWasTouch = false
+local centerUntil = 0
+
+-- The phone ⚔️ Use button aims at the middle of the screen (its crosshair)
+-- instead of where the button was tapped.
+function Aim.aimAtCenter()
+	centerUntil = os.clock() + 0.3
+end
 
 local function aimRay(): Ray
 	local camera = workspace.CurrentCamera
+	if os.clock() < centerUntil then
+		local size = camera.ViewportSize
+		return camera:ViewportPointToRay(size.X / 2, size.Y * 0.45)
+	end
 	if lastWasTouch and lastTouch then
 		return camera:ScreenPointToRay(lastTouch.X, lastTouch.Y)
 	end

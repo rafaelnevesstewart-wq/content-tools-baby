@@ -16,6 +16,9 @@ local EVENTS = {
 	"VoteMode", -- client -> server: ("Solo" | "Duo" | "Squad")
 	"PartyAction", -- client -> server: ("invite" | "accept" | "decline" | "leave" | "kick", userId)
 	"PartyInvite", -- server -> client: (fromUserId, fromName)
+	"DuelAction", -- client -> server: ("challenge" | "accept" | "decline", userId)
+	"DuelInvite", -- server -> client: (fromUserId, fromName) someone challenged you
+	"SaveSetting", -- client -> server: (key, value) a ⚙️ Settings choice
 	"Victory", -- server -> client: (teamKey) your team won: dance!
 	"DamageShown", -- server -> client: (position, amount) you hit someone
 	"KillFeed", -- server -> all clients: (entry) a knockout or a broken bed

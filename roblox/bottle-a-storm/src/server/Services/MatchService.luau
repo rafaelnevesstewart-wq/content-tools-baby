@@ -139,6 +139,16 @@ function MatchService.teamCount(): number
 	return startedTeams
 end
 
+-- The island top-center frames of the teams in this match (-Z faces the
+-- middle island).
+function MatchService.teamFrames(): { CFrame }
+	local frames = {}
+	for _, team in teams do
+		table.insert(frames, team.frame)
+	end
+	return frames
+end
+
 function MatchService.teamOf(player: Player): MatchTeam?
 	return teamByPlayer[player]
 end

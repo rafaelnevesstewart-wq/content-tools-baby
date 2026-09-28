@@ -1,4 +1,5 @@
--- Bed Wars weapons and gadgets: click with the Sword to swing, the Bow to
+-- Bed Wars weapons and gadgets: click with the Sword (or the Knockback
+-- Stick) to swing, the Bow to
 -- shoot, the Storm Apple to eat, the Wind Pearl or a Fireball to throw, a
 -- potion to drink, and a Pickaxe or Axe to mine blocks. (Storm TNT is placed
 -- by BlockController.) This only aims and asks; the server checks it all.
@@ -46,15 +47,17 @@ end
 
 function WeaponController.start()
 	local lastSwing = 0
-	Aim.hookTool("Sword", function()
-		if os.clock() - lastSwing < 0.3 then
-			return
-		end
-		lastSwing = os.clock()
-		slash("Sword")
-		Sfx.play("throw", 1.3 + math.random() * 0.2)
-		Remotes.event("Swing"):FireServer(Aim.point(enemyRoots(), 2))
-	end)
+	for _, toolName in { "Sword", "Knockback Stick" } do
+		Aim.hookTool(toolName, function()
+			if os.clock() - lastSwing < 0.3 then
+				return
+			end
+			lastSwing = os.clock()
+			slash(toolName)
+			Sfx.play("throw", (if toolName == "Sword" then 1.3 else 0.9) + math.random() * 0.2)
+			Remotes.event("Swing"):FireServer(Aim.point(enemyRoots(), 2))
+		end)
+	end
 	Aim.hookTool("Bow", function()
 		Sfx.play("throw", 0.8)
 		Remotes.event("ShootBow"):FireServer(Aim.point(enemyRoots(), 4))

@@ -369,6 +369,11 @@ end
 -- Shop hooks (used by ItemShopService)
 ---------------------------------------------------------------------------
 
+-- A blast that hurts and throws players near it (lucky blocks use this).
+function GadgetService.blast(owner: Player, center: Vector3, radius: number, damage: number, knockback: number)
+	boom(owner, center, radius, damage, knockback)
+end
+
 function GadgetService.handles(key: string): boolean
 	return key == "TNT" or key == "Fireball" or POTIONS[key] ~= nil or MatchData.Tools[key] ~= nil
 end

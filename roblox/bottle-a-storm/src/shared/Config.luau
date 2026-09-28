@@ -64,6 +64,26 @@ Config.Lobby = {
 	CastleHalf = 44, -- the castle walls are a square this far from the center
 }
 
+-- Lucky Blocks mode (MatchData.Modes): ❓ blocks to break for surprises.
+Config.Lucky = {
+	Interval = 45, -- seconds between new batches of blocks
+	PerIsland = 2, -- on each team island per batch
+	Middle = 6, -- on the middle island per batch
+	MaxBlocks = 40,
+	Hits = 3, -- sword hits to open one
+	Size = 3.2,
+}
+
+-- 1v1 duels in the castle lobby's arena (challenge people from 👥 Party).
+Config.Duel = {
+	InviteSeconds = 20,
+	CountdownSeconds = 3,
+	Seconds = 90, -- no knockout by then: a draw
+	SwordTier = 3, -- both duelists get an iron sword
+	WinSparks = 150,
+	RewardsPerDay = 10, -- wins that pay Sparks each day
+}
+
 -- Parties (👥 Party): friends who always end up on the same team.
 Config.Party = {
 	MaxSize = 4,

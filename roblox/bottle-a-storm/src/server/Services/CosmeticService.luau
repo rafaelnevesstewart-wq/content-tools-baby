@@ -21,6 +21,7 @@ local Signal = require(Shared.Signal)
 
 local Modules = script.Parent.Parent.Modules
 local Effects = require(Modules.Effects)
+local PetModels = require(Modules.PetModels)
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
@@ -1661,7 +1662,7 @@ end
 ---------------------------------------------------------------------------
 
 -- The Style Bonus: every cosmetic you use adds its tier's bonus.
-local SLOTS = { "hat", "trail", "back", "aura", "bed", "sword", "fx", "ko", "dance" }
+local SLOTS = { "hat", "trail", "back", "aura", "pet", "bed", "sword", "fx", "ko", "dance" }
 
 local function styleBonus(cosmetics: any): number
 	local total = 0
@@ -1696,10 +1697,49 @@ local function publish(player: Player, data: any)
 	player:SetAttribute("Cosmetics", HttpService:JSONEncode(state))
 end
 
+-- Your pet: built here, then every screen walks it after you (PetFollower).
+local petOf: { [Player]: Model } = {}
+
+local function refreshPet(player: Player)
+	local old = petOf[player]
+	if old then
+		old:Destroy()
+		petOf[player] = nil
+	end
+	local data = DataService.get(player)
+	local item = data and CosmeticsData.get(data.cosmetics.pet)
+	if not item or not item.pet or not player.Parent then
+		return
+	end
+	local owned = data.cosmetics.owned[item.id] or (item.cost <= 0 and not item.robux and not item.season)
+	if not owned then
+		return
+	end
+	local character = player.Character
+	local start = if character then character:GetPivot() * CFrame.new(3, -1.5, 3) else CFrame.new(Config.Lobby.Center)
+	local model = PetModels.build(item.pet, start)
+	if not model then
+		return
+	end
+	model.Name = player.Name .. "_Pet"
+	model:SetAttribute("OwnerId", player.UserId)
+	CollectionService:AddTag(model, "FollowerPet")
+	local folder = workspace:FindFirstChild("Pets")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Pets"
+		folder.Parent = workspace
+	end
+	model.Parent = folder
+	petOf[player] = model
+end
+
 local function refreshFor(player: Player, data: any, category: string)
 	publish(player, data)
 	if category == "hat" or category == "trail" or category == "back" or category == "aura" then
 		applyCharacter(player)
+	elseif category == "pet" then
+		refreshPet(player)
 	end
 	CosmeticService.Changed:Fire(player, category)
 end
@@ -1800,6 +1840,7 @@ function CosmeticService.start()
 	DataService.ProfileLoaded:Connect(function(player, data)
 		publish(player, data)
 		applyCharacter(player)
+		refreshPet(player)
 	end)
 
 	local function onPlayer(player: Player)
@@ -1813,6 +1854,10 @@ function CosmeticService.start()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		lastRequest[player] = nil
+		if petOf[player] then
+			petOf[player]:Destroy()
+			petOf[player] = nil
+		end
 	end)
 end
 

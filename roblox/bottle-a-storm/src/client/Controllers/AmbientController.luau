@@ -4,6 +4,8 @@
 
 local RunService = game:GetService("RunService")
 
+local Settings = require(script.Parent.Settings)
+
 local AmbientController = {}
 
 local PASTELS = {
@@ -187,7 +189,12 @@ end
 function AmbientController.start()
 	folder = Instance.new("Folder")
 	folder.Name = "Ambient"
-	folder.Parent = workspace
+	folder.Parent = if Settings.get("ambient") then workspace else nil
+	Settings.Changed:Connect(function(key, value)
+		if key == "ambient" then
+			folder.Parent = if value then workspace else nil
+		end
+	end)
 
 	buildIslets()
 	-- Out past the ring of player islands.

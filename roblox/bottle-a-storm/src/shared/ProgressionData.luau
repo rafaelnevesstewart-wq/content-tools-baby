@@ -364,6 +364,16 @@ ProgressionData.Achievements = {
 		progress = field("bestRank"),
 		reward = kit(7),
 	},
+	-- Lobby
+	{
+		id = "Duelist",
+		name = "Duelist",
+		emoji = "🤺",
+		goal = "Win 10 duels in the lobby arena",
+		target = 10,
+		progress = stat("duelsWon"),
+		reward = sparks(1500),
+	},
 	-- Collecting
 	{
 		id = "Kits10",

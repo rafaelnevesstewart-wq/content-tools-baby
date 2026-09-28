@@ -1,6 +1,7 @@
--- The 👥 Party window: your party (leave, or remove someone if you lead it)
--- and everyone else in the server with an Invite button. Invites pop up at
--- the bottom with Join / No thanks. Party members always play on the same
+-- The 👥 Party window: your party (leave, or remove someone if you lead it),
+-- everyone else in the server with an Invite button, and a ⚔️ Duel button to
+-- challenge anyone to a 1v1 in the castle arena (LobbyService). Invites and
+-- challenges pop up at the bottom. Party members always play on the same
 -- team (PartyService).
 
 local HttpService = game:GetService("HttpService")
@@ -13,6 +14,7 @@ local Remotes = require(Shared.Remotes)
 local UI = require(script.Parent.UI)
 
 local player = Players.LocalPlayer
+local DUEL_COLOR = Color3.fromRGB(230, 120, 40)
 
 local Party = {}
 
@@ -126,6 +128,21 @@ local function build()
 	if others == 0 then
 		heading("Nobody else is here yet.")
 	end
+	local duelable = {}
+	for _, other in Players:GetPlayers() do
+		if other ~= player then
+			table.insert(duelable, other)
+		end
+	end
+	if #duelable > 0 then
+		heading("⚔️ Duel someone: a 1v1 in the castle arena")
+		for _, other in duelable do
+			order += 1
+			row(order, other.DisplayName, "⚔️ Duel", DUEL_COLOR, function()
+				Remotes.event("DuelAction"):FireServer("challenge", other.UserId)
+			end)
+		end
+	end
 end
 
 function Party.toggle()
@@ -135,30 +152,36 @@ function Party.toggle()
 	end
 end
 
--- An invite pops up at the bottom of the screen.
-local function showInvite(fromUserId: number, fromName: string)
+-- An invite (or a duel challenge) pops up at the bottom of the screen.
+local function showInvite(fromUserId: number, fromName: string, duel: boolean)
 	local card = UI.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -160),
 		Size = UDim2.fromOffset(360, 96),
 		BackgroundColor3 = UI.Colors.Panel,
 		Parent = screen,
-	}, { UI.corner(14), UI.stroke(UI.Colors.Good, 3), UI.padding(10) })
+	}, { UI.corner(14), UI.stroke(if duel then DUEL_COLOR else UI.Colors.Good, 3), UI.padding(10) })
 	UI.label({
 		Size = UDim2.new(1, 0, 0, 30),
-		Text = "👥 " .. fromName .. " invited you to their party!",
+		Text = if duel
+			then "⚔️ " .. fromName .. " challenged you to a duel!"
+			else "👥 " .. fromName .. " invited you to their party!",
 		TextSize = 17,
 		TextWrapped = true,
 		Parent = card,
 	})
 	local function answer(action: string)
-		send(action, fromUserId)
+		if duel then
+			Remotes.event("DuelAction"):FireServer(action, fromUserId)
+		else
+			send(action, fromUserId)
+		end
 		card:Destroy()
 	end
 	UI.button({
 		Position = UDim2.new(0, 0, 1, -38),
 		Size = UDim2.new(0.5, -4, 0, 38),
-		Text = "Join",
+		Text = if duel then "Fight!" else "Join",
 		BackgroundColor3 = UI.Colors.Good,
 		Parent = card,
 	}).Activated
@@ -176,7 +199,7 @@ local function showInvite(fromUserId: number, fromName: string)
 		:Connect(function()
 			answer("decline")
 		end)
-	task.delay(Config.Party.InviteSeconds, function()
+	task.delay(if duel then Config.Duel.InviteSeconds else Config.Party.InviteSeconds, function()
 		if card.Parent then
 			card:Destroy()
 		end
@@ -241,7 +264,12 @@ function Party.start()
 
 	Remotes.event("PartyInvite").OnClientEvent:Connect(function(fromUserId, fromName)
 		if type(fromUserId) == "number" and type(fromName) == "string" then
-			showInvite(fromUserId, fromName)
+			showInvite(fromUserId, fromName, false)
+		end
+	end)
+	Remotes.event("DuelInvite").OnClientEvent:Connect(function(fromUserId, fromName)
+		if type(fromUserId) == "number" and type(fromName) == "string" then
+			showInvite(fromUserId, fromName, true)
 		end
 	end)
 	local function refresh()

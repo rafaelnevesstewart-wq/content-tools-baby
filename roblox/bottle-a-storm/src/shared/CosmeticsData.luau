@@ -1,6 +1,6 @@
 --!strict
 -- Bed Wars cosmetics, bought in the 🎨 Style window: your look (hat, trail,
--- back, aura), your team's cloud bed, your sword and arrows, and the effect
+-- back, aura), a pet that follows you around, your team's cloud bed, your sword and arrows, and the effect
 -- when you knock someone out. Most cost Sparks; a few cost Robux (a Developer
 -- Product each, listed in Products.Cosmetics under the key "Cosmetic_<id>");
 -- some only come from the battle pass. What each one looks like is built in
@@ -8,7 +8,7 @@
 
 export type Item = {
 	id: string,
-	category: string, -- hat, trail, back, aura, bed, sword, fx, ko, dance
+	category: string, -- hat, trail, back, aura, pet, bed, sword, fx, ko, dance
 	name: string,
 	emoji: string,
 	cost: number, -- Sparks; 0 = free
@@ -16,6 +16,7 @@ export type Item = {
 	season: string?, -- only from this season's battle pass (see SeasonData)
 	achievement: boolean?, -- only from an achievement (see ProgressionData)
 	emote: string?, -- dances: the Roblox emote your character plays
+	pet: string?, -- pets: the animal (PetModels.Kinds)
 	description: string,
 }
 
@@ -32,6 +33,7 @@ CosmeticsData.Categories = {
 	{ key = "trail", name = "Trails", emoji = "✨" },
 	{ key = "back", name = "Backs", emoji = "🪽" },
 	{ key = "aura", name = "Auras", emoji = "💫" },
+	{ key = "pet", name = "Pets", emoji = "🐾" },
 	{ key = "bed", name = "Cloud Beds", emoji = "🛏️" },
 	{ key = "sword", name = "Sword Skins", emoji = "🗡️" },
 	{ key = "fx", name = "Arrow Effects", emoji = "🏹" },
@@ -40,6 +42,81 @@ CosmeticsData.Categories = {
 } :: { Category }
 
 CosmeticsData.Items = {
+	-- Pets: they follow you everywhere, in the lobby and in matches.
+	{
+		id = "PetDuck",
+		category = "pet",
+		name = "Duckling",
+		emoji = "🦆",
+		cost = 400,
+		pet = "Ducks",
+		description = "A little mallard that waddles after you.",
+	},
+	{
+		id = "PetBunny",
+		category = "pet",
+		name = "Bunny",
+		emoji = "🐰",
+		cost = 1200,
+		pet = "Bunnies",
+		description = "Hops along behind you.",
+	},
+	{
+		id = "PetCat",
+		category = "pet",
+		name = "Cat",
+		emoji = "🐱",
+		cost = 2500,
+		pet = "Cat",
+		description = "A curious tabby with a swishy tail.",
+	},
+	{
+		id = "PetCorgi",
+		category = "pet",
+		name = "Corgi",
+		emoji = "🐶",
+		cost = 4500,
+		pet = "Corgi",
+		description = "Short legs, big heart, never leaves your side.",
+	},
+	{
+		id = "PetSheep",
+		category = "pet",
+		name = "Cloud Sheep",
+		emoji = "🐑",
+		cost = 8000,
+		pet = "CloudSheep",
+		description = "So fluffy it could be a cloud.",
+	},
+	{
+		id = "PetFox",
+		category = "pet",
+		name = "Fox",
+		emoji = "🦊",
+		cost = 15000,
+		pet = "Fox",
+		description = "A clever red fox with a bushy tail.",
+	},
+	{
+		id = "PetDeer",
+		category = "pet",
+		name = "Deer",
+		emoji = "🦌",
+		cost = 0,
+		robux = true,
+		pet = "Deer",
+		description = "A graceful deer with antlers.",
+	},
+	{
+		id = "PetDragon",
+		category = "pet",
+		name = "Storm Dragon",
+		emoji = "🐉",
+		cost = 0,
+		robux = true,
+		pet = "StormDragon",
+		description = "A little dragon that flies over your shoulder.",
+	},
 	-- Hats
 	{
 		id = "CloudHat",

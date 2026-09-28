@@ -236,8 +236,10 @@ function MatchHUD.start()
 	for order, mode in MatchData.Modes do
 		local button = UI.button({
 			LayoutOrder = order,
-			Size = UDim2.fromOffset(150, 34),
+			Size = UDim2.fromOffset(136, 34),
 			TextSize = 15,
+			TextScaled = true,
+			TextWrapped = true,
 			Parent = voteRow,
 		})
 		button.Activated:Connect(function()

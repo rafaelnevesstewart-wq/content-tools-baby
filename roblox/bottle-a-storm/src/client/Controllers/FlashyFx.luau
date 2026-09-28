@@ -10,7 +10,10 @@
 
 local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
+
+local Settings = require(script.Parent.Settings)
 
 local FlashyFx = {}
 
@@ -130,9 +133,29 @@ function FlashyFx.start()
 		tracked[instance] = nil
 	end)
 
+	-- ⚙️ Settings "Fancy effects" off: no glow, sun rays or animations.
+	local function applyLighting()
+		local on = Settings.get("effects") == true
+		for _, className in { "BloomEffect", "SunRaysEffect" } do
+			local effect = Lighting:FindFirstChildOfClass(className) :: PostEffect?
+			if effect then
+				effect.Enabled = on
+			end
+		end
+	end
+	applyLighting()
+	Settings.Changed:Connect(function(key)
+		if key == "effects" then
+			applyLighting()
+		end
+	end)
+	Lighting.ChildAdded:Connect(function()
+		task.defer(applyLighting)
+	end)
+
 	RunService.RenderStepped:Connect(function()
 		local camera = workspace.CurrentCamera
-		if not camera then
+		if not camera or not Settings.get("effects") then
 			return
 		end
 		local eye = camera.CFrame.Position

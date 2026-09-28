@@ -53,6 +53,8 @@ local function defaultData()
 		spin = { day = -1, extra = 0 }, -- daily wheel: last free spin day, bought spins
 		holiday = { key = "", points = 0 }, -- event currency for the running holiday
 		obby = { lastDay = -1 }, -- last day the lobby parkour reward was claimed
+		duels = { day = -1, paid = 0 }, -- lobby duel wins that paid Sparks today
+		settings = {}, -- ⚙️ Settings you changed from the defaults (SettingsData)
 		level = 1, -- player level (1-100), then prestige (ProgressionData)
 		levelXp = 0,
 		prestige = 0,
@@ -72,6 +74,7 @@ local function defaultData()
 		stats = {
 			sparksEarned = 0,
 			obbyClears = 0, -- times you reached the top of the lobby parkour
+			duelsWon = 0,
 			kills = 0,
 			finalKills = 0,
 			bedsBroken = 0,

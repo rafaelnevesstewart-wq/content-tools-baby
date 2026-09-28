@@ -2,13 +2,14 @@
 -- locked to the middle of the screen (with a crosshair), the camera sits a
 -- little over your right shoulder, and your character faces where you look.
 -- Opening any window (Item Shop, Style, Rewards...) frees the mouse so you
--- can click. Hold Left Alt (or press Ctrl) to free it any time. Phones and
--- controllers keep Roblox's normal camera.
+-- can click. Hold Left Alt (or press Ctrl) to free it any time, or turn it
+-- off in ⚙️ Settings. Phones and controllers keep Roblox's normal camera.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Settings = require(script.Parent.Settings)
 local UI = require(script.Parent.UI)
 
 local player = Players.LocalPlayer
@@ -85,6 +86,7 @@ function CameraController.start()
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		local camera = workspace.CurrentCamera
 		local lock = usingMouse()
+			and Settings.get("cameraLock")
 			and not freed
 			and not UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt)
 			and not windowOpen()
@@ -100,7 +102,7 @@ function CameraController.start()
 			local h = humanoid :: Humanoid
 			local r = root :: BasePart
 			h.AutoRotate = false
-			h.CameraOffset = h.CameraOffset:Lerp(SHOULDER, 0.2)
+			h.CameraOffset = h.CameraOffset:Lerp(if Settings.get("shoulder") then SHOULDER else Vector3.zero, 0.2)
 			-- Face where the camera looks (flat, so you don't tip over).
 			local look = camera.CFrame.LookVector * Vector3.new(1, 0, 1)
 			if look.Magnitude > 0.01 then
@@ -113,7 +115,7 @@ function CameraController.start()
 			UserInputService.MouseIconEnabled = true
 			crosshair.Visible = false
 			hint.Text = "🖱️ Ctrl: lock the camera to the mouse again"
-			hint.Visible = freed
+			hint.Visible = freed and Settings.get("cameraLock")
 			if humanoid then
 				humanoid.AutoRotate = true
 				humanoid.CameraOffset = Vector3.zero
